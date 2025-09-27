@@ -1,7 +1,7 @@
 # EXAMPLE TEMPLATE SETUP
 from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
-from db import SessionLocal, engine
+from database import SessionLocal, engine
 
 app = FastAPI()
 
