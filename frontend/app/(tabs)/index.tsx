@@ -1,40 +1,85 @@
-import { Button, StyleSheet, TextInput } from 'react-native';
-
-import CustomButton from '@/components/CustomButton';
-import { Text, View } from '@/components/Themed';
-import { useState } from 'react';
-import "./page-one-style.css"
+import { StyleSheet, TextInput, View, Text } from "react-native";
+import { useState } from "react";
+import CustomButton from "@/components/CustomButton";
+import { navigate } from "expo-router/build/global-state/routing";
+import CustomHeader from "@/components/CustomHeader";
 
 export default function TabOneScreen() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   return (
-    <View className='container'>
-      <header className='header'>
-       <Text className='header-title'>Fridge Flow 🏠</Text>
-       </header>
-       <div className='login-container'>
-        <div className='login-form'>
-      <TextInput
-          onChangeText={setUsername}
-          placeholder='Username'
-          value={username}
-          className='login-input'
-        />
-        <TextInput
-          onChangeText={setPassword}
-          placeholder='Password'
-          value={password}
-          className='login-input'
-        />
-        <CustomButton
-        title="Press Me"
-        onPress={() => {}}
-        className='login-button'
-      />
-        <a className='create-account-button'>Create Account</a>
-        </div>
-        </div>
+    <View style={styles.container}>
+      <CustomHeader title="Fridge Flow 🏠"/>
+
+      <View style={styles.loginContainer}>
+        <View style={styles.loginForm}>
+          <TextInput
+            onChangeText={setEmail}
+            placeholder="Username"
+            value={email}
+            style={styles.loginInput}
+          />
+          <TextInput
+            onChangeText={setPassword}
+            placeholder="Password"
+            value={password}
+            secureTextEntry
+            style={styles.loginInput}
+          />
+          <CustomButton
+            title="Login"
+            onPress={() => {
+              console.log("login");
+            }}
+            style={styles.loginButton}
+            className=""
+          />
+          <Text
+            style={styles.createAccountButton}
+            onPress={() => {
+              navigate("/account/CreateAccount");
+            }}
+          >
+            Create Account
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FF",
+  },
+  loginContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 200,
+  },
+  loginForm: {
+    alignItems: "center",
+    width: 280,
+  },
+  loginInput: {
+    width: "100%",
+    marginVertical: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    fontSize: 15,
+  },
+  loginButton: {
+    width: 217,
+  },
+  createAccountButton: {
+    marginTop: 15,
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+  },
+});
