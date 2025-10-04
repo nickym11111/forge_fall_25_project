@@ -1,18 +1,19 @@
-# EXAMPLE TEMPLATE SETUP
-from fastapi import FastAPI, Depends
-from sqlalchemy.orm import Session
-from database import SessionLocal, engine
+from fastapi import FastAPI
+from database import supabase  
 
 app = FastAPI()
-
-# Dependency to get DB session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @app.get("/")
 def read_root():
     return {"message": "Hello from backend with Supabase!"}
+
+#TEMPLATE to get started :)
+@app.post("/users")
+def create_user(name: str, email: str):
+    response = supabase.table("users").insert({"name": name, "email": email}).execute()
+    return {"data": response.data, "error": response.error}
+
+@app.get("/users")
+def get_users():
+    response = supabase.table("users").select("*").execute()
+    return {"data": response.data, "error": response.error}
