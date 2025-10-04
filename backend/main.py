@@ -1,8 +1,13 @@
+<<<<<<< HEAD
 # EXAMPLE TEMPLATE SETUP
 from fastapi import FastAPI
 from database import supabase  
 from pydantic import BaseModel
 from supabase import create_client, Client
+=======
+from fastapi import FastAPI
+from database import supabase  
+>>>>>>> origin
 
 app = FastAPI()
 
@@ -20,6 +25,7 @@ def create_user(name: str, email: str):
 def get_users():
     response = supabase.table("users").select("*").execute()
     return {"data": response.data, "error": response.error}
+<<<<<<< HEAD
 
 class UserCreate(BaseModel):
     email: str
@@ -36,3 +42,5 @@ async def create_user(user: UserCreate):
         return {"email": user.email, "status": "User created successfully with password: " + user.password}
     except Exception as e:
         return {"error": str(e)}
+=======
+>>>>>>> origin
