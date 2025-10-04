@@ -4,8 +4,24 @@ from sqlalchemy.orm import Session
 from database import SessionLocal, engine
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from supabase import create_client, Client
+import os
+
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:8081", # React/Next dev server
+    "http://127.0.0.1:8081",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # allow POST, GET, OPTIONS, etc.
+    allow_headers=["*"],
+)
 
 
 # Dependency to get DB session
@@ -26,5 +42,5 @@ class UserCreate(BaseModel):
 
 @app.post("/sign-up/")
 async def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    # Here you would integrate with Supabase Auth to create a user
+    
     return {"email": user.email, "status": "User created successfully with password: " + user.password}

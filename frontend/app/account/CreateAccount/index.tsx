@@ -51,14 +51,15 @@ export default function CreateAccount() {
             style={styles.createAccountInput}
           />
           <CustomButton
-            title="Create Acount"
+            title="Create Account"
             onPress={() => {
-              console.log("Create Acount");
+              console.log("Create Account");
               CreateAccountRequest(email, password);
             }}
+            disabled={!firstName|| !lastName || !email || !password}
             style={styles.createAccountButton}
-            className=""
-          />
+            className=''
+            />
           {
             dietaryRestrictions.map((restriction, index) => (
               <Text key={index}>{restriction}</Text>
