@@ -4,6 +4,7 @@ import CustomButton from '@/components/CustomButton';
 import CustomHeader from '@/components/CustomHeader';
 import { navigate } from 'expo-router/build/global-state/routing';
 import { CreateAccountRequest } from '../../api/CreateAccount';
+import ToastMessage from '@/components/toastMessage';
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState('');
@@ -18,6 +19,7 @@ export default function CreateAccount() {
     <View style={styles.container}>
       <CustomHeader title="Fridge Flow 🏠"/>
       <View style={styles.createAccountContainer}>
+        <ToastMessage message="Account Created Successfully!" />
         <View style={styles.createAccountForm}>
           <TextInput
             onChangeText={setFirstName}

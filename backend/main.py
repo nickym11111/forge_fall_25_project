@@ -52,5 +52,12 @@ class UserCreate(BaseModel):
 
 @app.post("/sign-up/")
 async def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    
-    return {"email": user.email, "status": "User created successfully with password: " + user.password}
+    try:
+        # Example of using the database session
+        supabase.auth.sign_up({
+            "email": user.email,
+            "password": user.password
+        })
+        return {"email": user.email, "status": "User created successfully with password: " + user.password}
+    except Exception as e:
+        return {"error": str(e)}
