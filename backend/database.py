@@ -1,6 +1,8 @@
-from supabase import create_client, Client
+# EXAMPLE TEMPLATE SETUP
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv # type: ignore
 
 load_dotenv()
 

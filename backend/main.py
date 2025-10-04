@@ -1,10 +1,10 @@
+# EXAMPLE TEMPLATE SETUP
+
 from fastapi import FastAPI
 from database import supabase  
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from Join import app as join_router
-from Users import app as users_router
-from typing import List, Optional, Any
+
 
 app = FastAPI()
 
