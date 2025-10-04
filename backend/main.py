@@ -39,6 +39,9 @@ def get_users():
 class UserCreate(BaseModel):
     email: str
     password: str
+    firstName: str | None = None
+    lastName: str | None = None
+    dietaryRestrictions: list[str] | None = None
     
     
 def findAccount(email: str):
@@ -48,14 +51,23 @@ def findAccount(email: str):
 @app.post("/sign-up/")
 async def create_user(user: UserCreate):
     try:
-        existing_user = findAccount(user.email)
-        if existing_user.user is not None:
-            return {"error": "User already exists"}
         # Example of using the database session
         supabase.auth.sign_up({
             "email": user.email,
-            "password": user.password
+            "password": user.password,
+            "options": {
+                "data": {
+                    "first_name": user.firstName,
+                    "last_name": user.lastName,
+                    "dietary_restrictions": user.dietaryRestrictions
+                },
+                "email_redirect_to": "http://localhost:8081/" # Redirect to this URL after email confirmation
+            }
         })
-        return {"email": user.email, "status": "User created successfully"}
+        return {"email": user.email, 
+                "firstName": user.firstName,
+                "lastName": user.lastName,
+                "dietaryRestrictions": user.dietaryRestrictions,
+                "status": "User created successfully"}
     except Exception as e:
         return {"error": str(e)}

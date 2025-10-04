@@ -61,7 +61,7 @@ export default function CreateAccount() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
               try {
-                const response = await CreateAccountRequest(email, password);
+                const response = await CreateAccountRequest(email, password, firstName, lastName, dietaryRestrictions);
                 setToastMessage(
                   response?.status === "User created successfully"
                     ? "Account created!"
