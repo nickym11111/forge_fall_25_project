@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-
+# Allow CORS origin policy to allow requests from local origins.
 origins = [
     "http://localhost:8081", # React/Next dev server
     "http://127.0.0.1:8081",
