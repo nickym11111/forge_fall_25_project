@@ -16,7 +16,9 @@ from receiptParsing.chatGPTParse import app as receipt_router
 from dotenv import load_dotenv
 
 
-load_dotenv()
+from fastapi import FastAPI, Depends # type: ignore
+from sqlalchemy.orm import Session # type: ignore
+from database import SessionLocal, engine
 
 # Initialize routers
 app = FastAPI()
