@@ -13,13 +13,14 @@ export default function CreateAccount() {
   const [email, setEmail] = useState('');
   const [dietaryRestrictionsText, setDietaryRestrictionsText] = useState('');
   const dietaryRestrictions = dietaryRestrictionsText.split(',').map(item => item.trim());
+  const [isToastVisible, setIsToastVisible] = useState(false);
 
 
   return (
     <View style={styles.container}>
       <CustomHeader title="Fridge Flow 🏠"/>
+      <ToastMessage message="Account Created Successfully!" visible={isToastVisible}/>
       <View style={styles.createAccountContainer}>
-        <ToastMessage message="Account Created Successfully!" />
         <View style={styles.createAccountForm}>
           <TextInput
             onChangeText={setFirstName}
@@ -56,6 +57,8 @@ export default function CreateAccount() {
             title="Create Account"
             onPress={() => {
               console.log("Create Account");
+              setIsToastVisible(true);
+              setTimeout(() => setIsToastVisible(false), 3000);
               CreateAccountRequest(email, password);
             }}
             disabled={!firstName|| !lastName || !email || !password}
