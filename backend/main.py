@@ -2,8 +2,24 @@
 from fastapi import FastAPI
 from database import supabase  
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
+
+
+origins = [
+    "http://localhost:8081", # React/Next dev server
+    "http://127.0.0.1:8081",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # allow POST, GET, OPTIONS, etc.
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def read_root():
@@ -23,15 +39,23 @@ def get_users():
 class UserCreate(BaseModel):
     email: str
     password: str
+    
+    
+def findAccount(email: str):
+    response = supabase.auth.get_user(email)
+    return response
 
 @app.post("/sign-up/")
 async def create_user(user: UserCreate):
     try:
+        existing_user = findAccount(user.email)
+        if existing_user.user is not None:
+            return {"error": "User already exists"}
         # Example of using the database session
         supabase.auth.sign_up({
             "email": user.email,
             "password": user.password
         })
-        return {"email": user.email, "status": "User created successfully with password: " + user.password}
+        return {"email": user.email, "status": "User created successfully"}
     except Exception as e:
         return {"error": str(e)}

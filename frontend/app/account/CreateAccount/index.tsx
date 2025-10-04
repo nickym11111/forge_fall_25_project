@@ -1,25 +1,27 @@
-import { StyleSheet, TextInput, View, Text } from 'react-native';
-import { useState } from 'react';
-import CustomButton from '@/components/CustomButton';
-import CustomHeader from '@/components/CustomHeader';
-import { navigate } from 'expo-router/build/global-state/routing';
-import { CreateAccountRequest } from '../../api/CreateAccount';
-import ToastMessage from '@/components/ToastMessage';
+import { StyleSheet, TextInput, View, Text } from "react-native";
+import { useState } from "react";
+import CustomButton from "@/components/CustomButton";
+import CustomHeader from "@/components/CustomHeader";
+import { navigate } from "expo-router/build/global-state/routing";
+import { CreateAccountRequest } from "../../api/CreateAccount";
+import ToastMessage from "@/components/ToastMessage";
 
 export default function CreateAccount() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const [dietaryRestrictionsText, setDietaryRestrictionsText] = useState('');
-  const dietaryRestrictions = dietaryRestrictionsText.split(',').map(item => item.trim());
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [dietaryRestrictionsText, setDietaryRestrictionsText] = useState("");
+  const dietaryRestrictions = dietaryRestrictionsText
+    .split(",")
+    .map((item) => item.trim());
   const [isToastVisible, setIsToastVisible] = useState(false);
-
+  const [toastMessage, setToastMessage] = useState("");
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Fridge Flow 🏠"/>
-      <ToastMessage message="Account Created Successfully!" visible={isToastVisible}/>
+      <CustomHeader title="Fridge Flow 🏠" />
+      <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.createAccountContainer}>
         <View style={styles.createAccountForm}>
           <TextInput
@@ -55,21 +57,30 @@ export default function CreateAccount() {
           />
           <CustomButton
             title="Create Account"
-            onPress={() => {
-              console.log("Create Account");
+            onPress={async () => {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
-              CreateAccountRequest(email, password);
+              try {
+                const response = await CreateAccountRequest(email, password);
+                setToastMessage(
+                  response?.status === "User created successfully"
+                    ? "Account created!"
+                    : response?.error || "Error creating account"
+                );
+                } catch (e) {
+                  setToastMessage("Network error");
+                  console.log(e);
+                }
+              setIsToastVisible(true);
+              setTimeout(() => setIsToastVisible(false), 3000);
             }}
-            disabled={!firstName|| !lastName || !email || !password}
+            disabled={!firstName || !lastName || !email || !password}
             style={styles.createAccountButton}
-            className=''
-            />
-          {
-            dietaryRestrictions.map((restriction, index) => (
-              <Text key={index}>{restriction}</Text>
-            ))
-          }
+            className=""
+          />
+          {dietaryRestrictions.map((restriction, index) => (
+            <Text key={index}>{restriction}</Text>
+          ))}
         </View>
       </View>
     </View>
