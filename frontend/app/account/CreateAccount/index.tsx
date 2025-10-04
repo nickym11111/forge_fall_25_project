@@ -4,7 +4,7 @@ import CustomButton from '@/components/CustomButton';
 import CustomHeader from '@/components/CustomHeader';
 import { navigate } from 'expo-router/build/global-state/routing';
 import { CreateAccountRequest } from '../../api/CreateAccount';
-import ToastMessage from '@/components/toastMessage';
+import ToastMessage from '@/components/ToastMessage';
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState('');
