@@ -1,3 +1,5 @@
+// Toast message component (pop-up style notification in top left of page)
+
 import React, { useEffect, useRef } from 'react';
 import { Animated, Text, StyleSheet } from 'react-native';
 
