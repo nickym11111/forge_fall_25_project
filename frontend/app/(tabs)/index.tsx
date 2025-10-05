@@ -3,6 +3,7 @@ import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
+import { LoginRequest } from "../api/Login";
 
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
@@ -29,12 +30,27 @@ export default function TabOneScreen() {
           />
           <CustomButton
             title="Login"
-            onPress={() => {
-              console.log("login");
-            }}
+            onPress={async () => {
+              console.log("Attempting login...");
+              console.log("Email entered:", email);
+
+              try {
+                const response = await LoginRequest(email, password);
+                console.log("Server response:", response);
+
+                if (response?.status === "Login successful") {
+                  console.log("Login successful.");
+                  console.log("User info:", response.user);
+                  console.log("Session token:", response.session?.access_token);
+                } else {
+                  console.log("Login failed:", response?.error || "Invalid credentials.");
+                }
+              } catch (error) {
+                console.error("Network or server error:", error);
+              }
+            } }
             style={styles.loginButton}
-            className=""
-          />
+            className="" disabled={false}          />
           <Text
             style={styles.createAccountButton}
             onPress={() => {
