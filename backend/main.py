@@ -89,7 +89,8 @@ def create_user(name: str, email: str):
 @app.get("/users")
 def get_users():
     response = supabase.table("users").select("*").execute()
-    return {"data": response.data, "error": response.error}
+    print(response)
+    return {"data": response.data}
 
 class UserCreate(BaseModel):
     email: str
