@@ -29,3 +29,12 @@ iOS: npx react-native run-ios
 Android: npx react-native run-android
 
 Expo: Scan the QR code in your terminal with the Expo Go app.
+
+BACKEND SETUP:
+- Cd into backend folder
+- python3 -m venv venv
+= source venv/bin/activate  # Mac/Linux
+- venv\Scripts\activate     # Windows
+- pip install -r requirements.txt
+- cp .env.example .env
+- Run the backend Server: uvicorn main:app --reload
