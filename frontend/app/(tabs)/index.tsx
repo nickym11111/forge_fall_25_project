@@ -1,13 +1,13 @@
-<<<<<<< HEAD
-{/* increment number of days expired, button functionalities*/ }
-
 import { StyleSheet, Button, TouchableOpacity, FlatList, TextInput } from 'react-native';
-import { type SetStateAction, type Dispatch} from 'react';
+import { type SetStateAction, type Dispatch } from 'react';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
+// Assuming these are accessible components
+import EditScreenInfo from '@/components/EditScreenInfo'; 
 import { Text, View } from '@/components/Themed';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react'; // Added useRef to imports
 import type { PropsWithChildren } from 'react';
+
+// --- Type Definitions ---
 
 interface FridgeMate {
   first_name: string,
@@ -90,7 +90,7 @@ export default function TabOneScreen() {
     } if (selectedFilters.includes('My Items')) {
       temp_data = temp_data.filter(item =>
         item.shared_by && item.shared_by.length == 1 &&
-        `${item.shared_by[0].first_name} ${item.shared_by[0].last_name}` === username);      
+        `${item.shared_by[0].first_name} ${item.shared_by[0].last_name}` === username);
       //if user presses 'shared'
     } if (selectedFilters.includes('Shared')) {
       temp_data = temp_data.filter(item =>
@@ -108,22 +108,22 @@ export default function TabOneScreen() {
   const filtered_data = filterData(originalHolder.current, selectedFilters);
 
 
-// 2. Apply the search filter to the result of step 1
-const finalListData = filtered_data.filter((item) => {
+  // 2. Apply the search filter to the result of step 1
+  const finalListData = filtered_data.filter((item) => {
     // If search bar is empty, show all items from the button filter
-    if (!searchValue) return true; 
+    if (!searchValue) return true;
 
     // Check if the item title includes the search text (case-insensitive)
     const itemData = item.title.toUpperCase();
     const textData = searchValue.toUpperCase();
-    return itemData.includes(textData); 
-});
+    return itemData.includes(textData);
+  });
 
-// 3. Simplified searchFunction: ONLY updates the search value state
-const searchFunction = (text: string) => {
+  // 3. Simplified searchFunction: ONLY updates the search value state
+  const searchFunction = (text: string) => {
     // We no longer call setData here; we only update the search term.
-    setSearchValue(text); 
-};
+    setSearchValue(text);
+  };
   return (
     <View style={styles.container}>
       <Text style={styles.title}>What's In Our Fridge?</Text>
@@ -154,56 +154,6 @@ const searchFunction = (text: string) => {
         }
         keyExtractor={(item, index) => item.title + index}
       />
-
-=======
-import { StyleSheet, TextInput, View, Text } from "react-native";
-import { useState } from "react";
-import CustomButton from "@/components/CustomButton";
-import { navigate } from "expo-router/build/global-state/routing";
-import CustomHeader from "@/components/CustomHeader";
-
-export default function TabOneScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  return (
-    <View style={styles.container}>
-      <CustomHeader title="Fridge Flow 🏠"/>
-
-      <View style={styles.loginContainer}>
-        <View style={styles.loginForm}>
-          <TextInput
-            onChangeText={setEmail}
-            placeholder="Username"
-            value={email}
-            style={styles.loginInput}
-          />
-          <TextInput
-            onChangeText={setPassword}
-            placeholder="Password"
-            value={password}
-            secureTextEntry
-            style={styles.loginInput}
-          />
-          <CustomButton
-            title="Login"
-            onPress={() => {
-              console.log("login");
-            }}
-            style={styles.loginButton}
-            className=""
-          />
-          <Text
-            style={styles.createAccountButton}
-            onPress={() => {
-              navigate("/account/CreateAccount");
-            }}
-          >
-            Create Account
-          </Text>
-        </View>
-      </View>
->>>>>>> 38e287ad2d5be7cdfac7830cf830e8e872563246
     </View>
 
   );
@@ -305,7 +255,6 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-<<<<<<< HEAD
     alignItems: 'center',
   },
   title: {
@@ -317,38 +266,9 @@ const styles = StyleSheet.create({
     marginVertical: 3,
     height: 1,
     width: '80%',
-=======
     backgroundColor: "#F8F9FF",
   },
-  loginContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 200,
-  },
-  loginForm: {
-    alignItems: "center",
-    width: 280,
-  },
-  loginInput: {
-    width: "100%",
-    marginVertical: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    fontSize: 15,
-  },
-  loginButton: {
-    width: 217,
-  },
-  createAccountButton: {
-    marginTop: 15,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
->>>>>>> 38e287ad2d5be7cdfac7830cf830e8e872563246
-  },
+  // Removed login styles from the conflict
   item: {
     backgroundColor: "#f0f0f0",
     padding: 15,
