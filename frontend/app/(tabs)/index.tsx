@@ -1,13 +1,11 @@
 import { StyleSheet, Button, TouchableOpacity, FlatList, TextInput } from 'react-native';
 import { type SetStateAction, type Dispatch } from 'react';
-
-// Assuming these are accessible components
 import EditScreenInfo from '@/components/EditScreenInfo'; 
 import { Text, View } from '@/components/Themed';
-import React, { useState, useRef } from 'react'; // Added useRef to imports
+import React, { useState, useRef } from 'react';
 import type { PropsWithChildren } from 'react';
 
-// --- Type Definitions ---
+// Defines a user
 
 interface FridgeMate {
   first_name: string,
@@ -46,14 +44,11 @@ interface ItemProps {
   days_until_expiration: number;
 }
 
-//so that we can apply multiple filters
-const temp_data = DATA;
-
 // Individual item component
 const Item = ({ title, added_by, shared_by, quantity, days_until_expiration }: ItemProps) => {
 
-  // Split names by commas
-  const sharedByString: string = shared_by
+// Split names by commas
+const sharedByString: string = shared_by
     .map(mate => `${mate.first_name} ${mate.last_name}`)
     .join(', ');
 
@@ -71,18 +66,19 @@ const Item = ({ title, added_by, shared_by, quantity, days_until_expiration }: I
 };
 
 export default function TabOneScreen() {
-  const [text, onChangeText] = React.useState('');
-
-  const [data, setData] = React.useState<FoodItem[]>(DATA);
+  //save search value typed by user
   const [searchValue, setSearchValue] = React.useState<string>("");
-  const originalHolder = React.useRef<FoodItem[]>(DATA);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>(['All Items']);
+  //save the original data with no filters
+  const originalHolder = React.useRef<FoodItem[]>(DATA); 
+  //save the current selectd filters (multi-select)
+  const [selectedFilters, setSelectedFilters] = useState<string[]>(['All Items']); 
 
+  //filter the data based on the selected filters, passed in as an array of strings
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
-    // Current user
+    // Sample user
     const username = "John Doe";
+    //variable that updates after applying filters
     var temp_data = data;
-
     //if user presses 'expiring soon'
     if (selectedFilters.includes('Expiring Soon')) {
       temp_data = temp_data.filter(item => item.days_until_expiration <= 7);
@@ -104,26 +100,28 @@ export default function TabOneScreen() {
     return temp_data;
   };
 
-  // Get the data array based on the selected filter
+  // Get the data array based on the selected filters
   const filtered_data = filterData(originalHolder.current, selectedFilters);
 
-
-  // 2. Apply the search filter to the result of step 1
+  // Out of the current data after filters are applied, show only items that show up in search bar
   const finalListData = filtered_data.filter((item) => {
-    // If search bar is empty, show all items from the button filter
+    // If search bar is empty, show all items
     if (!searchValue) return true;
-
     // Check if the item title includes the search text (case-insensitive)
+    //item name
     const itemData = item.title.toUpperCase();
+    //text in search bar
     const textData = searchValue.toUpperCase();
+    //check if search bar string is in any of the item names (ex. ba in banana)
     return itemData.includes(textData);
   });
 
-  // 3. Simplified searchFunction: ONLY updates the search value state
+  // ONLY updates the search value state
   const searchFunction = (text: string) => {
-    // We no longer call setData here; we only update the search term.
+    // update the search term
     setSearchValue(text);
   };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>What's In Our Fridge?</Text>
