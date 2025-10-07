@@ -5,6 +5,8 @@ import os
 from dotenv import load_dotenv # type: ignore
 from supabase import create_client
 
+from supabase import create_client
+
 
 load_dotenv()
 
@@ -16,5 +18,4 @@ print(f"DEBUG: Connecting with URL: '{url}'")
 if not url or not key:
     raise ValueError("ERROR: SUPABASE_URL or SUPABASE_KEY is missing. Check your .env file.")
 
-supabase = create_client(url, key)
-
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
