@@ -12,11 +12,6 @@ from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
 from ai_expiration import router as ai_router 
 
-=======
-from fastapi import FastAPI, Depends # type: ignore
-from sqlalchemy.orm import Session # type: ignore
-from database import SessionLocal, engine
->>>>>>> 296b126 (ignores)
 
 # Initialize routers
 app = FastAPI()
