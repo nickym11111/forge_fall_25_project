@@ -1,15 +1,9 @@
 # EXAMPLE TEMPLATE SETUP
-<<<<<<< HEAD
 from fastapi import FastAPI
 from database import supabase  
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
-=======
-from fastapi import FastAPI, Depends # type: ignore
-from sqlalchemy.orm import Session # type: ignore
-from database import SessionLocal, engine
->>>>>>> 296b126 (ignores)
 
 app = FastAPI()
 
