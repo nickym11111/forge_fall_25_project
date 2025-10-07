@@ -15,5 +15,4 @@ print(f"DEBUG: Connecting with URL: '{url}'")
 if not url or not key:
     raise ValueError("ERROR: SUPABASE_URL or SUPABASE_KEY is missing. Check your .env file.")
 
-supabase = create_client(url, key)
-
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
