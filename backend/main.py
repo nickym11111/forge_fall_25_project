@@ -1,4 +1,5 @@
 # EXAMPLE TEMPLATE SETUP
+
 from typing import Optional, Any
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
@@ -19,6 +20,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, Depends # type: ignore
 from sqlalchemy.orm import Session # type: ignore
 from database import SessionLocal, engine
+
 
 # Initialize routers
 app = FastAPI()
