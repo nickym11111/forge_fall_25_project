@@ -1,5 +1,4 @@
 # EXAMPLE TEMPLATE SETUP
-
 from fastapi import FastAPI
 from database import supabase  
 from pydantic import BaseModel
