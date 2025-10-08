@@ -68,7 +68,7 @@ export default function JoinFridgeScreen()
   }
 
   setIsLoading(true);
-  const API_URL = "http://127.0.0.1:8000/join-fridge";
+  const API_URL = "http://127.0.0.1:8000/fridge/join-fridge";
 
   try {
     const response = await fetch(API_URL, {

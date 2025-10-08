@@ -1,28 +1,9 @@
-from fastapi import FastAPI
+from fastapi import APIRouter
 from database import supabase  
 from pydantic import BaseModel
-from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI()
+app = APIRouter()
 
-origins = [
-    "http://localhost:8081", # React/Next dev server
-    "http://127.0.0.1:8081",
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"], # allow POST, GET, OPTIONS, etc.
-    allow_headers=["*"],
-)
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello from backend with Supabase!"}
-
-#TEMPLATE to get started :)
 class JoinRequest(BaseModel):
     fridgeCode: str
 
