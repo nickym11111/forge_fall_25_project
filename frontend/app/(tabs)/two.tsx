@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 4,
-    backgroundColor: 'purple',
+    backgroundColor: '#4caf50',
     alignSelf: 'flex-start',
     marginHorizontal: '1%',
     marginBottom: 6,
