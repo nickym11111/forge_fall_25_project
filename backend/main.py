@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from database import supabase  
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-
+from Join import app as join_router
+from Users import app as users_router
 
 app = FastAPI()
 
@@ -21,53 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(join_router, prefix="/fridge")  # ← now /fridge/join works
+app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints work
+
 @app.get("/")
 def read_root():
     return {"message": "Hello from backend with Supabase!"}
 
-#TEMPLATE to get started :)
-@app.post("/users")
-def create_user(name: str, email: str):
-    response = supabase.table("users").insert({"name": name, "email": email}).execute()
-    return {"data": response.data, "error": response.error}
-
-@app.get("/users")
-def get_users():
-    response = supabase.table("users").select("*").execute()
-    return {"data": response.data, "error": response.error}
-
-class UserCreate(BaseModel):
-    email: str
-    password: str
-    firstName: str | None = None
-    lastName: str | None = None
-    dietaryRestrictions: list[str] | None = None
-    
-    
-def findAccount(email: str):
-    response = supabase.auth.get_user(email)
-    return response
-
-@app.post("/sign-up/")
-async def create_user(user: UserCreate):
-    try:
-        # Example of using the database session
-        supabase.auth.sign_up({
-            "email": user.email,
-            "password": user.password,
-            "options": {
-                "data": {
-                    "first_name": user.firstName,
-                    "last_name": user.lastName,
-                    "dietary_restrictions": user.dietaryRestrictions
-                },
-                "email_redirect_to": "http://localhost:8081/" # Redirect to this URL after email confirmation
-            }
-        })
-        return {"email": user.email, 
-                "firstName": user.firstName,
-                "lastName": user.lastName,
-                "dietaryRestrictions": user.dietaryRestrictions,
-                "status": "User created successfully"}
-    except Exception as e:
-        return {"error": str(e)}
