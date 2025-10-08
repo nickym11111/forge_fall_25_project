@@ -1,52 +1,9 @@
-import { StyleSheet, TextInput, View, Text } from "react-native";
-import { useState } from "react";
-import CustomButton from "@/components/CustomButton";
-import { navigate } from "expo-router/build/global-state/routing";
-import CustomHeader from "@/components/CustomHeader";
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import CreateFridge from '../createFridge/create-fridge';
 
-export default function TabOneScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  return (
-    <View style={styles.container}>
-      <CustomHeader title="Fridge Flow 🏠"/>
-
-      <View style={styles.loginContainer}>
-        <View style={styles.loginForm}>
-          <TextInput
-            onChangeText={setEmail}
-            placeholder="Username"
-            value={email}
-            style={styles.loginInput}
-          />
-          <TextInput
-            onChangeText={setPassword}
-            placeholder="Password"
-            value={password}
-            secureTextEntry
-            style={styles.loginInput}
-          />
-          <CustomButton
-            title="Login"
-            onPress={() => {
-              console.log("login");
-            }}
-            style={styles.loginButton}
-            className=""
-          />
-          <Text
-            style={styles.createAccountButton}
-            onPress={() => {
-              navigate("/account/CreateAccount");
-            }}
-          >
-            Create Account
-          </Text>
-        </View>
-      </View>
-    </View>
-  );
+export default function App() {
+  return <CreateFridge />;
 }
 
 const styles = StyleSheet.create({
