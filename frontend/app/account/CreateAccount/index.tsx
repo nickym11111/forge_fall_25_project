@@ -61,22 +61,16 @@ export default function CreateAccount() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
               try {
-                const response = await CreateAccountRequest(
-                  email,
-                  password,
-                  firstName,
-                  lastName,
-                  dietaryRestrictions
-                );
+                const response = await CreateAccountRequest(email, password);
                 setToastMessage(
                   response?.status === "User created successfully"
                     ? "Account created!"
                     : response?.error || "Error creating account"
                 );
-              } catch (e) {
-                setToastMessage("Network error");
-                console.log(e);
-              }
+                } catch (e) {
+                  setToastMessage("Network error");
+                  console.log(e);
+                }
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
             }}
@@ -84,14 +78,9 @@ export default function CreateAccount() {
             style={styles.createAccountButton}
             className=""
           />
-          <Text
-            style={styles.backToLoginButton}
-            onPress={() => {
-              navigate("/");
-            }}
-          >
-            Back to Login
-          </Text>
+          {dietaryRestrictions.map((restriction, index) => (
+            <Text key={index}>{restriction}</Text>
+          ))}
         </View>
       </View>
     </View>
@@ -124,11 +113,5 @@ const styles = StyleSheet.create({
   },
   createAccountButton: {
     width: "100%",
-  },
-  backToLoginButton: {
-    marginTop: 15,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
   },
 });
