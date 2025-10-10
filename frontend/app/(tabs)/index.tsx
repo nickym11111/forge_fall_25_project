@@ -4,19 +4,15 @@ import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
 import { LoginRequest } from "../api/Login";
-import ToastMessage from "@/components/ToastMessage";
 
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const [isToastVisible, setIsToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-
   return (
     <View style={styles.container}>
       <CustomHeader title="Fridge Flow 🏠"/>
-      <ToastMessage message={toastMessage} visible={isToastVisible} />
+
       <View style={styles.loginContainer}>
         <View style={styles.loginForm}>
           <TextInput
@@ -35,22 +31,23 @@ export default function TabOneScreen() {
           <CustomButton
             title="Login"
             onPress={async () => {
-              setIsToastVisible(true);
-              setTimeout(() => setIsToastVisible(false), 3000);
+              console.log("Attempting login...");
+              console.log("Email entered:", email);
 
               try {
                 const response = await LoginRequest(email, password);
-                setToastMessage(
-                  response?.status === "Login successful"
-                    ? "Login successful!"
-                    : response?.error || "Login failed",
-                );
-              } catch (e) {
-                setToastMessage("Network error");
-                console.log(e);
+                console.log("Server response:", response);
+
+                if (response?.status === "Login successful") {
+                  console.log("Login successful.");
+                  console.log("User info:", response.user);
+                  console.log("Session token:", response.session?.access_token);
+                } else {
+                  console.log("Login failed:", response?.error || "Invalid credentials.");
+                }
+              } catch (error) {
+                console.error("Network or server error:", error);
               }
-              setIsToastVisible(true);
-              setTimeout(() => setIsToastVisible(false), 3000);
             } }
             style={styles.loginButton}
             className="" disabled={false}          />
