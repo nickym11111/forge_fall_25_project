@@ -67,10 +67,10 @@ export default function CreateAccount() {
                     ? "Account created!"
                     : response?.error || "Error creating account"
                 );
-                } catch (e) {
-                  setToastMessage("Network error");
-                  console.log(e);
-                }
+              } catch (e) {
+                setToastMessage("Network error");
+                console.log(e);
+              }
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
             }}
