@@ -66,7 +66,6 @@ def get_items_added_by(user_name: str):
         .execute()
     return {"data": response.data}
 
-
 # Get items expiring soon
 @app.get("/fridge_items/expiring-soon/")
 def get_expiring_items():
@@ -80,8 +79,9 @@ def get_expiring_items():
 @app.delete("/fridge_items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
-    return {"data": response.data}#TEMPLATE to get started :)
-    
+    return {"data": response.data}
+
+# Login Page
 class UserLogin(BaseModel):
     email: str
     password: str
