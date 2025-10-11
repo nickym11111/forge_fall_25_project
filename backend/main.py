@@ -103,3 +103,24 @@ async def login_user(user: UserLogin):
     except Exception as e:
         return {"error": str(e)}
 
+# --- FRIDGE ENDPOINTS ---
+class FridgeCreate(BaseModel):
+    name: str
+    emails: List[str]
+
+@app.post("/fridges")
+def create_fridge(fridge: FridgeCreate):
+    response = supabase.table("fridges").insert({
+        "name": fridge.name,
+        "emails": fridge.emails
+    }).execute()
+
+    if response.error:
+        return {"error": response.error}
+
+    return {"data": response.data, "status": "Fridge created successfully"}
+
+@app.get("/fridges")
+def get_fridges():
+    response = supabase.table("fridges").select("*").execute()
+    return {"data": response.data, "error": response.error}
