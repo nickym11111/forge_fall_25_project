@@ -4,6 +4,13 @@ from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+<<<<<<< HEAD
+=======
+from Join import app as join_router
+from Users import app as users_router
+from typing import List, Optional, Any
+from ai_expiration import router as ai_router 
+>>>>>>> 46849d4 (added list import)
 from datetime import datetime
 from service import get_current_user, generate_invite_code
 from Join import app as join_router
