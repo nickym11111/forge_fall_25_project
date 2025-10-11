@@ -66,7 +66,6 @@ def get_items_added_by(user_name: str):
         .execute()
     return {"data": response.data}
 
-
 # Get items expiring soon
 @app.get("/fridge_items/expiring-soon/")
 def get_expiring_items():
@@ -81,3 +80,26 @@ def get_expiring_items():
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
+
+# Login Page
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+@app.post("/log-in/")
+async def login_user(user: UserLogin):
+    try:
+        res = supabase.auth.sign_in_with_password({
+            "email": user.email,
+            "password": user.password
+        })
+
+        # The response contains user + session data if valid
+        return {
+            "user": res.user,
+            "session": res.session,  # includes access_token, refresh_token, etc.
+            "status": "Login successful"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
