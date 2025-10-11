@@ -14,7 +14,7 @@ export default function TabOneScreen() {
   const [toastMessage, setToastMessage] = useState("");
   
   return (
-    <View style={styles.container}>
+    <View style={styles.container}>w
       <CustomHeader title="Fridge Flow 🏠"/>
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />
@@ -22,7 +22,7 @@ export default function TabOneScreen() {
         <View style={styles.loginForm}>
           <TextInput
             onChangeText={setEmail}
-            placeholder="Username"
+            placeholder="Email"
             value={email}
             style={styles.loginInput}
           />

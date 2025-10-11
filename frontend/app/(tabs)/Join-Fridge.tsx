@@ -120,7 +120,7 @@ export default function JoinFridgeScreen()
             onPress={() =>
               !isLoading && navigate("/account/CreateAccount")} // connect to "create fridge" page
           >
-            Or create a fridge
+            Create a fridge instead
           </Text>
         </View>
       </View>
