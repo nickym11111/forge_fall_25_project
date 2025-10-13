@@ -1,4 +1,3 @@
-# EXAMPLE TEMPLATE SETUP
 from typing import Optional, Any
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
@@ -8,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 =======
 from Join import app as join_router
 from Users import app as users_router
-from typing import List, Optional, Any
+from typing import List, List, Optional, Any
 from ai_expiration import router as ai_router 
 >>>>>>> 46849d4 (added list import)
 from datetime import datetime
@@ -26,8 +25,12 @@ app.include_router(users_router)
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
+<<<<<<< HEAD
     "http://localhost:8081",  # React/Next dev server
     "http://localhost:8081",
+=======
+    "http://localhost:8081", 
+>>>>>>> ed04c8d (Fixed frontend/backend connection, updated UI to match other pages, added a remove emails button, etc)
     "http://127.0.0.1:8081",
     "http://localhost:8082",
     "http://127.0.0.1:8082",
@@ -255,6 +258,26 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+<<<<<<< HEAD
+=======
+@app.post("/log-in/")
+async def login_user(user: UserLogin):
+    try:
+        res = supabase.auth.sign_in_with_password({
+            "email": user.email,
+            "password": user.password
+        })
+
+        # The response contains user + session data if valid
+        return {
+            "user": res.user,
+            "session": res.session,  # includes access_token, refresh_token, etc.
+            "status": "Login successful"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+>>>>>>> ed04c8d (Fixed frontend/backend connection, updated UI to match other pages, added a remove emails button, etc)
 #Create a Fridge
 class FridgeCreate(BaseModel):
     name: str
