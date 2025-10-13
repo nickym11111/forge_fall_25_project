@@ -1,18 +1,19 @@
-# EXAMPLE TEMPLATE SETUP
 from fastapi import FastAPI
 from database import supabase  
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from Join import app as join_router
 from Users import app as users_router
-from typing import Optional, Any
+from typing import List, Optional, Any
 
 app = FastAPI()
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
-    "http://localhost:8081", # React/Next dev server
+    "http://localhost:8081",
     "http://127.0.0.1:8081",
+    "http://localhost:8082",
+    "http://127.0.0.1:8082",
 ]
 
 app.add_middleware(
@@ -103,7 +104,7 @@ async def login_user(user: UserLogin):
     except Exception as e:
         return {"error": str(e)}
 
-# --- FRIDGE ENDPOINTS ---
+#Create a Fridge
 class FridgeCreate(BaseModel):
     name: str
     emails: List[str]
