@@ -118,7 +118,7 @@ export default function JoinFridgeScreen()
           <Text
             style={styles.createFridgeButton}
             onPress={() =>
-              !isLoading && navigate("/account/CreateAccount")} // connect to "create fridge" page
+              !isLoading && navigate("/(tabs)/create_fridge")} // connect to "create fridge" page
           >
             Create a fridge instead
           </Text>
