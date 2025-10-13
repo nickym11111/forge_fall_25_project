@@ -1,5 +1,4 @@
 # EXAMPLE TEMPLATE SETUP
-from typing import List, Any, Optional, Dict
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
@@ -49,12 +48,10 @@ app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints wo
 # Data Transfer Object for fridge invite
 class FridgeInviteDTO(BaseModel):
     fridge_id: str
-    emails: List[str]
-    invited_by: Optional[str] = None
-    invite_code: Optional[str] = None
+    email_to: str
+    invited_by: str
+    invite_code: str
 
-
-# Data Transfer Object for redeem fridge invite
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
 
@@ -140,6 +137,7 @@ def get_items_added_by(user_name: str):
                .contains("added_by", {"name": user_name})
                .execute())
     return {"data": response.data}
+
 
 # Get items expiring soon
 @app.get("/fridge_items/expiring-soon/")
@@ -395,7 +393,7 @@ async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     }
 
 # Accept fridge invite
-@app.post("/accept-fridge-invite/")
+@join_router.post("/accept-invite/")
 async def accept_fridge_invite(
     redeem_dto: RedeemFridgeInviteDTO,
     current_user = Depends(get_current_user),
