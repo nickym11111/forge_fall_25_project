@@ -23,6 +23,8 @@ from database import SessionLocal, engine
 
 
 # Initialize routers
+join_router = APIRouter()
+users_router = APIRouter()
 app = FastAPI()
 app.include_router(users_router)
 #app.include_router(ai_expiration, tags=["ai"])
@@ -42,33 +44,22 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
+    allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
     allow_headers=["*"],
 )
 
-
-app.include_router(join_router, prefix="/fridge")  # ← now /fridge/join works
-app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints work
-# Data Transfer Object for fridge invite
-class FridgeInviteDTO(BaseModel):
-    fridge_id: str
-    emails: List[str]
-    invited_by: Optional[str] = None
-    invite_code: Optional[str] = None
-
-# Data Transfer Object for fridge invite
+# Data Transfer Objects
+# Data Transfer Objects
 class FridgeInviteDTO(BaseModel):
     fridge_id: str
     email_to: str
     invited_by: str
     invite_code: str
 
-# Data Transfer Object for redeem fridge invite
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
 
-
-
-class FridgeItemCreate(BaseModel):
+class FridgeItem(BaseModel):
     title: str
     quantity: Optional[int] = 1
     expiry_date: str
@@ -120,12 +111,7 @@ async def create_fridge_item(
             "added_by": current_user.get("id"),
             "shared_by": item.shared_by
         }).execute()
-        
-        return {
-            "status": "success",
-            "message": "Fridge item added successfully",
-            "data": response.data
-        }
+        return {"data": response.data, "status": "Fridge item added successfully"}
     except Exception as e:
         return {"error": str(e)}
 
@@ -160,7 +146,12 @@ def get_items_added_by(user_name: str):
                .select("*")
                .contains("added_by", {"name": user_name})
                .execute())
+    response = (supabase.table("fridge_items")
+               .select("*")
+               .contains("added_by", {"name": user_name})
+               .execute())
     return {"data": response.data}
+
 
 
 # Get items expiring soon
@@ -170,10 +161,13 @@ def get_expiring_items():
                .select("*")
                .lte("days_till_expiration", 3)
                .execute())
+    response = (supabase.table("fridge_items")
+               .select("*")
+               .lte("days_till_expiration", 3)
+               .execute())
     return {"data": response.data}
 
-@app.delete("/items/{item_id}")
-@app.delete("/items/{item_id}")
+@join_router.delete("/items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
@@ -419,6 +413,7 @@ async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     
 
 # Accept fridge invite
+@join_router.post("/accept-invite/")
 @join_router.post("/accept-invite/")
 async def accept_fridge_invite(
     redeem_dto: RedeemFridgeInviteDTO,
