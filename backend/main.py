@@ -48,9 +48,9 @@ app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints wo
 # Data Transfer Object for fridge invite
 class FridgeInviteDTO(BaseModel):
     fridge_id: str
-    email_to: str
-    invited_by: str
-    invite_code: str
+    emails: List[str]
+    invited_by: Optional[str] = None
+    invite_code: Optional[str] = None
 
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
