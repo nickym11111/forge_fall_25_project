@@ -283,16 +283,25 @@ class FridgeCreate(BaseModel):
     name: str
 
 @app.post("/fridges")
+<<<<<<< HEAD
 def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
             "name": fridge.name,
             "created_by": current_user.id,
+=======
+def create_fridge(fridge: FridgeCreate):
+    try:
+        # Insert the fridge and get the response
+        response = supabase.table("fridges").insert({
+            "name": fridge.name,
+>>>>>>> cebe5c0 (fixes to create fridge flow)
             "created_at": "now()"
         }).execute()
 
         # Check if the response contains data
+<<<<<<< HEAD
         if not createFridge_response.data or len(createFridge_response.data) == 0:
             print(f"No data returned from database: {createFridge_response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
@@ -311,19 +320,36 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
 
         if not fridge_id:
             print(f"No ID in response data: {createFridge_response.data}")
+=======
+        if not response.data or len(response.data) == 0:
+            print(f"No data returned from database: {response}")
+            raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
+        
+        # Extract the ID from the response
+        fridge_id = response.data[0].get("id")
+        if not fridge_id:
+            print(f"No ID in response data: {response.data}")
+>>>>>>> cebe5c0 (fixes to create fridge flow)
             raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
             
         return {
             "status": "success",
             "message": "Fridge created successfully",
             "fridge_id": fridge_id,
+<<<<<<< HEAD
             "data": createFridge_response.data
+=======
+            "data": response.data
+>>>>>>> cebe5c0 (fixes to create fridge flow)
         }
     except Exception as e:
         error_msg = f"Error creating fridge: {str(e)}"
         print(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
+<<<<<<< HEAD
 
+=======
+>>>>>>> cebe5c0 (fixes to create fridge flow)
 
 @app.get("/fridges")
 def get_fridges():
