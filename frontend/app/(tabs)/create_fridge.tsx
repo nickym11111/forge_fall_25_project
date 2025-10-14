@@ -1,4 +1,3 @@
-
 import {
   StyleSheet,
   TextInput,
@@ -18,7 +17,7 @@ import { useAuth } from "../context/authContext";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
-
+import ProfileIcon from "@/components/ProfileIcon";
 
 //Type for API response
 interface ApiResponse {
@@ -100,6 +99,8 @@ export default function CreateFridgeScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
+  const { user, refreshUser } = useAuth();
+
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
     const updated = [...emails];
@@ -116,7 +117,6 @@ export default function CreateFridgeScreen() {
     setEmails(updated);
   };
 
-  //Handle fridge creation and sending invites
   //Handle fridge creation and sending invites
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
@@ -145,8 +145,8 @@ export default function CreateFridgeScreen() {
         throw new Error("No active session. Please log in again.");
       }
 
-      console.log("User ID from session:", session.user.id);
-      console.log("User email from session:", session.user.email);
+      console.log("User ID from session:", user?.id);
+      console.log("User email from session:", user?.email);
 
       // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
@@ -207,14 +207,11 @@ export default function CreateFridgeScreen() {
           "Success!",
           "Fridge created and invites sent successfully!"
         );
-        Alert.alert(
-          "Success!",
-          "Fridge created and invites sent successfully!"
-        );
       }
+
+      await refreshUser();
       
     } catch (error) {
-      console.error("Error:", error);
       console.error("Error:", error);
       Alert.alert(
         "Error",
@@ -233,7 +230,7 @@ export default function CreateFridgeScreen() {
       title="Create Fridge  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
-
+<ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}
