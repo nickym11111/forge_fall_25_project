@@ -7,6 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
 
+from Join import app as join_router
+from Users import app as users_router
+from typing import List, Optional, Any
+
 # Initialize routers
 join_router = APIRouter()
 users_router = APIRouter()
@@ -15,7 +19,10 @@ app = FastAPI()
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
     "http://localhost:8081",  # React/Next dev server
+    "http://localhost:8081",
     "http://127.0.0.1:8081",
+    "http://localhost:8082",
+    "http://127.0.0.1:8082",
 ]
 
 app.add_middleware(
@@ -76,7 +83,8 @@ def get_items_added_by(user_name: str):
                .execute())
     return {"data": response.data}
 
-@join_router.get("/items/expiring-soon/")
+# Get items expiring soon
+@app.get("/fridge_items/expiring-soon/")
 def get_expiring_items():
     response = (supabase.table("fridge_items")
                .select("*")
@@ -200,3 +208,46 @@ app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
        
 
+# Login Page
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+@app.post("/log-in/")
+async def login_user(user: UserLogin):
+    try:
+        res = supabase.auth.sign_in_with_password({
+            "email": user.email,
+            "password": user.password
+        })
+
+        # The response contains user + session data if valid
+        return {
+            "user": res.user,
+            "session": res.session,  # includes access_token, refresh_token, etc.
+            "status": "Login successful"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+#Create a Fridge
+class FridgeCreate(BaseModel):
+    name: str
+    emails: List[str]
+
+@app.post("/fridges")
+def create_fridge(fridge: FridgeCreate):
+    response = supabase.table("fridges").insert({
+        "name": fridge.name,
+        "emails": fridge.emails
+    }).execute()
+
+    if response.error:
+        return {"error": response.error}
+
+    return {"data": response.data, "status": "Fridge created successfully"}
+
+@app.get("/fridges")
+def get_fridges():
+    response = supabase.table("fridges").select("*").execute()
+    return {"data": response.data, "error": response.error}

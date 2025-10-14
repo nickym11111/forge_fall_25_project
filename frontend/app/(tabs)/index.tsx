@@ -3,20 +3,26 @@ import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
+import { LoginRequest } from "../api/Login";
+import ToastMessage from "@/components/ToastMessage";
 
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  
   return (
-    <View style={styles.container}>
+    <View style={styles.container}>w
       <CustomHeader title="Fridge Flow 🏠"/>
 
+      <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.loginContainer}>
         <View style={styles.loginForm}>
           <TextInput
             onChangeText={setEmail}
-            placeholder="Username"
+            placeholder="Email"
             value={email}
             style={styles.loginInput}
           />
@@ -29,12 +35,26 @@ export default function TabOneScreen() {
           />
           <CustomButton
             title="Login"
-            onPress={() => {
-              console.log("login");
-            }}
+            onPress={async () => {
+              setIsToastVisible(true);
+              setTimeout(() => setIsToastVisible(false), 3000);
+
+              try {
+                const response = await LoginRequest(email, password);
+                setToastMessage(
+                  response?.status === "Login successful"
+                    ? "Login successful!"
+                    : response?.error || "Login failed",
+                );
+              } catch (e) {
+                setToastMessage("Network error");
+                console.log(e);
+              }
+              setIsToastVisible(true);
+              setTimeout(() => setIsToastVisible(false), 3000);
+            } }
             style={styles.loginButton}
-            className=""
-          />
+            className="" disabled={false}          />
           <Text
             style={styles.createAccountButton}
             onPress={() => {
