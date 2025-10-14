@@ -6,6 +6,14 @@ import {
   Alert,
   ScrollView,
   TouchableOpacity,
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  Text,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { useState, useCallback } from "react";
 import { useState, useCallback } from "react";
@@ -28,8 +36,8 @@ interface ApiResponse {
 }
 
 //Backend API endpoint
-const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridges`;
-const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
+const API_URL = "http://127.0.0.1:8000/fridges";
+const SEND_INVITE_URL = "http://127.0.0.1:8000/fridge/send-invite";
 
 //Styles
 const styles = StyleSheet.create({
@@ -152,6 +160,7 @@ export default function CreateFridgeScreen() {
   };
 
   //Handle fridge creation and sending invites
+  //Handle fridge creation and sending invites
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
       Alert.alert("Error", "Please enter a fridge name.");
@@ -236,7 +245,27 @@ export default function CreateFridgeScreen() {
             ", "
           )}`
         );
+      // Check for any failed invites
+      const failedInvites = inviteResults
+        .map((result, index) =>
+          result.status === "rejected" || result.value.status !== "success"
+            ? validEmails[index]
+            : null
+        )
+        .filter(Boolean);
+
+      if (failedInvites.length > 0) {
+        Alert.alert(
+          "Partial Success",
+          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
+            ", "
+          )}`
+        );
       } else {
+        Alert.alert(
+          "Success!",
+          "Fridge created and invites sent successfully!"
+        );
         Alert.alert(
           "Success!",
           "Fridge created and invites sent successfully!"
@@ -244,7 +273,10 @@ export default function CreateFridgeScreen() {
       }
     } catch (error) {
       console.error("Error:", error);
+      console.error("Error:", error);
       Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "An unexpected error occurred"
         "Error",
         error instanceof Error ? error.message : "An unexpected error occurred"
       );
@@ -312,6 +344,9 @@ export default function CreateFridgeScreen() {
             title={isLoading ? "Creating..." : "Create Fridge"}
             onPress={handleCreateFridge}
             style={styles.createButton}
+            disabled={isLoading}
+            className={""}
+          />
             disabled={isLoading}
             className={""}
           />
