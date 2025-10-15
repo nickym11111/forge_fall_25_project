@@ -2,7 +2,7 @@
 const api_url = "http://127.0.0.1:8000" // Replace environment variables later
 
 export async function CreateParseReceiptRequest(base64Image: string) {
-    const response = await fetch(`${api_url}/parse-receipt/`, {
+    const response = await fetch(`${api_url}/receipt/parse-receipt`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

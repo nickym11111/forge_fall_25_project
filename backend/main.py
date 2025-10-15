@@ -11,10 +11,9 @@ from receiptParsing.chatGPTParse import getChatGPTResponse
 from Join import app as join_router
 from Users import app as users_router
 from typing import List, Optional, Any
+from receiptParsing.chatGPTParse import app as receipt_router
 
 # Initialize routers
-join_router = APIRouter()
-users_router = APIRouter()
 app = FastAPI()
 
 # Allow CORS origin policy to allow requests from local origins.
@@ -215,6 +214,7 @@ async def accept_fridge_invite(
 # Include the routers with their prefixes
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
+app.include_router(receipt_router, prefix="/receipt")
        
 
 # Login Page
@@ -290,15 +290,3 @@ def get_fridges():
     except Exception as e:
         print(f"Error fetching fridges: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-class Receipt(BaseModel):
-    base64Image: str
-
-@app.post("/parse-receipt")
-def parse_receipt(receipt: Receipt):
-    try:
-        return getChatGPTResponse(receipt.base64Image);
-    except Exception as e:
-        error_msg = f"Error parsing receipt: {str(e)}"
-        print(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
