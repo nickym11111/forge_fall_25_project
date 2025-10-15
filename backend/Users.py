@@ -5,10 +5,6 @@ from typing import List, Optional
 
 app = APIRouter()
 #TEMPLATE to get started :)
-@app.post("/")
-def create_user(name: str, email: str):
-    response = supabase.table("users").insert({"name": name, "email": email}).execute()
-    return {"data": response.data, "error": response.error}
 
 @app.get("/")
 def get_users():
@@ -18,10 +14,9 @@ def get_users():
 class UserCreate(BaseModel):
     email: str
     password: str
-    firstName: Optional[str] = None
-    lastName: Optional[str] = None
-    dietaryRestrictions: Optional[List[str]] = None
-
+    firstName: str | None = None
+    lastName: str | None = None
+    dietaryRestrictions: list[str] | None = None
     
     
 def findAccount(email: str):
@@ -43,7 +38,8 @@ async def create_user(user: UserCreate):
                 },
                 "email_redirect_to": "http://localhost:8081/" # Redirect to this URL after email confirmation
             }
-        })
+        })  
+        supabase.table("users").insert({"first_name": user.firstName, "last_name": user.lastName, "email": user.email}).execute()
         return {"email": user.email, 
                 "firstName": user.firstName,
                 "lastName": user.lastName,

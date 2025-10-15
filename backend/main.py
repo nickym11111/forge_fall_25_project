@@ -9,7 +9,6 @@ from service import get_current_user, generate_invite_code
 from Join import app as join_router
 from Users import app as users_router
 from typing import List, Optional, Any
-from receiptParsing.chatGPTParse import app as receipt_router
 
 # Initialize routers
 app = FastAPI()
