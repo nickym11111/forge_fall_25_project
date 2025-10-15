@@ -104,8 +104,7 @@ async def create_fridge_item(
             "data": response.data
         }
     except Exception as e:
-        print(f"Error creating fridge item: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
+        return {"error": str(e)}
 
 @app.get("/fridge_items/")
 def get_fridge_items(current_user = Depends(get_current_user)):
@@ -151,11 +150,12 @@ def get_expiring_items():
     return {"data": response.data}
 
 @app.delete("/items/{item_id}")
+@app.delete("/items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-@join_router.post("/send-invite/")
+@app.post("/send-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
     fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
