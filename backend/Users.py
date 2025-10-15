@@ -2,8 +2,6 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import supabase  
 from pydantic import BaseModel
 from typing import List, Optional
-from service import get_current_user, generate_invite_code
-import ast
 
 app = APIRouter()
 #TEMPLATE to get started :)
@@ -18,7 +16,8 @@ class UserCreate(BaseModel):
     password: str
     firstName: Optional[str] = None
     lastName: Optional[str] = None
-    dietaryRestrictions: Optional[list[str]] = None
+    dietaryRestrictions: Optional[List[str]] = None
+
     
     
     
