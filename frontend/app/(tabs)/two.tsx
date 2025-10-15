@@ -1,12 +1,19 @@
-import { StyleSheet, Button, TouchableOpacity, FlatList, TextInput, ActivityIndicator } from 'react-native';
-import { type SetStateAction, type Dispatch } from 'react';
+import {
+  StyleSheet,
+  Button,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+  ActivityIndicator,
+} from "react-native";
+import { type SetStateAction, type Dispatch } from "react";
 
-import EditScreenInfo from '@/components/EditScreenInfo'; 
-import { Text, View } from '@/components/Themed';
-import React, { useState, useRef, useEffect } from 'react';
-import type { PropsWithChildren } from 'react';
+import EditScreenInfo from "@/components/EditScreenInfo";
+import { Text, View } from "@/components/Themed";
+import React, { useState, useRef, useEffect } from "react";
+import type { PropsWithChildren } from "react";
 
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = "http://127.0.0.1:8000";
 
 // just to note, we should prob figure out what to do when the food goes past the expiration date
 
@@ -40,37 +47,52 @@ interface ItemProps {
 }
 
 // Individual item component
-const Item = ({ title, added_by, shared_by, quantity, days_until_expiration }: ItemProps) => {
+const Item = ({
+  title,
+  added_by,
+  shared_by,
+  quantity,
+  days_until_expiration,
+}: ItemProps) => {
   // Handle different name formats from backend
   const getDisplayName = (mate: FridgeMate) => {
     if (mate.first_name && mate.last_name) {
       return `${mate.first_name} ${mate.last_name}`;
     }
-    return mate.name || 'Unknown';
+    return mate.name || "Unknown";
   };
 
-  const addedByName = added_by ? getDisplayName(added_by) : 'Unknown';
-  
-  const sharedByString: string = shared_by && shared_by.length > 0
-    ? shared_by.map(mate => getDisplayName(mate)).join(', ')
-    : 'No one';
+  const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
 
-    // Determine if item is expiring soon
+  const sharedByString: string =
+    shared_by && shared_by.length > 0
+      ? shared_by.map((mate) => getDisplayName(mate)).join(", ")
+      : "No one";
+
+  // Determine if item is expiring soon
   const isExpiringSoon = (days_until_expiration || 0) <= 7;
 
   return (
     <View style={styles.item}>
       <Text style={[styles.itemText]}>
-        <Text style={{ fontWeight: 'bold' }}>{title}</Text>
+        <Text style={{ fontWeight: "bold" }}>{title}</Text>
       </Text>
       <Text style={[styles.itemText, { fontSize: 10 }]}>
-        <Text style={{ fontWeight: 'bold' }}>Quantity:</Text> {quantity || 0} | 
-        <Text style={[{ fontWeight: 'bold' }, isExpiringSoon && styles.redText]}> Expires in</Text>
-        <Text style={isExpiringSoon && styles.redText}> {days_until_expiration || 0} days</Text>  | 
-        <Text style={{ fontWeight: 'bold' }}> Added by</Text> {addedByName}
+        <Text style={{ fontWeight: "bold" }}>Quantity:</Text> {quantity || 0} |
+        <Text
+          style={[{ fontWeight: "bold" }, isExpiringSoon && styles.redText]}
+        >
+          {" "}
+          Expires in
+        </Text>
+        <Text style={isExpiringSoon && styles.redText}>
+          {" "}
+          {days_until_expiration || 0} days
+        </Text>{" "}
+        |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
       </Text>
       <Text style={[styles.itemText, { fontSize: 10 }]}>
-        <Text style={{ fontWeight: 'bold' }}>Shared by:</Text> {sharedByString}
+        <Text style={{ fontWeight: "bold" }}>Shared by:</Text> {sharedByString}
       </Text>
     </View>
   );
@@ -80,7 +102,9 @@ export default function TabOneScreen() {
   const [data, setData] = useState<FoodItem[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
   const originalHolder = useRef<FoodItem[]>([]);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>(['All Items']);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([
+    "All Items",
+  ]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>("");
 
@@ -92,33 +116,35 @@ export default function TabOneScreen() {
   const fetchFridgeItems = async () => {
     try {
       setLoading(true);
-      console.log('Fetching from:', `${API_URL}/fridge_items/`);
-      
+      console.log("Fetching from:", `${API_URL}/fridge_items/`);
+
       const response = await fetch(`${API_URL}/fridge_items/`);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      console.log('API Response:', result);
-      
+      console.log("API Response:", result);
+
       // Transform backend data to match frontend format
-      const transformedData = result.data.map((item: any) => ({
-        ...item,
-        days_until_expiration: item.days_till_expiration, // Map backend field name
-      })).sort((a: FoodItem, b: FoodItem) => {
-        // Sort by days_till_expiration ascending (soonest first)
-        const aDays = a.days_till_expiration || 999;
-        const bDays = b.days_till_expiration || 999;
-        return aDays - bDays;
-      });
-      
+      const transformedData = result.data
+        .map((item: any) => ({
+          ...item,
+          days_until_expiration: item.days_till_expiration, // Map backend field name
+        }))
+        .sort((a: FoodItem, b: FoodItem) => {
+          // Sort by days_till_expiration ascending (soonest first)
+          const aDays = a.days_till_expiration || 999;
+          const bDays = b.days_till_expiration || 999;
+          return aDays - bDays;
+        });
+
       setData(transformedData);
       originalHolder.current = transformedData;
       setError("");
     } catch (err) {
-      console.error('Error fetching items:', err);
+      console.error("Error fetching items:", err);
       setError(`Failed to load items from ${API_URL}`);
     } finally {
       setLoading(false);
@@ -131,37 +157,39 @@ export default function TabOneScreen() {
     let temp_data = data;
 
     // If user presses 'expiring soon'
-    if (selectedFilters.includes('Expiring Soon')) {
-      temp_data = temp_data.filter(item => 
-        (item.days_till_expiration || 0) <= 7
+    if (selectedFilters.includes("Expiring Soon")) {
+      temp_data = temp_data.filter(
+        (item) => (item.days_till_expiration || 0) <= 7
       );
     }
-    
+
     // If user presses 'my items'
-    if (selectedFilters.includes('My Items')) {
-      temp_data = temp_data.filter(item => {
+    if (selectedFilters.includes("My Items")) {
+      temp_data = temp_data.filter((item) => {
         if (!item.shared_by || item.shared_by.length !== 1) return false;
         const mate = item.shared_by[0];
-        const fullName = mate.first_name && mate.last_name 
-          ? `${mate.first_name} ${mate.last_name}`
-          : mate.name || '';
+        const fullName =
+          mate.first_name && mate.last_name
+            ? `${mate.first_name} ${mate.last_name}`
+            : mate.name || "";
         return fullName === username;
       });
     }
-    
+
     // If user presses 'shared'
-    if (selectedFilters.includes('Shared')) {
-      temp_data = temp_data.filter(item => {
+    if (selectedFilters.includes("Shared")) {
+      temp_data = temp_data.filter((item) => {
         if (!item.shared_by || item.shared_by.length <= 1) return false;
-        return item.shared_by.some(mate => {
-          const fullName = mate.first_name && mate.last_name
-            ? `${mate.first_name} ${mate.last_name}`
-            : mate.name || '';
+        return item.shared_by.some((mate) => {
+          const fullName =
+            mate.first_name && mate.last_name
+              ? `${mate.first_name} ${mate.last_name}`
+              : mate.name || "";
           return fullName === username;
         });
       });
     }
-    
+
     return temp_data;
   };
 
@@ -183,7 +211,7 @@ export default function TabOneScreen() {
   // Loading state
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
+      <View style={[styles.container, { justifyContent: "center" }]}>
         <ActivityIndicator size="large" color="purple" />
         <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
       </View>
@@ -193,11 +221,11 @@ export default function TabOneScreen() {
   // Error state
   if (error) {
     return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
-        <Text style={{ color: 'red', textAlign: 'center', padding: 20 }}>
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
           {error}
         </Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.filter_button}
           onPress={fetchFridgeItems}
         >
@@ -210,7 +238,11 @@ export default function TabOneScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>What's In Our Fridge?</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
+      <View
+        style={styles.separator}
+        lightColor="#eee"
+        darkColor="rgba(255,255,255,0.1)"
+      />
       <View>
         <TextInput
           style={styles.search_bar}
@@ -220,13 +252,13 @@ export default function TabOneScreen() {
         />
       </View>
       <PreviewLayout
-        values={['All Items', 'Expiring Soon', 'My Items', 'Shared']}
+        values={["All Items", "Expiring Soon", "My Items", "Shared"]}
         selectedValue={selectedFilters}
-        setSelectedValue={setSelectedFilters}>
-      </PreviewLayout>
+        setSelectedValue={setSelectedFilters}
+      ></PreviewLayout>
       <FlatList
         data={finalListData}
-        renderItem={({ item }) =>
+        renderItem={({ item }) => (
           <Item
             title={item.title}
             added_by={item.added_by}
@@ -234,7 +266,7 @@ export default function TabOneScreen() {
             quantity={item.quantity}
             days_until_expiration={item.days_till_expiration}
           />
-        }
+        )}
         keyExtractor={(item) => item.id.toString()}
       />
     </View>
@@ -254,34 +286,52 @@ const PreviewLayout = ({
 }: PreviewLayoutProps) => (
   <View style={{ padding: 10 }}>
     <View style={styles.row}>
-      {values.map(value => (
+      {values.map((value) => (
         <TouchableOpacity
           key={value}
           onPress={() => {
             setSelectedValue((prevFilters: any[]) => {
-              if (value === 'All Items') {
-                return ['All Items'];
+              if (value === "All Items") {
+                return ["All Items"];
               }
-              let cleanedFilters = prevFilters.filter((f: string) => f !== 'All Items');
+              let cleanedFilters = prevFilters.filter(
+                (f: string) => f !== "All Items"
+              );
               if (cleanedFilters.includes(value)) {
-                const newFilters = cleanedFilters.filter((f: string) => f !== value);
-                return newFilters.length === 0 ? ['All Items'] : newFilters;
+                const newFilters = cleanedFilters.filter(
+                  (f: string) => f !== value
+                );
+                return newFilters.length === 0 ? ["All Items"] : newFilters;
               } else {
-                if (cleanedFilters.includes('My Items') && value === 'Shared') {
-                  cleanedFilters = cleanedFilters.filter((f: string) => f !== 'My Items');
-                } else if (cleanedFilters.includes('Shared') && value === 'My Items') {
-                  cleanedFilters = cleanedFilters.filter((f: string) => f !== 'Shared');
+                if (cleanedFilters.includes("My Items") && value === "Shared") {
+                  cleanedFilters = cleanedFilters.filter(
+                    (f: string) => f !== "My Items"
+                  );
+                } else if (
+                  cleanedFilters.includes("Shared") &&
+                  value === "My Items"
+                ) {
+                  cleanedFilters = cleanedFilters.filter(
+                    (f: string) => f !== "Shared"
+                  );
                 }
                 return [...cleanedFilters, value];
               }
             });
           }}
-          style={[styles.filter_button, selectedValue.includes(value) && styles.selected_filter_button]}>
+          style={[
+            styles.filter_button,
+            selectedValue.includes(value) && styles.selected_filter_button,
+          ]}
+        >
           <Text
             style={[
               styles.buttonLabel,
-              selectedValue.includes(value) && styles.selected_filter_button && styles.selectedLabel,
-            ]}>
+              selectedValue.includes(value) &&
+                styles.selected_filter_button &&
+                styles.selectedLabel,
+            ]}
+          >
             {value}
           </Text>
         </TouchableOpacity>
@@ -296,50 +346,50 @@ const styles = StyleSheet.create({
     height: 50,
   },
   row: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
   },
   filter_button: {
     paddingHorizontal: 8,
     paddingVertical: 6,
     borderRadius: 4,
-    backgroundColor: 'purple',
-    alignSelf: 'flex-start',
-    marginHorizontal: '1%',
+    backgroundColor: "purple",
+    alignSelf: "flex-start",
+    marginHorizontal: "1%",
     marginBottom: 6,
-    minWidth: '48%',
-    textAlign: 'center',
+    minWidth: "48%",
+    textAlign: "center",
   },
   selected_filter_button: {
-    backgroundColor: 'grey',
+    backgroundColor: "grey",
     borderWidth: 0,
   },
   buttonLabel: {
     fontSize: 14,
-    fontWeight: '500',
-    color: 'white',
+    fontWeight: "500",
+    color: "white",
   },
   selectedLabel: {
-    color: 'white',
+    color: "white",
   },
   label: {
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 10,
     fontSize: 24,
   },
   container: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     padding: 20,
   },
   separator: {
     marginVertical: 3,
     height: 1,
-    width: '80%',
+    width: "80%",
     backgroundColor: "#F8F9FF",
   },
   item: {
@@ -348,7 +398,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
     marginHorizontal: 16,
     borderRadius: 8,
-    width: 350
+    width: 350,
   },
   itemText: {
     fontSize: 18,
@@ -359,10 +409,10 @@ const styles = StyleSheet.create({
     margin: 12,
     borderWidth: 1,
     padding: 10,
-    width: 350
+    width: 350,
   },
   redText: {
-    color: '#d32f2f', 
-    fontWeight: 'bold',
+    color: "#d32f2f",
+    fontWeight: "bold",
   },
 });

@@ -71,12 +71,12 @@ def create_fridge_item(item: FridgeItem):
     except Exception as e:
         return {"error": str(e)}
 
-@join_router.get("/items/")
+@app.get("/fridge_items/")
 def get_fridge_items():
     response = supabase.table("fridge_items").select("*").execute()
     return {"data": response.data}
 
-@join_router.get("/items/added-by/{user_name}")
+@app.get("/items/added-by/{user_name}")
 def get_items_added_by(user_name: str):
     response = (supabase.table("fridge_items")
                .select("*")
@@ -93,12 +93,12 @@ def get_expiring_items():
                .execute())
     return {"data": response.data}
 
-@join_router.delete("/items/{item_id}")
+@app.delete("/items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-@join_router.post("/send-invite/")
+@app.post("/send-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
     fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
