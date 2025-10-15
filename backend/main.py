@@ -167,7 +167,7 @@ def get_expiring_items():
                .execute())
     return {"data": response.data}
 
-@join_router.delete("/items/{item_id}")
+@app.delete("/items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}

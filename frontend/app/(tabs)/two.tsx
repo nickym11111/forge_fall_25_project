@@ -18,7 +18,7 @@ import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import ProfileIcon from "@/components/ProfileIcon";
 
-const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
+const API_URL = "http://127.0.0.1:8000";
 
 // just to note, we should prob figure out what to do when the food goes past the expiration date
 
@@ -132,13 +132,7 @@ export default function TabOneScreen() {
 
       console.log("User ID:", user?.id);
 
-      const response = await fetch(`${API_URL}/fridge_items/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        }
-      });
+      const response = await fetch(`${API_URL}/fridge_items/`);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -146,7 +140,6 @@ export default function TabOneScreen() {
 
       const result = await response.json();
       console.log("API Response:", result);
-
 
       // Transform backend data to match frontend format
       const transformedData = result.data
