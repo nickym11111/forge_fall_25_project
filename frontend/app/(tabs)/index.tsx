@@ -20,9 +20,13 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
+<<<<<<< HEAD
       <CustomHeader 
       title="Fridge Flow  " 
       logo={require('../../assets/images/FridgeIcon.png')}/>
+=======
+      <CustomHeader title="Fridge Flow 🏠"/>
+>>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.loginContainer}>

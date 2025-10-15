@@ -86,6 +86,7 @@ def create_fridge_item(item: FridgeItem):
         return {"error": str(e)}
 
 @app.get("/fridge_items/")
+<<<<<<< HEAD
 def get_fridge_items(current_user = Depends(get_current_user)):
     #Get items from the current user's fridge
 
@@ -115,6 +116,12 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         print(f"Error getting fridge items: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get fridge items: {str(e)}")
 
+=======
+def get_fridge_items():
+    response = supabase.table("fridge_items").select("*").execute()
+    return {"data": response.data}
+
+>>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
 @app.get("/items/added-by/{user_name}")
 def get_items_added_by(user_name: str):
     response = (supabase.table("fridge_items")
@@ -137,7 +144,20 @@ def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
+<<<<<<< HEAD
 @join_router.post("/send-invite/")
+=======
+# Getting the shared users
+@app.get("/")
+def get_users():
+    try:
+        response = supabase.table("users").select("*").execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"data": [], "error": str(e)}
+
+@app.post("/send-invite/")
+>>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
     fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
