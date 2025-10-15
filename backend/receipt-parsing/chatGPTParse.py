@@ -16,7 +16,7 @@ image_path = "./testReceipt.jpg"
 base64_image = encode_image(image_path)
 
 response = client.responses.create(
-    model="gpt-4.1",
+    model="gpt-4.1-mini",
     input=[
         {
             "role": "user",
