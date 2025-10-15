@@ -96,7 +96,7 @@ def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-@app.post("/send-invite/")
+@join_router.post("/send-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
     fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
