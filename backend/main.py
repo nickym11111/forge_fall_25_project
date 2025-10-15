@@ -5,6 +5,11 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
+from receiptParsing.chatGPTParse import getChatGPTResponse
+
+from Join import app as join_router
+from Users import app as users_router
+from typing import List, Optional, Any
 
 # Initialize routers
 join_router = APIRouter()
@@ -199,10 +204,7 @@ async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
         "message": "Invitation processing completed",
         "results": results
     }
-        "status": "success",
-        "message": "Invitation processing completed",
-        "results": results
-    }
+    
 
 # Accept fridge invite
 @join_router.post("/accept-invite/")
@@ -289,12 +291,7 @@ class FridgeCreate(BaseModel):
 
 @app.post("/fridges")
 def create_fridge(fridge: FridgeCreate):
-    try:
-        # Insert the fridge and get the response
-        response = supabase.table("fridges").insert({
-            "name": fridge.name,
-            "created_at": "now()"
-        }).execute()
+
     try:
         # Insert the fridge and get the response
         response = supabase.table("fridges").insert({
@@ -361,17 +358,15 @@ def get_fridges():
     except Exception as e:
         print(f"Error fetching fridges: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+    
+class Receipt(BaseModel):
+    base64Image: str
+
+@app.post("/parse-receipt")
+def parse_receipt(receipt: Receipt):
     try:
-        response = supabase.table("fridges").select("*").execute()
-        
-        if response.error:
-            raise HTTPException(status_code=500, detail=response.error.message)
-            
-        return {
-            "status": "success",
-            "data": response.data,
-            "count": len(response.data) if response.data else 0
-        }
+        return getChatGPTResponse(receipt.base64Image);
     except Exception as e:
-        print(f"Error fetching fridges: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        error_msg = f"Error parsing receipt: {str(e)}"
+        print(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
