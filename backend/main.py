@@ -1,19 +1,17 @@
 # EXAMPLE TEMPLATE SETUP
 from typing import Optional, Any
-from fastapi import FastAPI, HTTPException, Depends, Header, APIRouter
+from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
-
 from Join import app as join_router
 from Users import app as users_router
 from typing import List, Optional, Any
+from receiptParsing.chatGPTParse import app as receipt_router
 
 # Initialize routers
-join_router = APIRouter()
-users_router = APIRouter()
 app = FastAPI()
 
 # Allow CORS origin policy to allow requests from local origins.
@@ -70,12 +68,12 @@ def create_fridge_item(item: FridgeItem):
     except Exception as e:
         return {"error": str(e)}
 
-@join_router.get("/items/")
+@app.get("/fridge_items/")
 def get_fridge_items():
     response = supabase.table("fridge_items").select("*").execute()
     return {"data": response.data}
 
-@join_router.get("/items/added-by/{user_name}")
+@app.get("/items/added-by/{user_name}")
 def get_items_added_by(user_name: str):
     response = (supabase.table("fridge_items")
                .select("*")
@@ -92,7 +90,7 @@ def get_expiring_items():
                .execute())
     return {"data": response.data}
 
-@join_router.delete("/items/{item_id}")
+@app.delete("/items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
@@ -214,6 +212,7 @@ async def accept_fridge_invite(
 # Include the routers with their prefixes
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
+app.include_router(receipt_router, prefix="/receipt")
        
 
 # Login Page
