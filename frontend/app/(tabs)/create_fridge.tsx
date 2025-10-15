@@ -1,11 +1,11 @@
-import { 
-  StyleSheet, 
-  TextInput, 
-  View, 
-  Text, 
-  Alert, 
-  ScrollView, 
-  TouchableOpacity 
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  Text,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,6 +24,7 @@ interface ApiResponse {
 
 //Backend API endpoint
 const API_URL = "http://127.0.0.1:8000/fridges";
+const SEND_INVITE_URL = "http://127.0.0.1:8000/fridge/send-invite";
 
 //Styles
 const styles = StyleSheet.create({
@@ -107,43 +108,85 @@ export default function CreateFridgeScreen() {
     setEmails(updated);
   };
 
-  //Handle fridge creation request
+  //Handle fridge creation and sending invites
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
       Alert.alert("Error", "Please enter a fridge name.");
       return;
     }
 
+    // Filter out empty emails
+    const validEmails = emails.filter((email) => email.trim() !== "");
+    if (validEmails.length === 0) {
+      Alert.alert("Error", "Please enter at least one email address.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      //Send POST request to FastAPI backend
-      const response = await fetch(API_URL, {
+      // 1. First, create the fridge
+      const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fridgeName,
-          emails: emails.filter((e) => e.trim() !== ""), //remove empty entries
-        }),
+        body: JSON.stringify({ name: fridgeName }),
       });
 
-      const data: ApiResponse = await response.json();
-      console.log("API Response:", data);
+      const fridgeData: ApiResponse = await createFridgeResponse.json();
+      console.log("Fridge creation response:", fridgeData);
 
-      //Success case
-      if (response.ok && data.status === "success") {
-        Alert.alert("Success!", data.message || "Fridge created!");
-        navigate("/(tabs)"); // redirect to main tabs page
+      if (!createFridgeResponse.ok || fridgeData.status !== "success") {
+        throw new Error(fridgeData.message || "Failed to create fridge");
+      }
+
+      const fridgeId = fridgeData.fridge_id;
+      if (!fridgeId) {
+        throw new Error("No fridge ID returned from server");
+      }
+
+      // 2. Then, send invites to all provided emails
+      const invitePromises = validEmails.map(async (email) => {
+        const inviteResponse = await fetch(SEND_INVITE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fridge_id: fridgeId.toString(),
+            emails: emails,
+            invited_by: "system@example.com",
+          }),
+        });
+        return inviteResponse.json();
+      });
+
+      const inviteResults = await Promise.allSettled(invitePromises);
+
+      // Check for any failed invites
+      const failedInvites = inviteResults
+        .map((result, index) =>
+          result.status === "rejected" || result.value.status !== "success"
+            ? validEmails[index]
+            : null
+        )
+        .filter(Boolean);
+
+      if (failedInvites.length > 0) {
+        Alert.alert(
+          "Partial Success",
+          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
+            ", "
+          )}`
+        );
       } else {
-        //Error case from API
-        Alert.alert("Error", data.message || "Failed to create fridge.");
+        Alert.alert(
+          "Success!",
+          "Fridge created and invites sent successfully!"
+        );
       }
     } catch (error) {
-      //Network or connection error
-      console.error("Network error:", error);
+      console.error("Error:", error);
       Alert.alert(
-        "Connection Error",
-        "Could not connect to the server. Make sure your backend is running."
+        "Error",
+        error instanceof Error ? error.message : "An unexpected error occurred"
       );
     } finally {
       setIsLoading(false);
@@ -206,7 +249,9 @@ export default function CreateFridgeScreen() {
             title={isLoading ? "Creating..." : "Create Fridge"}
             onPress={handleCreateFridge}
             style={styles.createButton}
-            disabled={isLoading} className={""}          />
+            disabled={isLoading}
+            className={""}
+          />
 
           {/*Navigate to Join Fridge page*/}
           <Text
