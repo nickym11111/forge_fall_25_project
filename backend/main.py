@@ -21,7 +21,11 @@ from ai_expiration import router as ai_router
 
 =======
 from receiptParsing.chatGPTParse import getChatGPTResponse
+<<<<<<< HEAD
 >>>>>>> 0000e52 (backend changes)
+=======
+from receiptParsing.chatGPTParse import app as receipt_router
+>>>>>>> c236aae (Add receipt parsing endpoint and update API routes)
 
 # Initialize routers
 app = FastAPI()

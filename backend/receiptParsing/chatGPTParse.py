@@ -1,5 +1,6 @@
 from dotenv import load_dotenv # type: ignore
 <<<<<<< HEAD
+<<<<<<< HEAD
 import os
 from openai import OpenAI
 from pydantic import BaseModel
@@ -16,13 +17,26 @@ class Receipt(BaseModel):
 
 =======
 import base64
+=======
+>>>>>>> c236aae (Add receipt parsing endpoint and update API routes)
 import os
 from openai import OpenAI
+from pydantic import BaseModel
+from fastapi import HTTPException, APIRouter, FastAPI
+
+
 load_dotenv()
+app = APIRouter()
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
+<<<<<<< HEAD
 >>>>>>> 0000e52 (backend changes)
+=======
+class Receipt(BaseModel):
+    base64Image: str
+
+>>>>>>> c236aae (Add receipt parsing endpoint and update API routes)
 
 def getChatGPTResponse(base64_image: str):
     response = client.responses.create(
@@ -47,6 +61,9 @@ def getChatGPTResponse(base64_image: str):
 
     return response
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> c236aae (Add receipt parsing endpoint and update API routes)
 
 @app.post("/parse-receipt")
 def parse_receipt(receipt: Receipt):
@@ -56,5 +73,8 @@ def parse_receipt(receipt: Receipt):
         error_msg = f"Error parsing receipt: {str(e)}"
         print(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
+<<<<<<< HEAD
 =======
 >>>>>>> 0000e52 (backend changes)
+=======
+>>>>>>> c236aae (Add receipt parsing endpoint and update API routes)
