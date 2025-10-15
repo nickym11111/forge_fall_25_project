@@ -1,13 +1,11 @@
 # EXAMPLE TEMPLATE SETUP
 from typing import Optional, Any
-from fastapi import FastAPI, HTTPException, Depends, Header, APIRouter
+from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
-from receiptParsing.chatGPTParse import getChatGPTResponse
-
 from Join import app as join_router
 from Users import app as users_router
 from typing import List, Optional, Any
