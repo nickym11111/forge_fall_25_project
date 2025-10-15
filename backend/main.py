@@ -12,12 +12,16 @@ from ai_expiration import router as ai_router
 >>>>>>> 46849d4 (added list import)
 from datetime import datetime
 from service import get_current_user, generate_invite_code
+<<<<<<< HEAD
 from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
 from ai_expiration import router as ai_router 
 
+=======
+from receiptParsing.chatGPTParse import getChatGPTResponse
+>>>>>>> 0000e52 (backend changes)
 
 # Initialize routers
 app = FastAPI()
@@ -353,6 +357,7 @@ def create_fridge(fridge: FridgeCreate):
 
 @app.get("/fridges")
 def get_fridges():
+<<<<<<< HEAD
     try:
         response = supabase.table("fridges").select("*").execute()
         
@@ -367,3 +372,18 @@ def get_fridges():
     except Exception as e:
         print(f"Error fetching fridges: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+=======
+    response = supabase.table("fridges").select("*").execute()
+    return {"data": response.data, "error": response.error}    
+class Receipt(BaseModel):
+    base64Image: str
+
+@app.post("/parse-receipt")
+def parse_receipt(receipt: Receipt):
+    try:
+        return getChatGPTResponse(receipt.base64Image);
+    except Exception as e:
+        error_msg = f"Error parsing receipt: {str(e)}"
+        print(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
+>>>>>>> 0000e52 (backend changes)
