@@ -20,9 +20,7 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader 
-      title="Fridge Flow  " 
-      logo={require('../../assets/images/FridgeIcon.png')}/>
+      <CustomHeader title="Fridge Flow 🏠"/>
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.loginContainer}>
