@@ -1,19 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, Button, Image, Platform, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Button, Image, Platform } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
-import CustomHeader from "@/components/CustomHeader";
-import { TouchableOpacity } from "react-native";
 
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
-  const [parsedItems, setParsedItems] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
+      mediaTypes: "images", // ✅ new API
       allowsEditing: false,
       quality: 1,
     });
@@ -23,12 +20,6 @@ export default function ParseReceiptScreen() {
     }
   };
 
-  useEffect(() => {
-    if (imageUri) {
-      parseReceipt();
-    }
-  }, [imageUri]);
-
   const parseReceipt = async () => {
     if (!imageUri) {
       alert("Please select an image first!");
@@ -36,12 +27,12 @@ export default function ParseReceiptScreen() {
     }
 
     try {
-      setIsLoading(true);
       setResponseText("Parsing receipt...");
 
       let base64Image: string;
 
       if (Platform.OS === "web") {
+        // ✅ Web fallback: fetch the blob and convert manually
         const response = await fetch(imageUri);
         const blob = await response.blob();
         base64Image = await new Promise<string>((resolve, reject) => {
@@ -52,6 +43,7 @@ export default function ParseReceiptScreen() {
           reader.readAsDataURL(blob);
         });
       } else {
+        // ✅ Native (iOS/Android)
         base64Image = await FileSystem.readAsStringAsync(imageUri, {
           encoding: "base64",
         });
@@ -59,139 +51,33 @@ export default function ParseReceiptScreen() {
 
       const response = await CreateParseReceiptRequest(base64Image);
       const parsed = JSON.parse(response.output[0].content[0].text);
-
-      setParsedItems(parsed);
-      console.log(parsed);
-      setResponseText("");
-
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
       console.error(error);
       setResponseText("Error parsing receipt");
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
-      <CustomHeader title="Add Items 📷" />
-      <View style={styles.imageContainer}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
-        ) : (
-          <TouchableOpacity
-            onPress={pickImage}
-            style={{ width: "100%", height: "100%" }}
-          >
-            <View style={styles.imageSkeleton}>
-              <View style={styles.imageTextContainer}>
-                <Text style={{ fontSize: 24 }}>📸</Text>
-                <Text
-                  style={{
-                    fontWeight: "bold",
-                    color: "white",
-                    fontSize: 18,
-                    textAlign: "center",
-                  }}
-                >
-                  Scan Receipt or Take Photo
-                </Text>
-                <Text
-                  style={{ color: "white", fontSize: 15, textAlign: "center" }}
-                >
-                  AI will detect items and expiry dates
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={styles.responseTextContainer}>
-        {isLoading && <Text>Parsing Receipt</Text>}
-        {!parsedItems ? (
-          <Text style={styles.responseText}>{responseText}</Text>
-        ) : parsedItems.length > 0 ? (
-          parsedItems.map((item, index) => {
-            const itemName = Object.keys(item)[0];
-            const itemData = item[itemName];
-            return (
-              <View key={index} style={styles.itemCard}>
-                <Text style={styles.itemName}>{itemName}</Text>
-                <Text style={styles.itemDetails}>
-                  Quantity: {itemData.quantity} | Price: $
-                  {itemData.price.toFixed(2)}
-                </Text>
-              </View>
-            );
-          })
-        ) : null}
-      </View>
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 12,
+      }}
+    >
+      <Button title="Pick an image" onPress={pickImage} />
+      {imageUri && (
+        <Image
+          source={{ uri: imageUri }}
+          style={{ width: 200, height: 200, marginVertical: 8 }}
+        />
+      )}
+      <Button title="Parse Receipt" onPress={parseReceipt} />
+      <Text style={{ marginTop: 16, paddingHorizontal: 12 }}>
+        {responseText}
+      </Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FF",
-    overflowY: "scroll",
-  },
-  imageContainer: {
-    width: "100%",
-    height: "100%",
-    maxHeight: 300,
-    justifyContent: "center",
-    maxWidth: 400,
-    alignItems: "center",
-    marginVertical: 16,
-    display: "flex",
-    alignSelf: "center",
-  },
-  imageSkeleton: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#74B9FF",
-    borderRadius: 8,
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imageTextContainer: {
-    alignItems: "center",
-    gap: 22,
-    maxWidth: 165,
-  },
-  image: {
-    width: "100%",
-    height: "100%",
-    marginVertical: 8,
-  },
-  responseTextContainer: {
-    width: "100%",
-    padding: 16,
-  },
-  responseText: {
-    textAlign: "center",
-  },
-  itemCard: {
-    backgroundColor: "white",
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  itemName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 4,
-  },
-  itemDetails: {
-    fontSize: 14,
-    color: "#666",
-  },
-});
