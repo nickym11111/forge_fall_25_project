@@ -37,4 +37,4 @@ BACKEND SETUP:
 - venv\Scripts\activate     # Windows
 - pip install -r requirements.txt
 - cp .env.example .env
-- Run the backend Server: uvicorn main:app --reload
+- Run the backend Server: uvicorn main:app --host 0.0.0.0 --reload
