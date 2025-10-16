@@ -13,8 +13,6 @@ export default function TabOneScreen() {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-  const { login } = useAuth();  // NEW: Get login from context
-
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   console.log("API URL:", apiUrl);
 
