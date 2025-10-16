@@ -3,7 +3,7 @@ import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
-import { CreateAccountRequest } from "../../api/CreateAccount";
+import { useAuth } from "@/contexts/AuthContext";
 import ToastMessage from "@/components/ToastMessage";
 
 export default function CreateAccount() {
@@ -17,6 +17,7 @@ export default function CreateAccount() {
     .map((item) => item.trim());
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const { signUp } = useAuth();
 
   return (
     <View style={styles.container}>
@@ -61,7 +62,7 @@ export default function CreateAccount() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
               try {
-                const response = await CreateAccountRequest(
+                const response = await signUp(
                   email,
                   password,
                   firstName,
