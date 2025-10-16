@@ -18,7 +18,7 @@ import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import ProfileIcon from "@/components/ProfileIcon";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
 // just to note, we should prob figure out what to do when the food goes past the expiration date
 

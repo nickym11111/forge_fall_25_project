@@ -15,25 +15,14 @@ export async function LoginRequest(email: string, password: string) {
 import { supabase } from '../utils/client'
 
 export async function LoginRequest(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+    const response = await fetch(`${api_url}/log-in/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+    });
 
-  console.log("Login data:", data); // Debug log
-  console.log("Login error:", error);
-
-  if (error) {
-    return { 
-      status: 'error', 
-      message: error.message 
-    };
-  }
-
-  return { 
-    status: 'success',
-    message: 'Login successful',
-    session: data.session,
-    user: data.user 
-  };
+    const data = await response.json();
+    return data;
 }
