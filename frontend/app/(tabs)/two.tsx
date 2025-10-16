@@ -13,7 +13,7 @@ import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
 // just to note, we should prob figure out what to do when the food goes past the expiration date
 

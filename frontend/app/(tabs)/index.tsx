@@ -12,7 +12,10 @@ export default function TabOneScreen() {
 
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  
+
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  console.log("API URL:", apiUrl);
+
   return (
     <View style={styles.container}>
       <CustomHeader title="Fridge Flow 🏠"/>
