@@ -6,6 +6,7 @@ import CustomHeader from "@/components/CustomHeader";
 import ToastMessage from "@/components/ToastMessage";
 import { useAuth } from "../context/authContext";  // NEW: Add this import
 
+
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -53,6 +54,7 @@ export default function TabOneScreen() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
 
+<<<<<<< HEAD
               try {
                 const result = await login(email, password);  // CHANGED: Use context login
                 
@@ -60,6 +62,30 @@ export default function TabOneScreen() {
                   setToastMessage("Login successful!");
                 } else {
                   setToastMessage(result.error || "Login failed");  // CHANGED: result.error
+                }
+=======
+              /*try {
+                const response = await LoginRequest(email, password);
+                setToastMessage(
+                  response?.status === "Login successful"
+                    ? "Login successful!"
+                    : response?.error || "Login failed",
+                );
+>>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
+              } catch (e) {
+                setToastMessage("Network error");
+                console.log(e);
+              } */
+
+              try {
+                const response = await LoginRequest(email, password);
+                
+                if (response.status === "success") {
+                  setToastMessage("Login successful!");
+                  // Optionally navigate to another screen
+                  // navigate("/(tabs)/create-fridge");
+                } else {
+                  setToastMessage(response.message || "Login failed");
                 }
               } catch (e) {
                 setToastMessage("Network error");

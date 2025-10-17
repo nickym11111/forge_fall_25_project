@@ -287,7 +287,11 @@ class UserLogin(BaseModel):
     password: str
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+"""
+>>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
 @app.post("/log-in/")
 async def login_user(user: UserLogin):
     try:
@@ -304,6 +308,7 @@ async def login_user(user: UserLogin):
         }
     except Exception as e:
         return {"error": str(e)}
+"""
 
 >>>>>>> ed04c8d (Fixed frontend/backend connection, updated UI to match other pages, added a remove emails button, etc)
 #Create a Fridge
@@ -311,6 +316,7 @@ class FridgeCreate(BaseModel):
     name: str
 
 @app.post("/fridges")
+<<<<<<< HEAD
 <<<<<<< HEAD
 def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
@@ -320,11 +326,18 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             "created_by": current_user.id,
 =======
 def create_fridge(fridge: FridgeCreate):
+=======
+def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
+>>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
     try:
         # Insert the fridge and get the response
         response = supabase.table("fridges").insert({
             "name": fridge.name,
+<<<<<<< HEAD
 >>>>>>> cebe5c0 (fixes to create fridge flow)
+=======
+            "created_by": current_user.id,
+>>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
             "created_at": "now()"
         }).execute()
 
@@ -355,6 +368,15 @@ def create_fridge(fridge: FridgeCreate):
         
         # Extract the ID from the response
         fridge_id = response.data[0].get("id")
+
+        updateFridgeID_response = supabase.table("users").update({
+            "fridge_id": fridge_id
+        }).eq("id", current_user.id).execute()
+
+        if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
+            print(f"Error updating user fridge ID: {updateFridgeID_response}")
+            raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
+
         if not fridge_id:
             print(f"No ID in response data: {response.data}")
 >>>>>>> cebe5c0 (fixes to create fridge flow)
@@ -378,6 +400,7 @@ def create_fridge(fridge: FridgeCreate):
 
 =======
 >>>>>>> cebe5c0 (fixes to create fridge flow)
+
 
 @app.get("/fridges")
 def get_fridges():
