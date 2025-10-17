@@ -9,6 +9,7 @@ from service import get_current_user, generate_invite_code
 from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
+from receiptParsing.chatGPTParse import app as receipt_router
 
 # Initialize routers
 app = FastAPI()
@@ -67,9 +68,34 @@ def create_fridge_item(item: FridgeItem):
         return {"error": str(e)}
 
 @app.get("/fridge_items/")
-def get_fridge_items():
-    response = supabase.table("fridge_items").select("*").execute()
-    return {"data": response.data}
+def get_fridge_items(current_user = Depends(get_current_user)):
+    #Get items from the current user's fridge
+
+    try:
+        #Get the user's fridge_id
+        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
+        
+        if not user_response.data or len(user_response.data) == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        fridge_id = user_response.data[0].get("fridge_id")
+        
+        if not fridge_id:
+            raise HTTPException(status_code=404, detail="User has no fridge assigned")
+        
+        # Get items only from the user's fridge
+        items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
+        
+        return {
+            "status": "success",
+            "data": items_response.data
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting fridge items: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get fridge items: {str(e)}")
 
 @app.get("/items/added-by/{user_name}")
 def get_items_added_by(user_name: str):
@@ -266,25 +292,6 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
-"""
-@app.post("/log-in/")
-async def login_user(user: UserLogin):
-    try:
-        res = supabase.auth.sign_in_with_password({
-            "email": user.email,
-            "password": user.password
-        })
-
-        # The response contains user + session data if valid
-        return {
-            "user": res.user,
-            "session": res.session,  # includes access_token, refresh_token, etc.
-            "status": "Login successful"
-        }
-    except Exception as e:
-        return {"error": str(e)}
-"""
-
 #Create a Fridge
 class FridgeCreate(BaseModel):
     name: str
@@ -293,20 +300,21 @@ class FridgeCreate(BaseModel):
 def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
         # Insert the fridge and get the response
-        response = supabase.table("fridges").insert({
+        createFridge_response = supabase.table("fridges").insert({
             "name": fridge.name,
             "created_by": current_user.id,
             "created_at": "now()"
         }).execute()
 
         # Check if the response contains data
-        if not response.data or len(response.data) == 0:
-            print(f"No data returned from database: {response}")
+        if not createFridge_response.data or len(createFridge_response.data) == 0:
+            print(f"No data returned from database: {createFridge_response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
         
         # Extract the ID from the response
-        fridge_id = response.data[0].get("id")
+        fridge_id = createFridge_response.data[0].get("id")
 
+        # Gets the response for updating the fridge id for a user
         updateFridgeID_response = supabase.table("users").update({
             "fridge_id": fridge_id
         }).eq("id", current_user.id).execute()
@@ -316,14 +324,14 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
 
         if not fridge_id:
-            print(f"No ID in response data: {response.data}")
+            print(f"No ID in response data: {createFridge_response.data}")
             raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
             
         return {
             "status": "success",
             "message": "Fridge created successfully",
             "fridge_id": fridge_id,
-            "data": response.data
+            "data": createFridge_response.data
         }
     except Exception as e:
         error_msg = f"Error creating fridge: {str(e)}"

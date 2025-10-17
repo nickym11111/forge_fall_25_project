@@ -43,18 +43,6 @@ export default function TabOneScreen() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
 
-              /*try {
-                const response = await LoginRequest(email, password);
-                setToastMessage(
-                  response?.status === "Login successful"
-                    ? "Login successful!"
-                    : response?.error || "Login failed",
-                );
-              } catch (e) {
-                setToastMessage("Network error");
-                console.log(e);
-              } */
-
               try {
                 const response = await LoginRequest(email, password);
                 
