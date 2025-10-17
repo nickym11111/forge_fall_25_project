@@ -107,8 +107,6 @@ export default function CreateFridgeScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  const { user, refreshUser } = useAuth();
-
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
     const updated = [...emails];
@@ -133,10 +131,6 @@ export default function CreateFridgeScreen() {
       return;
     }
 
-    /*if (!currentUserId) {
-      Alert.alert("Error", "You must be logged in.");
-      return;
-    } */
 
     // Filter out empty emails
     const validEmails = emails.filter((email) => email.trim() !== "");
@@ -148,7 +142,7 @@ export default function CreateFridgeScreen() {
     setIsLoading(true);
 
     try {
-      console.log("Getting fresh session...");
+      console.log("Getting a new session:");
       const { data: { session }, error } = await supabase.auth.getSession();
     
       console.log("Session exists?", !!session);
@@ -161,7 +155,7 @@ export default function CreateFridgeScreen() {
       console.log("User ID from session:", session.user.id);
       console.log("User email from session:", session.user.email);
 
-      // 1. First, create the fridge
+      // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json",

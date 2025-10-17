@@ -21,6 +21,7 @@ import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
+import { supabase } from "../utils/client";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -158,9 +159,23 @@ export default function TabOneScreen() {
   const fetchFridgeItems = async () => {
     try {
       setLoading(true);
-      console.log("Fetching from:", `${API_URL}/fridge_items/`);
+      console.log("Fetching data from:", `${API_URL}/fridge_items/`);
 
-      const response = await fetch(`${API_URL}/fridge_items/`);
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        throw new Error("You must be logged in to view fridge items");
+      }
+
+      console.log("User ID:", session.user.id);
+
+      const response = await fetch(`${API_URL}/fridge_items/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -169,6 +184,7 @@ export default function TabOneScreen() {
 
       const result = await response.json();
       console.log("API Response:", result);
+
 
       // Transform backend data to match frontend format
       const transformedData = result.data
