@@ -1,5 +1,5 @@
 
-const api_url = "http://127.0.0.1:8000" // Replace environment variables later
+const api_url = `${process.env.EXPO_PUBLIC_API_URL}` // Replace environment variables later
 
 export async function CreateParseReceiptRequest(base64Image: string) {
     const response = await fetch(`${api_url}/receipt/parse-receipt`, {
