@@ -7,13 +7,16 @@ import {
   ScrollView,
   TouchableOpacity,
 } from "react-native";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from "../utils/client";
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
+
 
 //Type for API response
 interface ApiResponse {
@@ -92,6 +95,9 @@ export default function CreateFridgeScreen() {
   const [emails, setEmails] = useState<string[]>([""]); // invited emails
   const [isLoading, setIsLoading] = useState<boolean>(false); // loading indicator
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
     const updated = [...emails];
@@ -115,6 +121,7 @@ export default function CreateFridgeScreen() {
       return;
     }
 
+
     // Filter out empty emails
     const validEmails = emails.filter((email) => email.trim() !== "");
     if (validEmails.length === 0) {
@@ -125,10 +132,25 @@ export default function CreateFridgeScreen() {
     setIsLoading(true);
 
     try {
-      // 1. First, create the fridge
+      console.log("Getting a new session:");
+      const { data: { session }, error } = await supabase.auth.getSession();
+    
+      console.log("Session exists?", !!session);
+      console.log("Session error:", error);
+
+      if (error || !session) {
+        throw new Error("No active session. Please log in again.");
+      }
+
+      console.log("User ID from session:", session.user.id);
+      console.log("User email from session:", session.user.email);
+
+      // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+                   "Authorization": `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({ name: fridgeName }),
       });
 
@@ -148,11 +170,12 @@ export default function CreateFridgeScreen() {
       const invitePromises = validEmails.map(async (email) => {
         const inviteResponse = await fetch(SEND_INVITE_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json",
+                     "Authorization": `Bearer ${session.access_token}`},
           body: JSON.stringify({
             fridge_id: fridgeId.toString(),
             emails: emails,
-            invited_by: "system@example.com",
+            invited_by: currentUserEmail,
           }),
         });
         return inviteResponse.json();
