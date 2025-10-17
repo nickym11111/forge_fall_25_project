@@ -6,6 +6,7 @@ import CustomHeader from "@/components/CustomHeader";
 import { LoginRequest } from "../api/Login";
 import ToastMessage from "@/components/ToastMessage";
 
+
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +43,7 @@ export default function TabOneScreen() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
 
-              try {
+              /*try {
                 const response = await LoginRequest(email, password);
                 setToastMessage(
                   response?.status === "Login successful"
@@ -52,7 +53,23 @@ export default function TabOneScreen() {
               } catch (e) {
                 setToastMessage("Network error");
                 console.log(e);
+              } */
+
+              try {
+                const response = await LoginRequest(email, password);
+                
+                if (response.status === "success") {
+                  setToastMessage("Login successful!");
+                  // Optionally navigate to another screen
+                  // navigate("/(tabs)/create-fridge");
+                } else {
+                  setToastMessage(response.message || "Login failed");
+                }
+              } catch (e) {
+                setToastMessage("Network error");
+                console.log(e);
               }
+              
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
             } }

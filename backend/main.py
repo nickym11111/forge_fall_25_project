@@ -8,7 +8,7 @@ from datetime import datetime
 from service import get_current_user, generate_invite_code
 from Join import app as join_router
 from Users import app as users_router
-from typing import List, Optional, Any
+from typing import Optional, Any
 
 # Initialize routers
 app = FastAPI()
@@ -180,7 +180,7 @@ async def accept_fridge_invite(
         invitation = invite_response.data[0]
 
         # Update user profile with fridge_id
-        profile_response = supabase.table("profiles").update({
+        profile_response = supabase.table("users").update({
             "fridge_id": invitation["fridge_id"]
         }).eq("id", current_user.id).execute()
 
@@ -219,6 +219,7 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+"""
 @app.post("/log-in/")
 async def login_user(user: UserLogin):
     try:
@@ -235,17 +236,19 @@ async def login_user(user: UserLogin):
         }
     except Exception as e:
         return {"error": str(e)}
+"""
 
 #Create a Fridge
 class FridgeCreate(BaseModel):
     name: str
 
 @app.post("/fridges")
-def create_fridge(fridge: FridgeCreate):
+def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
         # Insert the fridge and get the response
         response = supabase.table("fridges").insert({
             "name": fridge.name,
+            "created_by": current_user.id,
             "created_at": "now()"
         }).execute()
 
@@ -256,6 +259,15 @@ def create_fridge(fridge: FridgeCreate):
         
         # Extract the ID from the response
         fridge_id = response.data[0].get("id")
+
+        updateFridgeID_response = supabase.table("users").update({
+            "fridge_id": fridge_id
+        }).eq("id", current_user.id).execute()
+
+        if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
+            print(f"Error updating user fridge ID: {updateFridgeID_response}")
+            raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
+
         if not fridge_id:
             print(f"No ID in response data: {response.data}")
             raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
@@ -270,6 +282,7 @@ def create_fridge(fridge: FridgeCreate):
         error_msg = f"Error creating fridge: {str(e)}"
         print(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
+
 
 @app.get("/fridges")
 def get_fridges():
