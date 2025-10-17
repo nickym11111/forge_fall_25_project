@@ -1,7 +1,6 @@
 
-import { StyleSheet, TextInput, View, Text, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Animated, Modal } from "react-native";
-import { useState, useRef, useEffect } from "react";
-import { Picker } from '@react-native-picker/picker';
+import { StyleSheet, TextInput, View, Text, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Modal } from "react-native";
+import { useState, useEffect } from "react";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
@@ -21,7 +20,8 @@ interface User {
   };
 }
 
-const API_URL = 'http://127.0.0.1:8000';
+// Put your own
+const API_URL = 'http://10.0.0.155:8000';
 
 const styles = StyleSheet.create({
   container: {
@@ -265,6 +265,36 @@ const styles = StyleSheet.create({
     fontSize: 50,
     fontWeight: 'bold',
   },
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  popupBox: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    width: '85%',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 5,
+  },
+
+  pickerWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  datePickerIOS: {
+    alignSelf: 'center',
+    width: '100%',
+    transform: [{ scale: 0.95 }],
+  },
+  
 });
 
 export default function AddItemManual() {
@@ -274,16 +304,12 @@ export default function AddItemManual() {
   const [tempExpiryDate, setTempExpiryDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showUserPicker, setShowUserPicker] = useState(false);
-  const [sharedByUserIds, setSharedByUserIds] = useState<string[]>([]); // Array for multiple users
+  const [sharedByUserIds, setSharedByUserIds] = useState<string[]>([]);
   const [users, setUsers] = useState<User[]>([]); // List of users
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [showSuccess, setShowSuccess] = useState<boolean>(false);
   
   // TODO: Get this from your auth context when you implement login
   const currentUserId = "TEMP_USER_ID"; // This will be replaced with actual logged-in user
-  
-  const scaleAnim = useRef(new Animated.Value(0)).current;
-  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   // Fetch users on component mount
   useEffect(() => {
@@ -294,11 +320,58 @@ export default function AddItemManual() {
     try {
       const response = await fetch(`${API_URL}/users/`);
       const data = await response.json();
-      if (data.data) {
+      if (data.data && data.data.length > 0) {
         setUsers(data.data);
+      } else {
+        // Add temp users if none exist
+        setUsers([
+          {
+            id: "1",
+            user_metadata: { first_name: "Alice", last_name: "Johnson" },
+            email: "alice@example.com"
+          },
+          {
+            id: "2",
+            user_metadata: { first_name: "Bob", last_name: "Smith" },
+            email: "bob@example.com",
+          },
+          {
+            id: "3",
+            user_metadata: { first_name: "Charlie", last_name: "Brown" },
+            email: "charlie@example.com"
+          },
+          {
+            id: "4",
+            user_metadata: { first_name: "Diana", last_name: "Lee" },
+            email: "diana@example.com",
+          }
+        ]);
       }
     } catch (error) {
       console.error("Error fetching users:", error);
+      // Add temporary users on error
+      setUsers([
+        {
+          id: "1",
+          email: "alice@example.com",
+          user_metadata: { first_name: "Alice", last_name: "Johnson" }
+        },
+        {
+          id: "2",
+          email: "bob@example.com",
+          user_metadata: { first_name: "Bob", last_name: "Smith" }
+        },
+        {
+          id: "3",
+          email: "charlie@example.com",
+          user_metadata: { first_name: "Charlie", last_name: "Brown" }
+        },
+        {
+          id: "4",
+          email: "diana@example.com",
+          user_metadata: { first_name: "Diana", last_name: "Lee" }
+        }
+      ]);
     }
   };
 
@@ -310,15 +383,36 @@ export default function AddItemManual() {
   };
 
   const handleAddItem = async () => {
-    // Validation
     if (!title.trim()) {
       Alert.alert("Error", "Please enter an item name.");
       return;
     }
 
+    console.log("Starting to add item");
     setIsLoading(true);
 
+    const sharedByUsers = sharedByUserIds.map(userId => {
+      const user = users.find(u => u.id === userId);
+      if (user) {
+        return {
+          first_name: user.user_metadata?.first_name || "",
+          last_name: user.user_metadata?.last_name || "",
+          email: user.email
+        };
+      }
+      return null;
+    }).filter(u => u !== null);
+
     try {
+      console.log("Sending to:", `${API_URL}/fridge_items/`);
+      console.log("Data:", {
+        title: title.trim(),
+        quantity: quantity ? Number(quantity) : 1,
+        expiry_date: expiryDate.toISOString().split('T')[0],
+        added_by: currentUserId,
+        shared_by: sharedByUsers.length > 0 ? sharedByUsers : null,
+      });
+
       const response = await fetch(`${API_URL}/fridge_items/`, {
         method: "POST",
         headers: {
@@ -329,44 +423,22 @@ export default function AddItemManual() {
           quantity: quantity ? Number(quantity) : 1,
           expiry_date: expiryDate.toISOString().split('T')[0],
           added_by: currentUserId, // Automatic - logged in user
-          shared_by: sharedByUserIds.length > 0 ? sharedByUserIds : null, // Array of user IDs or null
+          shared_by: sharedByUsers.length > 0 ? sharedByUsers : null, // Array of user objects
         }),
       });
 
       const data: ApiResponse = await response.json();
+      console.log("Response status:", response.status);
+      console.log("Response data:", data);
 
-      if (response.ok && data.message) {
-        // Show success animation
-        setShowSuccess(true);
+      if (response.ok) {
+        Alert.alert("Success!", "Item added to fridge!");
         
-        // Animate checkmark
-        Animated.parallel([
-          Animated.spring(scaleAnim, {
-            toValue: 1,
-            tension: 50,
-            friction: 3,
-            useNativeDriver: true,
-          }),
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        // Reset everything after 1.5 seconds
-        setTimeout(() => {
-          // Reset animations
-          scaleAnim.setValue(0);
-          fadeAnim.setValue(0);
-          setShowSuccess(false);
-          
-          // Clear form - back to normal
-          setTitle("");
-          setQuantity("");
-          setExpiryDate(new Date());
-          setSharedByUserIds([]);
-        }, 1500);
+        // Clear form
+        setTitle("");
+        setQuantity("");
+        setExpiryDate(new Date());
+        setSharedByUserIds([]);
       } else {
         Alert.alert("Error", data.detail || data.message || "Failed to add item.");
       }
@@ -510,35 +582,39 @@ export default function AddItemManual() {
       </ScrollView>
 
       {/* Date Picker Modal for iOS */}
-      {showDatePicker && Platform.OS === 'ios' && (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showDatePicker}
-          onRequestClose={cancelDateSelection}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={cancelDateSelection} style={styles.modalButton}>
-                  <Text style={styles.modalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <Text style={styles.modalTitle}>Select Date</Text>
-                <TouchableOpacity onPress={confirmDateSelection} style={styles.modalButton}>
-                  <Text style={styles.modalButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
+    {showDatePicker && Platform.OS === 'ios' && (
+    <Modal
+        transparent={true}
+        animationType="fade"
+        visible={showDatePicker}
+        onRequestClose={cancelDateSelection}
+    >
+        <View style={styles.modalContainer}>
+        <View style={styles.popupBox}>
+            <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={cancelDateSelection} style={styles.modalButton}>
+                <Text style={styles.modalButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Date</Text>
+            <TouchableOpacity onPress={confirmDateSelection} style={styles.modalButton}>
+                <Text style={styles.modalButtonText}>Done</Text>
+            </TouchableOpacity>
+            </View>
+            <View style={styles.pickerWrapper}>
+            <DateTimePicker
                 value={tempExpiryDate}
                 mode="date"
-                display="spinner"
+                display="inline"
                 onChange={onDateChange}
                 minimumDate={new Date()}
-              />
+                style={styles.datePickerIOS}
+            />
             </View>
-          </View>
-        </Modal>
-      )}
+
+        </View>
+        </View>
+    </Modal>
+    )}
 
       {/* Android Date Picker */}
       {showDatePicker && Platform.OS === 'android' && (
@@ -599,26 +675,6 @@ export default function AddItemManual() {
           </View>
         </View>
       </Modal>
-
-      {/* Success Animation Overlay */}
-      {showSuccess && (
-        <View style={styles.successOverlay}>
-          <Animated.View 
-            style={[
-              styles.successContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }],
-              },
-            ]}
-          >
-            <View style={styles.checkmarkCircle}>
-              <Text style={styles.checkmarkText}>✓</Text>
-            </View>
-            <Text style={styles.successText}>Item Added!</Text>
-          </Animated.View>
-        </View>
-      )}
     </KeyboardAvoidingView>
   );
 }
