@@ -35,6 +35,8 @@ interface AuthProviderProps {
 const TOKEN_KEY = "auth_token";
 const USER_KEY = "auth_user";
 
+const api_url = `${process.env.EXPO_PUBLIC_API_URL}`;
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -102,7 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/log-in/", {
+      const response = await fetch(`${api_url}/log-in/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,6 +118,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       const data = await response.json();
+
+      return data;
 
       // Store token and user data
       await storeData(TOKEN_KEY, data.session.access_token);
@@ -142,7 +146,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/users/sign-up/", {
+      const response = await fetch(`${api_url}/users/sign-up/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

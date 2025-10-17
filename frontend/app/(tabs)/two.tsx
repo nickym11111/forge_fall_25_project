@@ -116,8 +116,6 @@ export default function TabOneScreen() {
   const fetchFridgeItems = async () => {
     try {
       setLoading(true);
-      console.log("Fetching from:", `${API_URL}/fridge_items/`);
-
       const response = await fetch(`${API_URL}/fridge_items/`);
 
       if (!response.ok) {
