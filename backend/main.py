@@ -420,7 +420,7 @@ async def accept_fridge_invite(
         invitation = invite_response.data[0]
 
         # Update user profile with fridge_id
-        profile_response = supabase.table("profiles").update({
+        profile_response = supabase.table("users").update({
             "fridge_id": invitation["fridge_id"]
         }).eq("id", current_user.id).execute()
 

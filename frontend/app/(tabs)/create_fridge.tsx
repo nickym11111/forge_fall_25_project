@@ -8,10 +8,11 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
+
 import { supabase } from "../utils/client";
-import { useAuth } from "../context/authContext";
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
@@ -99,7 +100,40 @@ export default function CreateFridgeScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  const { user, refreshUser } = useAuth();
+  /*useFocusEffect(
+    useCallback(() => {
+      const getCurrentUser = async () => {
+        console.log("=== Getting current user (on focus) ===");
+        
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession();
+          
+          console.log("Session:", session);
+          console.log("Error:", error);
+          console.log("User from session:", session?.user);
+          
+          if (error || !session) {
+            console.log("No session found!");
+            Alert.alert("Error", "You must be logged in to create a fridge");
+            // Optionally navigate to login
+            // navigate("/(auth)/login");
+            return;
+          }
+          
+          console.log("Setting user ID to:", session.user.id);
+          setCurrentUserId(session.user.id);
+          setCurrentUserEmail(session.user.email || null);
+          console.log("User ID set successfully!");
+          
+        } catch (error) {
+          console.error("Error in getCurrentUser:", error);
+          Alert.alert("Error", "Failed to verify login status");
+        }
+      };
+
+      getCurrentUser();
+    }, [])
+  ); */
 
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
@@ -208,9 +242,6 @@ export default function CreateFridgeScreen() {
           "Fridge created and invites sent successfully!"
         );
       }
-
-      await refreshUser();
-      
     } catch (error) {
       console.error("Error:", error);
       Alert.alert(

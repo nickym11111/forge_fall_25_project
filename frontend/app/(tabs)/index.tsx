@@ -4,7 +4,7 @@ import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
 import ToastMessage from "@/components/ToastMessage";
-import { useAuth } from "../context/authContext";  // NEW: Add this import
+
 
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
@@ -42,18 +42,33 @@ export default function TabOneScreen() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
 
+              /*try {
+                const response = await LoginRequest(email, password);
+                setToastMessage(
+                  response?.status === "Login successful"
+                    ? "Login successful!"
+                    : response?.error || "Login failed",
+                );
+              } catch (e) {
+                setToastMessage("Network error");
+                console.log(e);
+              } */
+
               try {
-                const result = await login(email, password);  // CHANGED: Use context login
+                const response = await LoginRequest(email, password);
                 
-                if (result.success) {  // CHANGED: Check result.success
+                if (response.status === "success") {
                   setToastMessage("Login successful!");
+                  // Optionally navigate to another screen
+                  // navigate("/(tabs)/create-fridge");
                 } else {
-                  setToastMessage(result.error || "Login failed");  // CHANGED: result.error
+                  setToastMessage(response.message || "Login failed");
                 }
               } catch (e) {
                 setToastMessage("Network error");
                 console.log(e);
               }
+              
               
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
