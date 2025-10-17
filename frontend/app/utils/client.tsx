@@ -41,9 +41,13 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 <<<<<<< HEAD
+<<<<<<< HEAD
 })
 =======
 })
 
 console.log("Supabase client initialized for platform:", Platform.OS);
 >>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
+=======
+})
+>>>>>>> 8648d3e (Cleaned up user auth code)

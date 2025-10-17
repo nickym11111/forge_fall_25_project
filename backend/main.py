@@ -91,6 +91,9 @@ def create_fridge_item(item: FridgeItem):
 
 @app.get("/fridge_items/")
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 8648d3e (Cleaned up user auth code)
 def get_fridge_items(current_user = Depends(get_current_user)):
     #Get items from the current user's fridge
 
@@ -99,12 +102,20 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:
+<<<<<<< HEAD
             raise HTTPException(status_code=401, detail="User not found")
+=======
+            raise HTTPException(status_code=404, detail="User not found")
+>>>>>>> 8648d3e (Cleaned up user auth code)
         
         fridge_id = user_response.data[0].get("fridge_id")
         
         if not fridge_id:
+<<<<<<< HEAD
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
+=======
+            raise HTTPException(status_code=404, detail="User has no fridge assigned")
+>>>>>>> 8648d3e (Cleaned up user auth code)
         
         # Get items only from the user's fridge
         items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
@@ -119,11 +130,14 @@ def get_fridge_items(current_user = Depends(get_current_user)):
     except Exception as e:
         print(f"Error getting fridge items: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get fridge items: {str(e)}")
+<<<<<<< HEAD
 
 =======
 def get_fridge_items():
     response = supabase.table("fridge_items").select("*").execute()
     return {"data": response.data}
+=======
+>>>>>>> 8648d3e (Cleaned up user auth code)
 
 >>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
 @app.get("/items/added-by/{user_name}")
@@ -288,6 +302,7 @@ class UserLogin(BaseModel):
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 =======
 """
@@ -311,6 +326,8 @@ async def login_user(user: UserLogin):
 """
 
 >>>>>>> ed04c8d (Fixed frontend/backend connection, updated UI to match other pages, added a remove emails button, etc)
+=======
+>>>>>>> 8648d3e (Cleaned up user auth code)
 #Create a Fridge
 class FridgeCreate(BaseModel):
     name: str
@@ -322,6 +339,7 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
     try:
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
+<<<<<<< HEAD
             "name": fridge.name,
             "created_by": current_user.id,
 =======
@@ -332,6 +350,8 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
     try:
         # Insert the fridge and get the response
         response = supabase.table("fridges").insert({
+=======
+>>>>>>> 8648d3e (Cleaned up user auth code)
             "name": fridge.name,
 <<<<<<< HEAD
 >>>>>>> cebe5c0 (fixes to create fridge flow)
@@ -342,6 +362,7 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         }).execute()
 
         # Check if the response contains data
+<<<<<<< HEAD
 <<<<<<< HEAD
         if not createFridge_response.data or len(createFridge_response.data) == 0:
             print(f"No data returned from database: {createFridge_response}")
@@ -364,11 +385,16 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
 =======
         if not response.data or len(response.data) == 0:
             print(f"No data returned from database: {response}")
+=======
+        if not createFridge_response.data or len(createFridge_response.data) == 0:
+            print(f"No data returned from database: {createFridge_response}")
+>>>>>>> 8648d3e (Cleaned up user auth code)
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
         
         # Extract the ID from the response
-        fridge_id = response.data[0].get("id")
+        fridge_id = createFridge_response.data[0].get("id")
 
+        # Gets the response for updating the fridge id for a user
         updateFridgeID_response = supabase.table("users").update({
             "fridge_id": fridge_id
         }).eq("id", current_user.id).execute()
@@ -378,8 +404,12 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
 
         if not fridge_id:
+<<<<<<< HEAD
             print(f"No ID in response data: {response.data}")
 >>>>>>> cebe5c0 (fixes to create fridge flow)
+=======
+            print(f"No ID in response data: {createFridge_response.data}")
+>>>>>>> 8648d3e (Cleaned up user auth code)
             raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
             
         return {
@@ -387,10 +417,14 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             "message": "Fridge created successfully",
             "fridge_id": fridge_id,
 <<<<<<< HEAD
+<<<<<<< HEAD
             "data": createFridge_response.data
 =======
             "data": response.data
 >>>>>>> cebe5c0 (fixes to create fridge flow)
+=======
+            "data": createFridge_response.data
+>>>>>>> 8648d3e (Cleaned up user auth code)
         }
     except Exception as e:
         error_msg = f"Error creating fridge: {str(e)}"

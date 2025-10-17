@@ -55,6 +55,7 @@ export default function TabOneScreen() {
               setTimeout(() => setIsToastVisible(false), 3000);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
               try {
                 const result = await login(email, password);  // CHANGED: Use context login
                 
@@ -77,6 +78,8 @@ export default function TabOneScreen() {
                 console.log(e);
               } */
 
+=======
+>>>>>>> 8648d3e (Cleaned up user auth code)
               try {
                 const response = await LoginRequest(email, password);
                 
