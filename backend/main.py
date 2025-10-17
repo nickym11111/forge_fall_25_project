@@ -81,3 +81,11 @@ def get_expiring_items():
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
+
+@app.get("/")  # This is accessed as /users/ because of the router prefix
+def get_users():
+    try:
+        response = supabase.table("users").select("*").execute()
+        return {"data": response.data}
+    except Exception as e:
+        return {"data": [], "error": str(e)}
