@@ -133,6 +133,11 @@ export default function CreateFridgeScreen() {
       return;
     }
 
+    /*if (!currentUserId) {
+      Alert.alert("Error", "You must be logged in.");
+      return;
+    } */
+
     // Filter out empty emails
     const validEmails = emails.filter((email) => email.trim() !== "");
     if (validEmails.length === 0) {
@@ -143,10 +148,25 @@ export default function CreateFridgeScreen() {
     setIsLoading(true);
 
     try {
+      console.log("Getting fresh session...");
+      const { data: { session }, error } = await supabase.auth.getSession();
+    
+      console.log("Session exists?", !!session);
+      console.log("Session error:", error);
+
+      if (error || !session) {
+        throw new Error("No active session. Please log in again.");
+      }
+
+      console.log("User ID from session:", session.user.id);
+      console.log("User email from session:", session.user.email);
+
       // 1. First, create the fridge
       const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json",
+                   "Authorization": `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({ name: fridgeName }),
       });
 
@@ -166,11 +186,12 @@ export default function CreateFridgeScreen() {
       const invitePromises = validEmails.map(async (email) => {
         const inviteResponse = await fetch(SEND_INVITE_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json",
+                     "Authorization": `Bearer ${session.access_token}`},
           body: JSON.stringify({
             fridge_id: fridgeId.toString(),
             emails: emails,
-            invited_by: "system@example.com",
+            invited_by: currentUserEmail,
           }),
         });
         return inviteResponse.json();
