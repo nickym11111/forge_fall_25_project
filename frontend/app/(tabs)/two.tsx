@@ -132,7 +132,13 @@ export default function TabOneScreen() {
 
       console.log("User ID:", user?.id);
 
-      const response = await fetch(`${API_URL}/fridge_items/`);
+      const response = await fetch(`${API_URL}/fridge_items/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -140,6 +146,7 @@ export default function TabOneScreen() {
 
       const result = await response.json();
       console.log("API Response:", result);
+
 
       // Transform backend data to match frontend format
       const transformedData = result.data
