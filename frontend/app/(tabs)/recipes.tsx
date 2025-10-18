@@ -54,7 +54,16 @@ export default function recipes() {
 
       const data = await response.json();
       console.log('Received response from backend:', data);
-      setResponseMessage(data.output[0].content[0].text);
+      const rawText = data.output[0].content[0].text;
+      const jsonString = rawText.replace(/^Response:\s*/, '');
+      let ingredients: string[] = [];
+      try {
+        const parsed = JSON.parse(jsonString);
+        ingredients = parsed.ingredients;
+      } catch (error) {
+        console.error("Failed to parse JSON:", error);
+      }
+      setResponseMessage(ingredients);
     } catch (error) {
       console.error('Error sending data:', error);
       setResponseMessage(['Error sending data to backend.']);
@@ -120,7 +129,6 @@ return (
         selectedValue={selectedPrompt}
         setSelectedValue={setSelectedPrompt}
       ></PreviewLayout>
-      <Text>Response: {responseMessage}</Text>
       <FlatList
         data={responseMessage}
         renderItem={({ item }) => (
