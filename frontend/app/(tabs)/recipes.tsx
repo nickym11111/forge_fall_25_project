@@ -68,24 +68,17 @@ export default function recipes() {
   const handleSubmit = async () => {
     try {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/recipes/find_ingredients`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/recipes/find_ingredients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ recipe: inputValue }), // Send data as JSON
+        body: JSON.stringify({ recipe: inputValue }), // Send data as JSON
       });
       const data = await response.json();
       console.log('Received response from backend:', data);
-      const rawText = data.output[0].content[0].text;
-      const jsonString = rawText.replace(/^Response:\s*/, '');
-      let ingredients: string[] = [];
-      try {
-        const parsed = JSON.parse(jsonString);
-        ingredients = parsed.ingredients;
-      } catch (error) {
-        console.error("Failed to parse JSON:", error);
-      }
-      setResponseMessage(ingredients);
+      setResponseMessage(data.output[0].content[0].text);
     } catch (error) {
       console.error('Error sending data:', error);
       setResponseMessage(['Error sending data to backend.']);
