@@ -19,7 +19,11 @@ interface UserData {
     name: string;
     emails?: string[]
   } | null;
+<<<<<<< HEAD
   fridgeMates?: fridgeMate[]
+=======
+  fridgeMateNames?: fridgeMate[]
+>>>>>>> e630bb3 (Fixed auth issues, made logic cleaner.)
 }
 
 let cachedUser: UserData | null = null;

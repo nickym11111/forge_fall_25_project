@@ -101,6 +101,7 @@ export default function CreateFridgeScreen() {
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   const { user, refreshUser } = useAuth();
 =======
   /*useFocusEffect(
@@ -141,6 +142,10 @@ export default function CreateFridgeScreen() {
 
 =======
 >>>>>>> 8648d3e (Cleaned up user auth code)
+=======
+  const { refreshUser } = useAuth();
+
+>>>>>>> e630bb3 (Fixed auth issues, made logic cleaner.)
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
     const updated = [...emails];
