@@ -19,7 +19,7 @@ interface UserData {
     name: string;
     emails?: string[]
   } | null;
-  fridgeMateNames?: fridgeMate[]
+  fridgeMates?: fridgeMate[]
 }
 
 let cachedUser: UserData | null = null;

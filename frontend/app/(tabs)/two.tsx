@@ -127,7 +127,7 @@ export default function TabOneScreen() {
         throw new Error("You must be logged in to view fridge items");
       }
 
-      console.log("User ID:", session.user.id);
+      console.log("User ID:", user?.id);
 
       const response = await fetch(`${API_URL}/fridge_items/`, {
         method: "GET",
