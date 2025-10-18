@@ -14,6 +14,7 @@ from receiptParsing.chatGPTParse import app as receipt_router
 # Initialize routers
 app = FastAPI()
 
+
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
     "http://localhost:8081", # React/Next dev server
@@ -37,6 +38,14 @@ class FridgeInviteDTO(BaseModel):
     invited_by: Optional[str] = None
     invite_code: Optional[str] = None
 
+# Data Transfer Object for fridge invite
+class FridgeInviteDTO(BaseModel):
+    fridge_id: str
+    email_to: str
+    invited_by: str
+    invite_code: str
+
+# Data Transfer Object for redeem fridge invite
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
 
