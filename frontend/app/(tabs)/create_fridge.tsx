@@ -197,7 +197,10 @@ export default function CreateFridgeScreen() {
   return (
     <View style={styles.container}>
       {/*Page Header*/}
-      <CustomHeader title="Create Fridge 🧊" />
+      <CustomHeader 
+      title="Create Fridge  "
+      logo={require('../../assets/images/FridgeIcon.png')}
+      />
 
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>

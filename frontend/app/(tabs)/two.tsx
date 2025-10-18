@@ -237,7 +237,7 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>What's In Our Fridge?</Text>
+      <Text style={styles.title}>What's In Our Fridge? </Text>
       <View
         style={styles.separator}
         lightColor="#eee"
