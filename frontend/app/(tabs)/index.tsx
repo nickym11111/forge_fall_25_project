@@ -3,9 +3,8 @@ import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
-import { LoginRequest } from "../api/Login";
 import ToastMessage from "@/components/ToastMessage";
-
+import { useAuth } from "../context/authContext";  // NEW: Add this import
 
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
@@ -13,6 +12,8 @@ export default function TabOneScreen() {
 
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  const { login } = useAuth();  // NEW: Get login from context
 
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   console.log("API URL:", apiUrl);
@@ -44,14 +45,12 @@ export default function TabOneScreen() {
               setTimeout(() => setIsToastVisible(false), 3000);
 
               try {
-                const response = await LoginRequest(email, password);
+                const result = await login(email, password);  // CHANGED: Use context login
                 
-                if (response.status === "success") {
+                if (result.success) {  // CHANGED: Check result.success
                   setToastMessage("Login successful!");
-                  // Optionally navigate to another screen
-                  // navigate("/(tabs)/create-fridge");
                 } else {
-                  setToastMessage(response.message || "Login failed");
+                  setToastMessage(result.error || "Login failed");  // CHANGED: result.error
                 }
               } catch (e) {
                 setToastMessage("Network error");
@@ -60,9 +59,11 @@ export default function TabOneScreen() {
               
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
-            } }
+            }}
             style={styles.loginButton}
-            className="" disabled={false}          />
+            className="" 
+            disabled={false}
+          />
           <Text
             style={styles.createAccountButton}
             onPress={() => {

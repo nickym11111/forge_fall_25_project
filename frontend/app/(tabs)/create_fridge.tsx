@@ -11,6 +11,7 @@ import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from "../utils/client";
+import { useAuth } from "../context/authContext";
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
@@ -97,6 +98,8 @@ export default function CreateFridgeScreen() {
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+  const { refreshUser } = useAuth();
 
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
@@ -205,6 +208,9 @@ export default function CreateFridgeScreen() {
           "Fridge created and invites sent successfully!"
         );
       }
+
+      await refreshUser();
+      
     } catch (error) {
       console.error("Error:", error);
       Alert.alert(
