@@ -1,4 +1,5 @@
 # EXAMPLE TEMPLATE SETUP
+from typing import List, Any, Optional, Dict
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
@@ -136,14 +137,6 @@ def create_fridge(fridge: FridgeCreate):
 def get_fridges():
     response = supabase.table("fridges").select("*").execute()
     return {"data": response.data, "error": response.error}
-
-# Send fridge invite
-@app.post("/send-fridge-invite/")
-async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO, current_user = Depends(get_current_user)):
-    # Check if Authenticated User is the owner of the fridge
-    owner_id = supabase.table("fridges").select("created_by").eq("id", fridge_invite_dto.fridge_id).execute()
-
-    if not owner_id.data:
 
 @join_router.post("/send-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
