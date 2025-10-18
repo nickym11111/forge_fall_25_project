@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
-import { AuthProvider } from './context/authContext';  // Add this import
+import { AuthProvider } from './context/authContext';
 
 export {
   ErrorBoundary,

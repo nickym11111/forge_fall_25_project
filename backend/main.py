@@ -13,6 +13,7 @@ from receiptParsing.chatGPTParse import app as receipt_router
 
 # Initialize routers
 app = FastAPI()
+app.include_router(users_router)
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [

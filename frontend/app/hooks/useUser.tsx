@@ -1,15 +1,25 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../utils/client';
 
+interface fridgeMate {
+    id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+}
+
 interface UserData {
   id: string;
   email: string;
+  first_name: string;
+  last_name: string;
   fridge_id: string | null;
   fridge?: {
     id: string;
     name: string;
-    created_at: string;
+    emails?: string[]
   } | null;
+  fridgeMateNames?: fridgeMate[]
 }
 
 let cachedUser: UserData | null = null;
@@ -45,7 +55,7 @@ export const useUser = () => {
           return;
         }
 
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/user/me`, {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }
@@ -90,7 +100,7 @@ export const refreshUserCache = async () => {
       return null;
     }
 
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/user/me`, {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
       headers: {
         'Authorization': `Bearer ${session.access_token}`
       }
@@ -98,8 +108,13 @@ export const refreshUserCache = async () => {
 
     if (response.ok) {
       const userData = await response.json();
+      console.log("   User ID:", userData.id);
+      console.log("   Email:", userData.email);
+      console.log("   Fridge ID:", userData.fridge_id);
+      console.log("   Fridge data:", userData.fridge);
+      console.log("   Full response:", JSON.stringify(userData, null, 2));
       cachedUser = userData;
-      notifyListeners(); // All components get updated!
+      notifyListeners(); // Update all components
       return cachedUser;
     }
   } catch (error) {
