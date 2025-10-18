@@ -1,5 +1,6 @@
 # EXAMPLE TEMPLATE SETUP
-from typing import Optional, Any
+
+from typing import List, Any, Optional, Dict
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
@@ -180,6 +181,9 @@ async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO, current_user = 
     # Check if Authenticated User is the owner of the fridge
     owner_id = supabase.table("fridges").select("created_by").eq("id", fridge_invite_dto.fridge_id).execute()
 
+    if not owner_id.data:
+        raise HTTPException(status_code=404, detail="Fridge not found")
+
 @join_router.post("/send-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
@@ -347,11 +351,11 @@ app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
        
-
 # Login Page
 class UserLogin(BaseModel):
     email: str
     password: str
+
 
 
 @app.post("/log-in/")
@@ -385,6 +389,24 @@ def create_fridge(fridge: FridgeCreate):
         }).execute()
 
         # Check if the response contains data
+        if not createFridge_response.data or len(createFridge_response.data) == 0:
+            print(f"No data returned from database: {createFridge_response}")
+            raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
+        
+        # Extract the ID from the response
+        fridge_id = createFridge_response.data[0].get("id")
+
+        # Gets the response for updating the fridge id for a user
+        updateFridgeID_response = supabase.table("users").update({
+            "fridge_id": fridge_id
+        }).eq("id", current_user.id).execute()
+
+        if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
+            print(f"Error updating user fridge ID: {updateFridgeID_response}")
+            raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
+
+        if not fridge_id:
+            print(f"No ID in response data: {createFridge_response.data}")
         if not response.data or len(response.data) == 0:
             print(f"No data returned from database: {response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
