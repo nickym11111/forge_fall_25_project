@@ -4,6 +4,13 @@ import { supabase } from '../utils/client';
 import { clearUserCache, refreshUserCache } from '../hooks/useUser';
 import { Alert } from 'react-native';
 
+interface fridgeMate {
+    id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+}
+
 interface UserData {
   id: string;
   email: string;
@@ -12,6 +19,7 @@ interface UserData {
     id: string;
     name: string;
   } | null;
+  fridgeMates?: fridgeMate[]
 }
 
 interface AuthContextType {

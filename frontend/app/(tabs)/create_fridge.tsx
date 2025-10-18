@@ -99,7 +99,7 @@ export default function CreateFridgeScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-  const { refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
@@ -145,8 +145,8 @@ export default function CreateFridgeScreen() {
         throw new Error("No active session. Please log in again.");
       }
 
-      console.log("User ID from session:", session.user.id);
-      console.log("User email from session:", session.user.email);
+      console.log("User ID from session:", user?.id);
+      console.log("User email from session:", user?.email);
 
       // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
