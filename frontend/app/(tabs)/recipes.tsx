@@ -44,16 +44,17 @@ export default function recipes() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/find_ingredients', {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/recipes/find_ingredients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: inputValue }), // Send data as JSON
+        body: JSON.stringify({ recipe: inputValue }), // Send data as JSON
       });
 
       const data = await response.json();
-      setResponseMessage(data.message);
+      console.log('Received response from backend:', data);
+      setResponseMessage(data.output[0].content[0].text);
     } catch (error) {
       console.error('Error sending data:', error);
       setResponseMessage(['Error sending data to backend.']);
@@ -119,6 +120,7 @@ return (
         selectedValue={selectedPrompt}
         setSelectedValue={setSelectedPrompt}
       ></PreviewLayout>
+      <Text>Response: {responseMessage}</Text>
       <FlatList
         data={responseMessage}
         renderItem={({ item }) => (

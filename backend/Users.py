@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from database import supabase  
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 
 app = APIRouter()
 #TEMPLATE to get started :)
@@ -14,9 +14,9 @@ def get_users():
 class UserCreate(BaseModel):
     email: str
     password: str
-    firstName: str | None = None
-    lastName: str | None = None
-    dietaryRestrictions: list[str] | None = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    dietaryRestrictions: Union[List[str], None] = None
     
     
 def findAccount(email: str):
