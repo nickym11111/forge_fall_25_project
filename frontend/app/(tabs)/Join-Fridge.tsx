@@ -68,7 +68,9 @@ export default function JoinFridgeScreen()
   }
 
   setIsLoading(true);
+
   const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/join-fridge`;
+
 
   try {
     const response = await fetch(API_URL, {
