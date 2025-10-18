@@ -161,7 +161,7 @@ export default function TabOneScreen() {
       setError("");
     } catch (err) {
       console.error("Error fetching items:", err);
-      setError(`Failed to load items from ${API_URL}`);
+      setError(`${err}`);
     } finally {
       setLoading(false);
     }

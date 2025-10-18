@@ -10,6 +10,7 @@ export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [parsedItems, setParsedItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
@@ -35,6 +36,7 @@ export default function ParseReceiptScreen() {
     }
 
     try {
+      setIsLoading(true);
       setResponseText("Parsing receipt...");
 
       let base64Image: string;
@@ -59,13 +61,15 @@ export default function ParseReceiptScreen() {
       const parsed = JSON.parse(response.output[0].content[0].text);
 
       setParsedItems(parsed);
-      console.log(parsed)
+      console.log(parsed);
       setResponseText("");
 
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
       console.error(error);
       setResponseText("Error parsing receipt");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,6 +108,7 @@ export default function ParseReceiptScreen() {
         )}
       </View>
       <View style={styles.responseTextContainer}>
+        {isLoading && <Text>Parsing Receipt</Text>}
         {!parsedItems ? (
           <Text style={styles.responseText}>{responseText}</Text>
         ) : parsedItems.length > 0 ? (
