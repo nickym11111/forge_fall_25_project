@@ -1,6 +1,10 @@
 # EXAMPLE TEMPLATE SETUP
+<<<<<<< HEAD
 
 from typing import Optional, Any
+=======
+from typing import List, Any, Optional, Dict
+>>>>>>> 2f5d6b1 (commit main)
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
@@ -188,6 +192,7 @@ def get_fridges():
     response = supabase.table("fridges").select("*").execute()
     return {"data": response.data, "error": response.error}
 
+<<<<<<< HEAD
 # Send fridge invite
 @app.post("/send-fridge-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO, current_user = Depends(get_current_user)):
@@ -195,6 +200,14 @@ async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO, current_user = 
     owner_id = supabase.table("fridges").select("created_by").eq("id", fridge_invite_dto.fridge_id).execute()
 
     if not owner_id.data:
+=======
+@join_router.post("/send-invite/")
+async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
+    # Check if fridge exists
+    fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
+    
+    if not fridge_data.data:
+>>>>>>> 2f5d6b1 (commit main)
         raise HTTPException(status_code=404, detail="Fridge not found")
     
     # Get owner name for email (use a default name if not available)
