@@ -68,7 +68,9 @@ export default function JoinFridgeScreen()
   }
 
   setIsLoading(true);
-  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/join-fridge`;
+
+  const API_URL = "http://127.0.0.1:8000/fridge/join-fridge"; //change ip address for backend development
+
 
   try {
     const response = await fetch(API_URL, {
