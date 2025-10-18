@@ -9,7 +9,7 @@ import { TouchableOpacity } from "react-native";
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
-
+  const [parsedItems, setParsedItems] = useState<any[]>([]);
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
@@ -57,6 +57,11 @@ export default function ParseReceiptScreen() {
 
       const response = await CreateParseReceiptRequest(base64Image);
       const parsed = JSON.parse(response.output[0].content[0].text);
+
+      setParsedItems(parsed);
+      console.log(parsed)
+      setResponseText("");
+
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
       console.error(error);
@@ -71,22 +76,51 @@ export default function ParseReceiptScreen() {
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.image} />
         ) : (
-          <TouchableOpacity onPress={pickImage} style={{width: "100%", height: "100%"}}> 
-          <View style={styles.imageSkeleton} >
-            <View style={styles.imageTextContainer}>
-              <Text style={{fontSize: 24}}>📸</Text>
-              <Text style={{fontWeight: "bold", color: "white", fontSize: 18, textAlign: "center",}}>Scan Receipt or Take Photo</Text>
-              <Text style={{color: "white", fontSize: 15, textAlign: "center",}}>AI will detect items and expiry dates</Text>
+          <TouchableOpacity
+            onPress={pickImage}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <View style={styles.imageSkeleton}>
+              <View style={styles.imageTextContainer}>
+                <Text style={{ fontSize: 24 }}>📸</Text>
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    color: "white",
+                    fontSize: 18,
+                    textAlign: "center",
+                  }}
+                >
+                  Scan Receipt or Take Photo
+                </Text>
+                <Text
+                  style={{ color: "white", fontSize: 15, textAlign: "center" }}
+                >
+                  AI will detect items and expiry dates
+                </Text>
+              </View>
             </View>
-          </View>
           </TouchableOpacity>
-
         )}
       </View>
       <View style={styles.responseTextContainer}>
-      <Text style={styles.responseText}>
-        {responseText}
-      </Text>
+        {!parsedItems ? (
+          <Text style={styles.responseText}>{responseText}</Text>
+        ) : parsedItems.length > 0 ? (
+          parsedItems.map((item, index) => {
+            const itemName = Object.keys(item)[0];
+            const itemData = item[itemName];
+            return (
+              <View key={index} style={styles.itemCard}>
+                <Text style={styles.itemName}>{itemName}</Text>
+                <Text style={styles.itemDetails}>
+                  Quantity: {itemData.quantity} | Price: $
+                  {itemData.price.toFixed(2)}
+                </Text>
+              </View>
+            );
+          })
+        ) : null}
       </View>
     </View>
   );
@@ -96,6 +130,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F9FF",
+    overflowY: "scroll",
   },
   imageContainer: {
     width: "100%",
@@ -117,7 +152,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   imageTextContainer: {
     alignItems: "center",
     gap: 22,
@@ -130,9 +164,29 @@ const styles = StyleSheet.create({
   },
   responseTextContainer: {
     width: "100%",
-    display: "flex",
-    alignItems: "center",
+    padding: 16,
   },
   responseText: {
+    textAlign: "center",
+  },
+  itemCard: {
+    backgroundColor: "white",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  itemDetails: {
+    fontSize: 14,
+    color: "#666",
   },
 });
