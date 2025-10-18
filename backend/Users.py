@@ -5,10 +5,6 @@ from typing import List, Optional
 
 app = APIRouter()
 #TEMPLATE to get started :)
-@app.post("/")
-def create_user(name: str, email: str):
-    response = supabase.table("users").insert({"name": name, "email": email}).execute()
-    return {"data": response.data, "error": response.error}
 
 @app.get("/")
 def get_users():
@@ -18,10 +14,9 @@ def get_users():
 class UserCreate(BaseModel):
     email: str
     password: str
-    firstName: Optional[str] = None
-    lastName: Optional[str] = None
-    dietaryRestrictions: Optional[List[str]] = None
-
+    firstName: str | None = None
+    lastName: str | None = None
+    dietaryRestrictions: list[str] | None = None
     
     
 def findAccount(email: str):
