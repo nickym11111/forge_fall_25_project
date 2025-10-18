@@ -11,6 +11,7 @@ from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
+from recipes import app as recipes_router
 
 # Initialize routers
 app = FastAPI()
@@ -350,6 +351,7 @@ async def accept_fridge_invite(
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
+app.include_router(recipes_router, prefix="/recipes")
        
 # Login Page
 class UserLogin(BaseModel):
