@@ -78,12 +78,12 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=401, detail="User not found")
         
         fridge_id = user_response.data[0].get("fridge_id")
         
         if not fridge_id:
-            raise HTTPException(status_code=404, detail="User has no fridge assigned")
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
         # Get items only from the user's fridge
         items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()

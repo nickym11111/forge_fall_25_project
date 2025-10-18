@@ -16,9 +16,9 @@ def get_users():
 class UserCreate(BaseModel):
     email: str
     password: str
-    firstName: str | None = None
-    lastName: str | None = None
-    dietaryRestrictions: list[str] | None = None
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    dietaryRestrictions: Optional[List[str]] = None
     
     
 def findAccount(email: str):
