@@ -47,12 +47,11 @@ class FridgeInviteDTO(BaseModel):
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
 
-class FridgeItem(BaseModel):
+class FridgeItemCreate(BaseModel):
     title: str
-    added_by: Optional[Any] = None  # store JSON (user info)
-    shared_by: Optional[Any] = None  # store JSON (list or user info)
-    quantity: Optional[int] = None
-    days_till_expiration: Optional[int] = None
+    quantity: Optional[int] = 1
+    expiry_date: str
+    shared_by: Optional[List[dict]] = None
 
 # Root endpoint
 @app.get("/")
@@ -60,19 +59,43 @@ def read_root():
     return {"message": "Hello from backend with Supabase!"}
 
 # Fridge items endpoints
-@join_router.post("/items/")
-def create_fridge_item(item: FridgeItem):
+@app.post("/fridge_items/")
+async def create_fridge_item(
+    item: FridgeItemCreate,
+    current_user = Depends(get_current_user)
+):
     try:
+        # Get user's fridge_id
+        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
+        
+        if not user_response.data or len(user_response.data) == 0:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        fridge_id = user_response.data[0].get("fridge_id")
+        
+        if not fridge_id:
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
+        
+        # Create the fridge item with added_by automatically set to current user
         response = supabase.table("fridge_items").insert({
             "title": item.title,
-            "added_by": item.added_by,
-            "shared_by": item.shared_by,
             "quantity": item.quantity,
-            "days_till_expiration": item.days_till_expiration
+            "expiry_date": item.expiry_date,
+            "fridge_id": fridge_id,
+            "added_by": current_user.id,  # Automatically use logged-in user
+            "shared_by": item.shared_by
         }).execute()
-        return {"data": response.data, "status": "Fridge item added successfully"}
+        
+        return {
+            "status": "success",
+            "message": "Fridge item added successfully",
+            "data": response.data
+        }
+    except HTTPException:
+        raise
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Error creating fridge item: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
 
 @app.get("/fridge_items/")
 def get_fridge_items(current_user = Depends(get_current_user)):

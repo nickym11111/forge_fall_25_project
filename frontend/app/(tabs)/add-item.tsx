@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
+import { useAuth } from '../context/authContext';
+import { supabase } from '../utils/client';
 
 interface ApiResponse {
   data?: any;
@@ -315,6 +317,7 @@ const styles = StyleSheet.create({
 });
 
 export default function AddItemManual() {
+  const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [quantity, setQuantity] = useState("");
   const [expiryDate, setExpiryDate] = useState<Date>(new Date());
@@ -326,8 +329,6 @@ export default function AddItemManual() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoadingAI, setIsLoadingAI] = useState<boolean>(false);
   const [aiSuggested, setAiSuggested] = useState<boolean>(false);
-  
-  const currentUserId = "TEMP_USER_ID";
 
   useEffect(() => {
     fetchUsers();
@@ -363,41 +364,50 @@ export default function AddItemManual() {
     };
 
     try {
-      // First try the backend API
-      const url = `${API_URL}/predict-expiry`;
-      console.log("📡 Calling:", url);
+      // Get session for auth token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-      
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          item_name: itemName,
-        }),
-        signal: controller.signal,
-      });
+      if (sessionError || !session) {
+        console.log("⚠️ No session, using fallback database");
+        // Fall through to fallback
+      } else {
+        // First try the backend API with auth
+        const url = `${API_URL}/predict-expiry`;
+        console.log("📡 Calling:", url);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            item_name: itemName,
+          }),
+          signal: controller.signal,
+        });
 
-      clearTimeout(timeoutId);
-      console.log("📥 Response status:", response.status);
+        clearTimeout(timeoutId);
+        console.log("📥 Response status:", response.status);
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("📦 Response data:", data);
+        if (response.ok) {
+          const data = await response.json();
+          console.log("📦 Response data:", data);
 
-        if (data.days) {
-          const days = parseInt(data.days);
-          console.log("✅ AI predicted", days, "days for", itemName);
-          const newExpiryDate = new Date();
-          newExpiryDate.setDate(newExpiryDate.getDate() + days);
-          setExpiryDate(newExpiryDate);
-          setTempExpiryDate(newExpiryDate);
-          setAiSuggested(true);
-          setIsLoadingAI(false);
-          return; // Exit early on success
+          if (data.days) {
+            const days = parseInt(data.days);
+            console.log("✅ AI predicted", days, "days for", itemName);
+            const newExpiryDate = new Date();
+            newExpiryDate.setDate(newExpiryDate.getDate() + days);
+            setExpiryDate(newExpiryDate);
+            setTempExpiryDate(newExpiryDate);
+            setAiSuggested(true);
+            setIsLoadingAI(false);
+            return; // Exit early on success
+          }
         }
       }
     } catch (error: any) {
@@ -432,65 +442,37 @@ export default function AddItemManual() {
     setExpiryDate(newExpiryDate);
     setTempExpiryDate(newExpiryDate);
     setAiSuggested(true);
-    setIsLoadingAI(false); // Make sure to clear loading state
+    setIsLoadingAI(false);
     console.log("✅ Using fallback prediction:", days, "days");
     console.log("🏁 AI prediction finished");
   };
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/users/`);
-      const data = await response.json();
-      if (data.data && data.data.length > 0) {
-        setUsers(data.data);
+      // Get fridge mates from current user
+      if (user?.fridgeMates && user.fridgeMates.length > 0) {
+        setUsers(user.fridgeMates);
       } else {
-        setUsers([
-          {
-            id: "1",
-            user_metadata: { first_name: "Alice", last_name: "Johnson" },
-            email: "alice@example.com"
-          },
-          {
-            id: "2",
-            user_metadata: { first_name: "Bob", last_name: "Smith" },
-            email: "bob@example.com",
-          },
-          {
-            id: "3",
-            user_metadata: { first_name: "Charlie", last_name: "Brown" },
-            email: "charlie@example.com"
-          },
-          {
-            id: "4",
-            user_metadata: { first_name: "Diana", last_name: "Lee" },
-            email: "diana@example.com",
+        // Fallback to API call if fridgeMates not in user object
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError || !session) {
+          console.error("No session found");
+          return;
+        }
+
+        const response = await fetch(`${API_URL}/users/`, {
+          headers: {
+            "Authorization": `Bearer ${session.access_token}`
           }
-        ]);
+        });
+        const data = await response.json();
+        if (data.data && data.data.length > 0) {
+          setUsers(data.data);
+        }
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-      setUsers([
-        {
-          id: "1",
-          email: "alice@example.com",
-          user_metadata: { first_name: "Alice", last_name: "Johnson" }
-        },
-        {
-          id: "2",
-          email: "bob@example.com",
-          user_metadata: { first_name: "Bob", last_name: "Smith" }
-        },
-        {
-          id: "3",
-          email: "charlie@example.com",
-          user_metadata: { first_name: "Charlie", last_name: "Brown" }
-        },
-        {
-          id: "4",
-          email: "diana@example.com",
-          user_metadata: { first_name: "Diana", last_name: "Lee" }
-        }
-      ]);
     }
   };
 
@@ -507,28 +489,42 @@ export default function AddItemManual() {
       return;
     }
 
+    if (!user?.id) {
+      Alert.alert("Error", "You must be logged in to add items.");
+      return;
+    }
+
     console.log("Starting to add item");
     setIsLoading(true);
 
+    // Get shared_by users info
     const sharedByUsers = sharedByUserIds.map(userId => {
-      const user = users.find(u => u.id === userId);
-      if (user) {
+      const foundUser = users.find(u => u.id === userId);
+      if (foundUser) {
         return {
-          first_name: user.user_metadata?.first_name || "",
-          last_name: user.user_metadata?.last_name || "",
-          email: user.email
+          first_name: foundUser.user_metadata?.first_name || "",
+          last_name: foundUser.user_metadata?.last_name || "",
+          email: foundUser.email
         };
       }
       return null;
     }).filter(u => u !== null);
 
     try {
+      // Get session token
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        Alert.alert("Error", "Authentication error. Please log in again.");
+        setIsLoading(false);
+        return;
+      }
+
       console.log("Sending to:", `${API_URL}/fridge_items/`);
       console.log("Data:", {
         title: title.trim(),
         quantity: quantity ? Number(quantity) : 1,
         expiry_date: expiryDate.toISOString().split('T')[0],
-        added_by: currentUserId,
         shared_by: sharedByUsers.length > 0 ? sharedByUsers : null,
       });
 
@@ -536,12 +532,12 @@ export default function AddItemManual() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           title: title.trim(),
           quantity: quantity ? Number(quantity) : 1,
           expiry_date: expiryDate.toISOString().split('T')[0],
-          added_by: currentUserId,
           shared_by: sharedByUsers.length > 0 ? sharedByUsers : null,
         }),
       });
