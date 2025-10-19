@@ -80,7 +80,6 @@ export default function ParseReceiptScreen() {
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.image} />
         ) : (
-<<<<<<< HEAD
           <TouchableOpacity
             onPress={pickImage}
             style={{ width: "100%", height: "100%" }}
@@ -127,24 +126,6 @@ export default function ParseReceiptScreen() {
             );
           })
         ) : null}
-=======
-          <TouchableOpacity onPress={pickImage} style={{width: "100%", height: "100%"}}> 
-          <View style={styles.imageSkeleton} >
-            <View style={styles.imageTextContainer}>
-              <Text style={{fontSize: 24}}>📸</Text>
-              <Text style={{fontWeight: "bold", color: "white", fontSize: 18, textAlign: "center",}}>Scan Receipt or Take Photo</Text>
-              <Text style={{color: "white", fontSize: 15, textAlign: "center",}}>AI will detect items and expiry dates</Text>
-            </View>
-          </View>
-          </TouchableOpacity>
-
-        )}
-      </View>
-      <View style={styles.responseTextContainer}>
-      <Text style={styles.responseText}>
-        {responseText}
-      </Text>
->>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
       </View>
     </View>
   );
@@ -154,10 +135,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F9FF",
-<<<<<<< HEAD
     overflowY: "scroll",
-=======
->>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
   },
   imageContainer: {
     width: "100%",
@@ -179,10 +157,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-<<<<<<< HEAD
-=======
-
->>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
   imageTextContainer: {
     alignItems: "center",
     gap: 22,
@@ -195,7 +169,6 @@ const styles = StyleSheet.create({
   },
   responseTextContainer: {
     width: "100%",
-<<<<<<< HEAD
     padding: 16,
   },
   responseText: {
@@ -220,11 +193,5 @@ const styles = StyleSheet.create({
   itemDetails: {
     fontSize: 14,
     color: "#666",
-=======
-    display: "flex",
-    alignItems: "center",
-  },
-  responseText: {
->>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
   },
 });

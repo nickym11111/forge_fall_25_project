@@ -99,53 +99,8 @@ export default function CreateFridgeScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
   const { user, refreshUser } = useAuth();
-=======
-  /*useFocusEffect(
-    useCallback(() => {
-      const getCurrentUser = async () => {
-        console.log("=== Getting current user (on focus) ===");
-        
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession();
-          
-          console.log("Session:", session);
-          console.log("Error:", error);
-          console.log("User from session:", session?.user);
-          
-          if (error || !session) {
-            console.log("No session found!");
-            Alert.alert("Error", "You must be logged in to create a fridge");
-            // Optionally navigate to login
-            // navigate("/(auth)/login");
-            return;
-          }
-          
-          console.log("Setting user ID to:", session.user.id);
-          setCurrentUserId(session.user.id);
-          setCurrentUserEmail(session.user.email || null);
-          console.log("User ID set successfully!");
-          
-        } catch (error) {
-          console.error("Error in getCurrentUser:", error);
-          Alert.alert("Error", "Failed to verify login status");
-        }
-      };
 
-      getCurrentUser();
-    }, [])
-  ); */
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
-
-=======
->>>>>>> 8648d3e (Cleaned up user auth code)
-=======
-  const { refreshUser } = useAuth();
-
->>>>>>> e630bb3 (Fixed auth issues, made logic cleaner.)
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
     const updated = [...emails];
@@ -169,16 +124,6 @@ export default function CreateFridgeScreen() {
       return;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-    /*if (!currentUserId) {
-      Alert.alert("Error", "You must be logged in.");
-      return;
-    } */
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
-=======
->>>>>>> 8648d3e (Cleaned up user auth code)
 
     // Filter out empty emails
     const validEmails = emails.filter((email) => email.trim() !== "");
@@ -190,15 +135,7 @@ export default function CreateFridgeScreen() {
     setIsLoading(true);
 
     try {
-<<<<<<< HEAD
-<<<<<<< HEAD
       console.log("Getting a new session:");
-=======
-      console.log("Getting fresh session...");
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
-=======
-      console.log("Getting a new session:");
->>>>>>> 8648d3e (Cleaned up user auth code)
       const { data: { session }, error } = await supabase.auth.getSession();
     
       console.log("Session exists?", !!session);
@@ -208,21 +145,10 @@ export default function CreateFridgeScreen() {
         throw new Error("No active session. Please log in again.");
       }
 
-<<<<<<< HEAD
       console.log("User ID from session:", user?.id);
       console.log("User email from session:", user?.email);
 
       // Create the fridge
-=======
-      console.log("User ID from session:", session.user.id);
-      console.log("User email from session:", session.user.email);
-
-<<<<<<< HEAD
-      // 1. First, create the fridge
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
-=======
-      // Create the fridge
->>>>>>> 8648d3e (Cleaned up user auth code)
       const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json",

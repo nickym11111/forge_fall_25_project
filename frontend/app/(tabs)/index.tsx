@@ -6,7 +6,6 @@ import CustomHeader from "@/components/CustomHeader";
 import ToastMessage from "@/components/ToastMessage";
 import { useAuth } from "../context/authContext";  // NEW: Add this import
 
-
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,23 +13,16 @@ export default function TabOneScreen() {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
-<<<<<<< HEAD
   const { login } = useAuth();  // NEW: Get login from context
 
-=======
->>>>>>> 2eb73e9 (Refactor API URL references to use environment variable for consistency)
   const apiUrl = process.env.EXPO_PUBLIC_API_URL;
   console.log("API URL:", apiUrl);
 
   return (
     <View style={styles.container}>
-<<<<<<< HEAD
       <CustomHeader 
       title="Fridge Flow  " 
       logo={require('../../assets/images/FridgeIcon.png')}/>
-=======
-      <CustomHeader title="Fridge Flow 🏠"/>
->>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.loginContainer}>
@@ -54,8 +46,6 @@ export default function TabOneScreen() {
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
               try {
                 const result = await login(email, password);  // CHANGED: Use context login
                 
@@ -63,32 +53,6 @@ export default function TabOneScreen() {
                   setToastMessage("Login successful!");
                 } else {
                   setToastMessage(result.error || "Login failed");  // CHANGED: result.error
-                }
-=======
-              /*try {
-                const response = await LoginRequest(email, password);
-                setToastMessage(
-                  response?.status === "Login successful"
-                    ? "Login successful!"
-                    : response?.error || "Login failed",
-                );
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
-              } catch (e) {
-                setToastMessage("Network error");
-                console.log(e);
-              } */
-
-=======
->>>>>>> 8648d3e (Cleaned up user auth code)
-              try {
-                const response = await LoginRequest(email, password);
-                
-                if (response.status === "success") {
-                  setToastMessage("Login successful!");
-                  // Optionally navigate to another screen
-                  // navigate("/(tabs)/create-fridge");
-                } else {
-                  setToastMessage(response.message || "Login failed");
                 }
               } catch (e) {
                 setToastMessage("Network error");

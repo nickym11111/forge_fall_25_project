@@ -1,47 +1,29 @@
+# EXAMPLE TEMPLATE SETUP
 from typing import Optional, Any
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-<<<<<<< HEAD
-=======
-from Join import app as join_router
-from Users import app as users_router
-from typing import List, List, Optional, Any
-from ai_expiration import router as ai_router 
->>>>>>> 46849d4 (added list import)
 from datetime import datetime
 from service import get_current_user, generate_invite_code
-<<<<<<< HEAD
 from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
-from ai_expiration import router as ai_router 
+from ai_expiration import app as ai_expiration
+from dotenv import load_dotenv
 
-<<<<<<< HEAD
-=======
-from receiptParsing.chatGPTParse import getChatGPTResponse
-<<<<<<< HEAD
->>>>>>> 0000e52 (backend changes)
-=======
-from receiptParsing.chatGPTParse import app as receipt_router
->>>>>>> c236aae (Add receipt parsing endpoint and update API routes)
-=======
->>>>>>> 971371d (ai expiration date feature)
+load_dotenv()
 
 # Initialize routers
 app = FastAPI()
 app.include_router(users_router)
+app.include_router(ai_expiration.router, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
-<<<<<<< HEAD
     "http://localhost:8081",  # React/Next dev server
     "http://localhost:8081",
-=======
-    "http://localhost:8081", 
->>>>>>> ed04c8d (Fixed frontend/backend connection, updated UI to match other pages, added a remove emails button, etc)
     "http://127.0.0.1:8081",
     "http://localhost:8082",
     "http://127.0.0.1:8082",
@@ -64,14 +46,6 @@ class FridgeInviteDTO(BaseModel):
 
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
-app.include_router(join_router, prefix="/fridge")  # ← now /fridge/join works
-app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints work
-app.include_router(ai_router, tags=["ai"])
-
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello from backend with Supabase!"}
 
 class FridgeItem(BaseModel):
     title: str
@@ -101,10 +75,6 @@ def create_fridge_item(item: FridgeItem):
         return {"error": str(e)}
 
 @app.get("/fridge_items/")
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 8648d3e (Cleaned up user auth code)
 def get_fridge_items(current_user = Depends(get_current_user)):
     #Get items from the current user's fridge
 
@@ -113,20 +83,12 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:
-<<<<<<< HEAD
             raise HTTPException(status_code=401, detail="User not found")
-=======
-            raise HTTPException(status_code=404, detail="User not found")
->>>>>>> 8648d3e (Cleaned up user auth code)
         
         fridge_id = user_response.data[0].get("fridge_id")
         
         if not fridge_id:
-<<<<<<< HEAD
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
-=======
-            raise HTTPException(status_code=404, detail="User has no fridge assigned")
->>>>>>> 8648d3e (Cleaned up user auth code)
         
         # Get items only from the user's fridge
         items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
@@ -141,16 +103,7 @@ def get_fridge_items(current_user = Depends(get_current_user)):
     except Exception as e:
         print(f"Error getting fridge items: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get fridge items: {str(e)}")
-<<<<<<< HEAD
 
-=======
-def get_fridge_items():
-    response = supabase.table("fridge_items").select("*").execute()
-    return {"data": response.data}
-=======
->>>>>>> 8648d3e (Cleaned up user auth code)
-
->>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
 @app.get("/items/added-by/{user_name}")
 def get_items_added_by(user_name: str):
     response = (supabase.table("fridge_items")
@@ -173,20 +126,7 @@ def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-<<<<<<< HEAD
 @join_router.post("/send-invite/")
-=======
-# Getting the shared users
-@app.get("/")
-def get_users():
-    try:
-        response = supabase.table("users").select("*").execute()
-        return {"data": response.data}
-    except Exception as e:
-        return {"data": [], "error": str(e)}
-
-@app.post("/send-invite/")
->>>>>>> 5ca5d15 (Refactor image picking logic and remove redundant comments in ParseReceiptScreen)
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
     fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
@@ -311,70 +251,21 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
-"""
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
-@app.post("/log-in/")
-async def login_user(user: UserLogin):
-    try:
-        res = supabase.auth.sign_in_with_password({
-            "email": user.email,
-            "password": user.password
-        })
-
-        # The response contains user + session data if valid
-        return {
-            "user": res.user,
-            "session": res.session,  # includes access_token, refresh_token, etc.
-            "status": "Login successful"
-        }
-    except Exception as e:
-        return {"error": str(e)}
-"""
-
->>>>>>> ed04c8d (Fixed frontend/backend connection, updated UI to match other pages, added a remove emails button, etc)
-=======
->>>>>>> 8648d3e (Cleaned up user auth code)
 #Create a Fridge
 class FridgeCreate(BaseModel):
     name: str
 
 @app.post("/fridges")
-<<<<<<< HEAD
-<<<<<<< HEAD
 def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
-<<<<<<< HEAD
             "name": fridge.name,
             "created_by": current_user.id,
-=======
-def create_fridge(fridge: FridgeCreate):
-=======
-def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
-    try:
-        # Insert the fridge and get the response
-        response = supabase.table("fridges").insert({
-=======
->>>>>>> 8648d3e (Cleaned up user auth code)
-            "name": fridge.name,
-<<<<<<< HEAD
->>>>>>> cebe5c0 (fixes to create fridge flow)
-=======
-            "created_by": current_user.id,
->>>>>>> 4086f2f (Added global auth logic, allowed for fridgeID tracking)
             "created_at": "now()"
         }).execute()
 
         # Check if the response contains data
-<<<<<<< HEAD
-<<<<<<< HEAD
         if not createFridge_response.data or len(createFridge_response.data) == 0:
             print(f"No data returned from database: {createFridge_response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
@@ -393,63 +284,22 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
 
         if not fridge_id:
             print(f"No ID in response data: {createFridge_response.data}")
-=======
-        if not response.data or len(response.data) == 0:
-            print(f"No data returned from database: {response}")
-=======
-        if not createFridge_response.data or len(createFridge_response.data) == 0:
-            print(f"No data returned from database: {createFridge_response}")
->>>>>>> 8648d3e (Cleaned up user auth code)
-            raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
-        
-        # Extract the ID from the response
-        fridge_id = createFridge_response.data[0].get("id")
-
-        # Gets the response for updating the fridge id for a user
-        updateFridgeID_response = supabase.table("users").update({
-            "fridge_id": fridge_id
-        }).eq("id", current_user.id).execute()
-
-        if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
-            print(f"Error updating user fridge ID: {updateFridgeID_response}")
-            raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
-
-        if not fridge_id:
-<<<<<<< HEAD
-            print(f"No ID in response data: {response.data}")
->>>>>>> cebe5c0 (fixes to create fridge flow)
-=======
-            print(f"No ID in response data: {createFridge_response.data}")
->>>>>>> 8648d3e (Cleaned up user auth code)
             raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
             
         return {
             "status": "success",
             "message": "Fridge created successfully",
             "fridge_id": fridge_id,
-<<<<<<< HEAD
-<<<<<<< HEAD
             "data": createFridge_response.data
-=======
-            "data": response.data
->>>>>>> cebe5c0 (fixes to create fridge flow)
-=======
-            "data": createFridge_response.data
->>>>>>> 8648d3e (Cleaned up user auth code)
         }
     except Exception as e:
         error_msg = f"Error creating fridge: {str(e)}"
         print(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
-<<<<<<< HEAD
-
-=======
->>>>>>> cebe5c0 (fixes to create fridge flow)
 
 
 @app.get("/fridges")
 def get_fridges():
-<<<<<<< HEAD
     try:
         response = supabase.table("fridges").select("*").execute()
         
@@ -464,18 +314,3 @@ def get_fridges():
     except Exception as e:
         print(f"Error fetching fridges: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-=======
-    response = supabase.table("fridges").select("*").execute()
-    return {"data": response.data, "error": response.error}    
-class Receipt(BaseModel):
-    base64Image: str
-
-@app.post("/parse-receipt")
-def parse_receipt(receipt: Receipt):
-    try:
-        return getChatGPTResponse(receipt.base64Image);
-    except Exception as e:
-        error_msg = f"Error parsing receipt: {str(e)}"
-        print(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
->>>>>>> 0000e52 (backend changes)
