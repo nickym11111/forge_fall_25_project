@@ -20,8 +20,7 @@ interface User {
   };
 }
 
-// Put your own
-const API_URL = 'http://10.0.0.155:8000';
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
 
 const styles = StyleSheet.create({
   container: {
