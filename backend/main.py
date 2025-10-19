@@ -19,6 +19,7 @@ from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
 from ai_expiration import router as ai_router 
 
+<<<<<<< HEAD
 =======
 from receiptParsing.chatGPTParse import getChatGPTResponse
 <<<<<<< HEAD
@@ -26,6 +27,8 @@ from receiptParsing.chatGPTParse import getChatGPTResponse
 =======
 from receiptParsing.chatGPTParse import app as receipt_router
 >>>>>>> c236aae (Add receipt parsing endpoint and update API routes)
+=======
+>>>>>>> 971371d (ai expiration date feature)
 
 # Initialize routers
 app = FastAPI()
@@ -61,6 +64,14 @@ class FridgeInviteDTO(BaseModel):
 
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
+app.include_router(join_router, prefix="/fridge")  # ← now /fridge/join works
+app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints work
+app.include_router(ai_router, tags=["ai"])
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello from backend with Supabase!"}
 
 class FridgeItem(BaseModel):
     title: str
