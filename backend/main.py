@@ -10,6 +10,8 @@ from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
+from ai_expiration import router as ai_router 
+
 
 # Initialize routers
 app = FastAPI()

@@ -1,5 +1,4 @@
-
-import { StyleSheet, TextInput, View, Text, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Modal } from "react-native";
+import { StyleSheet, TextInput, View, Text, Alert, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
 import { useState, useEffect } from "react";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CustomButton from "@/components/CustomButton";
@@ -89,6 +88,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#666",
     fontStyle: "italic",
+  },
+
+  aiSuggestionBadge: {
+    backgroundColor: "#E8F5E9",
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginTop: 4,
+    alignSelf: "flex-start",
+  },
+
+  aiSuggestionText: {
+    fontSize: 11,
+    color: "#2E7D32",
+    fontWeight: "600",
+  },
+
+  loadingIndicator: {
+    marginTop: 4,
   },
 
   datePickerButton: {
@@ -304,16 +322,120 @@ export default function AddItemManual() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showUserPicker, setShowUserPicker] = useState(false);
   const [sharedByUserIds, setSharedByUserIds] = useState<string[]>([]);
-  const [users, setUsers] = useState<User[]>([]); // List of users
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoadingAI, setIsLoadingAI] = useState<boolean>(false);
+  const [aiSuggested, setAiSuggested] = useState<boolean>(false);
   
-  // TODO: Get this from your auth context when you implement login
-  const currentUserId = "TEMP_USER_ID"; // This will be replaced with actual logged-in user
+  const currentUserId = "TEMP_USER_ID";
 
-  // Fetch users on component mount
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  // AI Expiry Date Prediction
+  useEffect(() => {
+    if (!title.trim()) {
+      setAiSuggested(false);
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      getAIExpiryPrediction(title.trim());
+    }, 800); // Debounce for 800ms
+
+    return () => clearTimeout(timeoutId);
+  }, [title]);
+
+  const getAIExpiryPrediction = async (itemName: string) => {
+    console.log("🤖 Starting AI prediction for:", itemName);
+    setIsLoadingAI(true);
+    setAiSuggested(false);
+
+    // Fallback shelf life database for common items
+    const commonShelfLife: { [key: string]: number } = {
+      'milk': 7, 'eggs': 35, 'cheese': 21, 'yogurt': 14, 'butter': 90,
+      'chicken': 2, 'beef': 5, 'pork': 5, 'fish': 2, 'lettuce': 7,
+      'broccoli': 7, 'carrots': 21, 'apples': 30, 'strawberries': 7,
+      'bananas': 5, 'bread': 7, 'tomatoes': 7, 'potatoes': 30, 'onions': 30,
+      'orange': 14, 'lemon': 21, 'cucumber': 7, 'spinach': 5, 'mushrooms': 7,
+      'bacon': 7, 'ham': 7, 'turkey': 2, 'salmon': 2, 'shrimp': 2,
+    };
+
+    try {
+      // First try the backend API
+      const url = `${API_URL}/predict-expiry`;
+      console.log("📡 Calling:", url);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
+      
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          item_name: itemName,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      console.log("📥 Response status:", response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("📦 Response data:", data);
+
+        if (data.days) {
+          const days = parseInt(data.days);
+          console.log("✅ AI predicted", days, "days for", itemName);
+          const newExpiryDate = new Date();
+          newExpiryDate.setDate(newExpiryDate.getDate() + days);
+          setExpiryDate(newExpiryDate);
+          setTempExpiryDate(newExpiryDate);
+          setAiSuggested(true);
+          setIsLoadingAI(false);
+          return; // Exit early on success
+        }
+      }
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log("⏱️ Backend API timeout, using fallback");
+      } else {
+        console.error("❌ Backend API failed, trying fallback:", error);
+      }
+    }
+
+    // Fallback to local database
+    const normalizedName = itemName.toLowerCase().trim();
+    let days = 7; // default
+
+    // Check exact match
+    if (commonShelfLife[normalizedName]) {
+      days = commonShelfLife[normalizedName];
+      console.log("✅ Found exact match:", days, "days");
+    } else {
+      // Check partial matches
+      for (const [food, foodDays] of Object.entries(commonShelfLife)) {
+        if (normalizedName.includes(food) || food.includes(normalizedName)) {
+          days = foodDays;
+          console.log("✅ Found partial match:", food, "->", days, "days");
+          break;
+        }
+      }
+    }
+
+    const newExpiryDate = new Date();
+    newExpiryDate.setDate(newExpiryDate.getDate() + days);
+    setExpiryDate(newExpiryDate);
+    setTempExpiryDate(newExpiryDate);
+    setAiSuggested(true);
+    setIsLoadingAI(false); // Make sure to clear loading state
+    console.log("✅ Using fallback prediction:", days, "days");
+    console.log("🏁 AI prediction finished");
+  };
 
   const fetchUsers = async () => {
     try {
@@ -322,7 +444,6 @@ export default function AddItemManual() {
       if (data.data && data.data.length > 0) {
         setUsers(data.data);
       } else {
-        // Add temp users if none exist
         setUsers([
           {
             id: "1",
@@ -348,7 +469,6 @@ export default function AddItemManual() {
       }
     } catch (error) {
       console.error("Error fetching users:", error);
-      // Add temporary users on error
       setUsers([
         {
           id: "1",
@@ -421,8 +541,8 @@ export default function AddItemManual() {
           title: title.trim(),
           quantity: quantity ? Number(quantity) : 1,
           expiry_date: expiryDate.toISOString().split('T')[0],
-          added_by: currentUserId, // Automatic - logged in user
-          shared_by: sharedByUsers.length > 0 ? sharedByUsers : null, // Array of user objects
+          added_by: currentUserId,
+          shared_by: sharedByUsers.length > 0 ? sharedByUsers : null,
         }),
       });
 
@@ -433,11 +553,11 @@ export default function AddItemManual() {
       if (response.ok) {
         Alert.alert("Success!", "Item added to fridge!");
         
-        // Clear form
         setTitle("");
         setQuantity("");
         setExpiryDate(new Date());
         setSharedByUserIds([]);
+        setAiSuggested(false);
       } else {
         Alert.alert("Error", data.detail || data.message || "Failed to add item.");
       }
@@ -454,9 +574,9 @@ export default function AddItemManual() {
       setShowDatePicker(false);
       if (selectedDate) {
         setExpiryDate(selectedDate);
+        setAiSuggested(false); // User manually changed it
       }
     } else {
-      // iOS - update temp date as user scrolls
       if (selectedDate) {
         setTempExpiryDate(selectedDate);
       }
@@ -466,6 +586,7 @@ export default function AddItemManual() {
   const confirmDateSelection = () => {
     setExpiryDate(tempExpiryDate);
     setShowDatePicker(false);
+    setAiSuggested(false); // User manually changed it
   };
 
   const cancelDateSelection = () => {
@@ -480,10 +601,8 @@ export default function AddItemManual() {
   const toggleUserSelection = (userId: string) => {
     setSharedByUserIds(prev => {
       if (prev.includes(userId)) {
-        // Remove user if already selected
         return prev.filter(id => id !== userId);
       } else {
-        // Add user if not selected
         return [...prev, userId];
       }
     });
@@ -549,8 +668,21 @@ export default function AddItemManual() {
                 {formatDate(expiryDate)}
               </Text>
             </TouchableOpacity>
+            
+            {isLoadingAI && (
+              <View style={styles.loadingIndicator}>
+                <ActivityIndicator size="small" color="#4CAF50" />
+              </View>
+            )}
+            
+            {aiSuggested && !isLoadingAI && (
+              <View style={styles.aiSuggestionBadge}>
+                <Text style={styles.aiSuggestionText}>✨ AI Suggested</Text>
+              </View>
+            )}
+            
             <Text style={styles.helperText}>
-              Tap to select expiry date
+              {aiSuggested ? "AI predicted this expiry date - tap to adjust if needed" : "Tap to select expiry date"}
             </Text>
 
             <Text style={styles.label}>Shared By</Text>
@@ -580,42 +712,39 @@ export default function AddItemManual() {
         </View>
       </ScrollView>
 
-      {/* Date Picker Modal for iOS */}
-    {showDatePicker && Platform.OS === 'ios' && (
-    <Modal
-        transparent={true}
-        animationType="fade"
-        visible={showDatePicker}
-        onRequestClose={cancelDateSelection}
-    >
-        <View style={styles.modalContainer}>
-        <View style={styles.popupBox}>
-            <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={cancelDateSelection} style={styles.modalButton}>
-                <Text style={styles.modalButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Date</Text>
-            <TouchableOpacity onPress={confirmDateSelection} style={styles.modalButton}>
-                <Text style={styles.modalButtonText}>Done</Text>
-            </TouchableOpacity>
+      {showDatePicker && Platform.OS === 'ios' && (
+        <Modal
+          transparent={true}
+          animationType="fade"
+          visible={showDatePicker}
+          onRequestClose={cancelDateSelection}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.popupBox}>
+              <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={cancelDateSelection} style={styles.modalButton}>
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={styles.modalTitle}>Select Date</Text>
+                <TouchableOpacity onPress={confirmDateSelection} style={styles.modalButton}>
+                  <Text style={styles.modalButtonText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.pickerWrapper}>
+                <DateTimePicker
+                  value={tempExpiryDate}
+                  mode="date"
+                  display="inline"
+                  onChange={onDateChange}
+                  minimumDate={new Date()}
+                  style={styles.datePickerIOS}
+                />
+              </View>
             </View>
-            <View style={styles.pickerWrapper}>
-            <DateTimePicker
-                value={tempExpiryDate}
-                mode="date"
-                display="inline"
-                onChange={onDateChange}
-                minimumDate={new Date()}
-                style={styles.datePickerIOS}
-            />
-            </View>
+          </View>
+        </Modal>
+      )}
 
-        </View>
-        </View>
-    </Modal>
-    )}
-
-      {/* Android Date Picker */}
       {showDatePicker && Platform.OS === 'android' && (
         <DateTimePicker
           value={expiryDate}
@@ -626,7 +755,6 @@ export default function AddItemManual() {
         />
       )}
 
-      {/* User Picker Modal */}
       <Modal
         transparent={true}
         animationType="slide"
