@@ -21,9 +21,8 @@ def getChatGPTResponse(recipe: str):
                 "role": "user",
                 "content": [
                     { "type": "input_text", "text": f'''
-                        What ingredients do I need to make {recipe}? Return this as a JSON object with no
-                        word response or ```''' 
-                    },
+        What ingredients do I need to make {recipe}? Return this as a list of items.
+        ''' },
                 ],
             }
         ],
