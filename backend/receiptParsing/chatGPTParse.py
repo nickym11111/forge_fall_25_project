@@ -2,7 +2,7 @@ from dotenv import load_dotenv # type: ignore
 import os
 from openai import OpenAI
 from pydantic import BaseModel
-from fastapi import HTTPException, APIRouter, FastAPI
+from fastapi import HTTPException, APIRouter
 
 
 load_dotenv()

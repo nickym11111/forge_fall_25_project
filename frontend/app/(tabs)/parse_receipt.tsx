@@ -5,6 +5,8 @@ import * as FileSystem from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
 import { TouchableOpacity } from "react-native";
+import { supabase } from "../utils/client";
+import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -28,6 +30,56 @@ export default function ParseReceiptScreen() {
       parseReceipt();
     }
   }, [imageUri]);
+
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error getting session:", error);
+        return;
+      }
+      if (isMounted) setUserSession(data.session);
+    };
+
+    fetchSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (isMounted) setUserSession(session);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+
+  const sendItemToFridge = async (item: any) => {
+    const response = await PredictExpiryDate(item.name);
+      const data = await response.json();
+      console.log("📦 Response data:", data);
+      const newExpiryDate = new Date(); // Default to today
+
+      if (data.days) {
+        const days = parseInt(data.days);
+        console.log("✅ AI predicted", days, "days for", item.name);
+        newExpiryDate.setDate(newExpiryDate.getDate() + days);
+      }
+
+    AddItemToFridge(
+      userSession.access_token,
+      item.name,
+      item.quantity,
+      newExpiryDate,
+      "TEMP_USER_ID", // Placeholder for current user ID
+      []
+    );
+  }
 
   const parseReceipt = async () => {
     if (!imageUri) {
