@@ -1,11 +1,4 @@
-import {
-  StyleSheet,
-  TextInput,
-  View,
-  Text,
-  Alert,
-  ScrollView,
-  TouchableOpacity,
+
 import {
   StyleSheet,
   TextInput,
@@ -209,22 +202,6 @@ export default function CreateFridgeScreen() {
             ", "
           )}`
         );
-      // Check for any failed invites
-      const failedInvites = inviteResults
-        .map((result, index) =>
-          result.status === "rejected" || result.value.status !== "success"
-            ? validEmails[index]
-            : null
-        )
-        .filter(Boolean);
-
-      if (failedInvites.length > 0) {
-        Alert.alert(
-          "Partial Success",
-          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
-            ", "
-          )}`
-        );
       } else {
         Alert.alert(
           "Success!",
@@ -235,15 +212,11 @@ export default function CreateFridgeScreen() {
           "Fridge created and invites sent successfully!"
         );
       }
-
-      await refreshUser();
       
     } catch (error) {
       console.error("Error:", error);
       console.error("Error:", error);
       Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "An unexpected error occurred"
         "Error",
         error instanceof Error ? error.message : "An unexpected error occurred"
       );
@@ -311,9 +284,6 @@ export default function CreateFridgeScreen() {
             title={isLoading ? "Creating..." : "Create Fridge"}
             onPress={handleCreateFridge}
             style={styles.createButton}
-            disabled={isLoading}
-            className={""}
-          />
             disabled={isLoading}
             className={""}
           />
