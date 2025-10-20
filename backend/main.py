@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
 from Join import app as join_router
+from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
@@ -274,7 +275,8 @@ async def accept_fridge_invite(
 # Include the routers with their prefixes
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
-# app.include_router(receipt_router, prefix="/receipt")
+app.include_router(receipt_router, prefix="/receipt")
+app.include_router(ai_expiration_router, prefix="/expiry")
        
 
 # Login Page

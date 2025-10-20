@@ -10,8 +10,13 @@ app = APIRouter()
 
 @app.get("/")
 def get_users():
-    response = supabase.table("users").select("*").execute()
-    return {"data": response.data, "error": response.error}
+    
+    try:
+        response = response = supabase.table("users").select("*").execute()
+        return {"data": response.data, "error": None}
+    except Exception as e:
+        return {"data": None, "error": str(e)}
+
 
 class UserCreate(BaseModel):
     email: str
