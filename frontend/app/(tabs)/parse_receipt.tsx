@@ -7,9 +7,10 @@ import {
   Platform,
   StyleSheet,
   Alert,
+  ScrollView
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+    import { File } from 'expo-file-system';
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
 import { TouchableOpacity } from "react-native";
@@ -145,11 +146,9 @@ export default function ParseReceiptScreen() {
           reader.readAsDataURL(blob);
         });
       } else {
-        base64Image = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: "base64",
-        });
+        const file = new File(imageUri);
+        base64Image = file.base64Sync();
       }
-
       const response = await CreateParseReceiptRequest(base64Image);
       const parsed = JSON.parse(response.output[0].content[0].text);
 
@@ -167,7 +166,7 @@ export default function ParseReceiptScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <CustomHeader title="Add Items 📷" />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
@@ -261,7 +260,7 @@ export default function ParseReceiptScreen() {
           </View>
         ) : null}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
