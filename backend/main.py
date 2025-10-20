@@ -396,7 +396,7 @@ def get_fridges():
     try:
         response = supabase.table("fridges").select("*").execute()
         
-        if response.error:
+        if response.get("error"):
             raise HTTPException(status_code=500, detail=response.error.message)
             
         return {
