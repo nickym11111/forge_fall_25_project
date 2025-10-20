@@ -1,4 +1,6 @@
 # EXAMPLE TEMPLATE SETUP
+from dotenv import load_dotenv
+load_dotenv()
 from typing import Optional, Any
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
@@ -20,13 +22,11 @@ app = FastAPI()
 app.include_router(users_router)
 app.include_router(ai_expiration.router, tags=["ai"])
 
+
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
     "http://localhost:8081",  # React/Next dev server
-    "http://localhost:8081",
-    "http://127.0.0.1:8081",
     "http://localhost:8082",
-    "http://127.0.0.1:8082",
 ]
 
 app.add_middleware(
@@ -267,6 +267,7 @@ async def accept_fridge_invite(
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
+app.include_router(recipes_router, prefix="/recipes")
        
 
 # Login Page

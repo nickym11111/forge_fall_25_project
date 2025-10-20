@@ -19,6 +19,7 @@ class UserCreate(BaseModel):
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     dietaryRestrictions: Optional[List[str]] = None
+
     
     
 def findAccount(email: str):
