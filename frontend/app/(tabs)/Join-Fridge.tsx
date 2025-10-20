@@ -98,7 +98,10 @@ export default function JoinFridgeScreen()
 };
   return (
     <View style={styles.container}>
-      <CustomHeader title = "Join Fridge 🏠"/>
+      <CustomHeader 
+      title="Join Fridge  "
+      logo={require('../../assets/images/FridgeIcon.png')}
+      />
       <View style = {styles.joinContainer}>
         <View style = {styles.joinForm}>
           <TextInput

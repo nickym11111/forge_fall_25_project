@@ -21,7 +21,7 @@ def getChatGPTResponse(base64_image: str):
             {
                 "role": "user",
                 "content": [
-                    { "type": "input_text", "text": "parse this receipt for text and give me back a list of the items. Only give me the items and give it to me as a JSON list. Do not include any extra text (including backticks `), only give me the json starting with the bracket" },
+                    { "type": "input_text", "text": "parse this receipt for text and give me back a list of maps of the items. Give me the item name as the key and its value is a map with the 2 keys being 'quantity' and 'price'. Return as JSON. Do not include any extra text (including backticks `), only give me the json starting with the [" },
                     {
                         "type": "input_image",
                         "image_url": f"data:image/jpeg;base64,{base64_image}",

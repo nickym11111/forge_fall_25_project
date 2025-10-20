@@ -11,6 +11,7 @@ import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from "../utils/client";
+import { useAuth } from "../context/authContext";
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
@@ -98,6 +99,8 @@ export default function CreateFridgeScreen() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
+  const { user, refreshUser } = useAuth();
+
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
     const updated = [...emails];
@@ -142,8 +145,8 @@ export default function CreateFridgeScreen() {
         throw new Error("No active session. Please log in again.");
       }
 
-      console.log("User ID from session:", session.user.id);
-      console.log("User email from session:", session.user.email);
+      console.log("User ID from session:", user?.id);
+      console.log("User email from session:", user?.email);
 
       // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
@@ -205,6 +208,9 @@ export default function CreateFridgeScreen() {
           "Fridge created and invites sent successfully!"
         );
       }
+
+      await refreshUser();
+      
     } catch (error) {
       console.error("Error:", error);
       Alert.alert(
@@ -220,7 +226,10 @@ export default function CreateFridgeScreen() {
   return (
     <View style={styles.container}>
       {/*Page Header*/}
-      <CustomHeader title="Create Fridge 🧊" />
+      <CustomHeader 
+      title="Create Fridge  "
+      logo={require('../../assets/images/FridgeIcon.png')}
+      />
 
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
