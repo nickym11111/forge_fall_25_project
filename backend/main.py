@@ -1,4 +1,6 @@
 # EXAMPLE TEMPLATE SETUP
+from dotenv import load_dotenv
+load_dotenv()
 from typing import Optional, Any
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase

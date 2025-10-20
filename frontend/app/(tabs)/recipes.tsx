@@ -19,6 +19,27 @@ interface ItemProps {
   title: string;
 }
 
+// Recipe items component
+const RecipeItem = ({ item }: { item: any }) => {
+  // Handles cases where the backend sends an error or a message like "Need more ingredients"
+  if (!item.recipe_name) {
+      return (
+          <View style={styles.item}>
+              <Text style={styles.itemText}>{item.message || "Could not generate recipes. Check fridge contents."}</Text>
+          </View>
+      );
+  }
+  return (
+    <View style={styles.item}>
+      <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
+      <Text style={styles.recipeDescription}>{item.description}</Text>
+      <Text style={styles.recipeIngredients}>
+        Ingredients: {Array.isArray(item.ingredients_used) ? item.ingredients_used.join(", ") : 'N/A'}
+      </Text>
+    </View>
+  );
+};
+
 // Individual item component
 const Item = ({
   title
@@ -38,6 +59,8 @@ export default function recipes() {
   const [responseMessage, setResponseMessage] = useState<string[]>();
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
 
+  const [recipes, setRecipes] = useState<any[]>([]);
+
    const searchFunction = (text: string) => {
     setInputValue(text);
   };
@@ -51,7 +74,6 @@ export default function recipes() {
         },
         body: JSON.stringify({ recipe: inputValue }), // Send data as JSON
       });
-
       const data = await response.json();
       console.log('Received response from backend:', data);
       const rawText = data.output[0].content[0].text;
@@ -69,24 +91,45 @@ export default function recipes() {
       setResponseMessage(['Error sending data to backend.']);
     }
   };
+
+  const handleFindRecipe = async () => {
+
+    try {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/recipes/generate-recipes/`);
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.detail || "Failed to fetch recipes.");
+        }
+        
+        // Sets the state with either the list of recipes or the message from the backend
+        setRecipes(data.recipes || [{ message: data.detail }]);
+
+    } catch (error) {
+        console.error('Error fetching recipes:', error);
+        setRecipes([{ message: String(error) }]);
+    }
+  };
   
   type PreviewLayoutProps = PropsWithChildren<{
   values: string[];
   selectedValue: string;
   setSelectedValue: Dispatch<SetStateAction<string>>;
+  onPress: () => void; 
 }>;
 
 const PreviewLayout = ({
   values,
   selectedValue,
   setSelectedValue,
+  onPress,
 }: PreviewLayoutProps) => (
   <View style={{ padding: 10 }}>
     <View style={styles.row}>
       {values.map((value) => (
         <TouchableOpacity
           key={value}
-          onPress={handleSubmit}
+          onPress={onPress}
           style={[
             styles.filter_button,
             selectedValue.includes(value) && styles.selected_filter_button,
@@ -128,7 +171,9 @@ return (
         values={["Find Ingredients"]}
         selectedValue={selectedPrompt}
         setSelectedValue={setSelectedPrompt}
+        onPress={handleSubmit}
       ></PreviewLayout>
+
       <FlatList
         data={responseMessage}
         renderItem={({ item }) => (
@@ -142,15 +187,17 @@ return (
         values={["Find Recipe"]}
         selectedValue={selectedPrompt}
         setSelectedValue={setSelectedPrompt}
+        onPress={handleFindRecipe}
+
       ></PreviewLayout>
+
         <FlatList
-        data={responseMessage}
+        data={recipes}
         renderItem={({ item }) => (
-          <Item
-            title={item}
-          />
+          <RecipeItem 
+            item={item} />
         )}
-        keyExtractor={(item) => item}
+        keyExtractor={(item, index) => `recipe-${index}`}
       />
     </View>
   );
@@ -232,4 +279,19 @@ const styles = StyleSheet.create({
     color: "#d32f2f",
     fontWeight: "bold",
   },
+  recipeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  recipeDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginVertical: 4,
+  },
+  recipeIngredients: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+  }
 });
