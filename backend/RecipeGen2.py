@@ -51,7 +51,7 @@ def generate_recipes2():
             "status": "success",
             "recipes": recipe_json
         }
-
+    
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Error parsing recipes from OpenAI.")
     except Exception as e:
