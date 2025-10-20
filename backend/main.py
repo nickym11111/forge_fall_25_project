@@ -40,10 +40,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(join_router, prefix="/fridge")  # ← now /fridge/join works
-app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints work
-app.include_router(shopping_router, prefix="/shopping")
-
 # Data Transfer Objects
 class FridgeInviteDTO(BaseModel):
     fridge_id: str

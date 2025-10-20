@@ -3,7 +3,6 @@ import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
-import React from "react";
 
 interface ApiResponse {
   status: 'success' | 'error';

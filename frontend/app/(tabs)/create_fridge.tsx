@@ -17,7 +17,6 @@ import { useAuth } from "../context/authContext";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
-import React from "react";
 
 
 //Type for API response
