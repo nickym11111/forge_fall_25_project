@@ -71,7 +71,6 @@ def read_root():
 @app.post("/fridge_items/")
 async def create_fridge_item(
     item: FridgeItemCreate,
-    current_user = Depends(get_current_user)
 ):
     try:
         from datetime import datetime, date
