@@ -1,8 +1,0 @@
-{
-  "recommendations": [
-    "dbaeumer.vscode-eslint",        // ESLint integration
-    "esbenp.prettier-vscode",        // Prettier formatting
-    "msjsdiag.debugger-for-chrome",  // Optional: debugging support
-    "eamodio.gitlens"                // Optional: Git enhancements
-  ]
-}

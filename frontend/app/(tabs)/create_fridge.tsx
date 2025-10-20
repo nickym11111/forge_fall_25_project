@@ -1,18 +1,24 @@
-import { 
-  StyleSheet, 
-  TextInput, 
-  View, 
-  Text, 
-  Alert, 
-  ScrollView, 
-  TouchableOpacity 
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  Text,
+  Alert,
+  ScrollView,
+  TouchableOpacity,
 } from "react-native";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from '@react-navigation/native';
+import { supabase } from "../utils/client";
+import { useAuth } from "../context/authContext";
+
+//Custom components
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
 import React from "react";
+
 
 //Type for API response
 interface ApiResponse {
@@ -22,7 +28,8 @@ interface ApiResponse {
 }
 
 //Backend API endpoint
-const API_URL = "http://127.0.0.1:8000/fridges";
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridges`;
+const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
 
 //Styles
 const styles = StyleSheet.create({
@@ -90,6 +97,11 @@ export default function CreateFridgeScreen() {
   const [emails, setEmails] = useState<string[]>([""]); // invited emails
   const [isLoading, setIsLoading] = useState<boolean>(false); // loading indicator
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
+
+  const { user, refreshUser } = useAuth();
+
   //Update a specific email input
   const enterEmail = (text: string, index: number) => {
     const updated = [...emails];
@@ -106,43 +118,105 @@ export default function CreateFridgeScreen() {
     setEmails(updated);
   };
 
-  //Handle fridge creation request
+  //Handle fridge creation and sending invites
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
       Alert.alert("Error", "Please enter a fridge name.");
       return;
     }
 
+
+    // Filter out empty emails
+    const validEmails = emails.filter((email) => email.trim() !== "");
+    if (validEmails.length === 0) {
+      Alert.alert("Error", "Please enter at least one email address.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
-      //Send POST request to FastAPI backend
-      const response = await fetch(API_URL, {
+      console.log("Getting a new session:");
+      const { data: { session }, error } = await supabase.auth.getSession();
+    
+      console.log("Session exists?", !!session);
+      console.log("Session error:", error);
+
+      if (error || !session) {
+        throw new Error("No active session. Please log in again.");
+      }
+
+      console.log("User ID from session:", user?.id);
+      console.log("User email from session:", user?.email);
+
+      // Create the fridge
+      const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: fridgeName,
-          emails: emails.filter((e) => e.trim() !== ""), //remove empty entries
-        }),
+        headers: { "Content-Type": "application/json",
+                   "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ name: fridgeName }),
       });
 
-      const data: ApiResponse = await response.json();
-      console.log("API Response:", data);
+      const fridgeData: ApiResponse = await createFridgeResponse.json();
+      console.log("Fridge creation response:", fridgeData);
 
-      //Success case
-      if (response.ok && data.status === "success") {
-        Alert.alert("Success!", data.message || "Fridge created!");
-        navigate("/(tabs)"); // redirect to main tabs page
-      } else {
-        //Error case from API
-        Alert.alert("Error", data.message || "Failed to create fridge.");
+      if (!createFridgeResponse.ok || fridgeData.status !== "success") {
+        throw new Error(fridgeData.message || "Failed to create fridge");
       }
+
+      const fridgeId = fridgeData.fridge_id;
+      if (!fridgeId) {
+        throw new Error("No fridge ID returned from server");
+      }
+
+      // 2. Then, send invites to all provided emails
+      const invitePromises = validEmails.map(async (email) => {
+        const inviteResponse = await fetch(SEND_INVITE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json",
+                     "Authorization": `Bearer ${session.access_token}`},
+          body: JSON.stringify({
+            fridge_id: fridgeId.toString(),
+            emails: emails,
+            invited_by: currentUserEmail,
+          }),
+        });
+        return inviteResponse.json();
+      });
+
+      const inviteResults = await Promise.allSettled(invitePromises);
+
+      // Check for any failed invites
+      const failedInvites = inviteResults
+        .map((result, index) =>
+          result.status === "rejected" || result.value.status !== "success"
+            ? validEmails[index]
+            : null
+        )
+        .filter(Boolean);
+
+      if (failedInvites.length > 0) {
+        Alert.alert(
+          "Partial Success",
+          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
+            ", "
+          )}`
+        );
+      } else {
+        Alert.alert(
+          "Success!",
+          "Fridge created and invites sent successfully!"
+        );
+      }
+
+      await refreshUser();
+      
     } catch (error) {
-      //Network or connection error
-      console.error("Network error:", error);
+      console.error("Error:", error);
       Alert.alert(
-        "Connection Error",
-        "Could not connect to the server. Make sure your backend is running."
+        "Error",
+        error instanceof Error ? error.message : "An unexpected error occurred"
       );
     } finally {
       setIsLoading(false);
@@ -153,7 +227,10 @@ export default function CreateFridgeScreen() {
   return (
     <View style={styles.container}>
       {/*Page Header*/}
-      <CustomHeader title="Create Fridge 🧊" />
+      <CustomHeader 
+      title="Create Fridge  "
+      logo={require('../../assets/images/FridgeIcon.png')}
+      />
 
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
@@ -205,7 +282,9 @@ export default function CreateFridgeScreen() {
             title={isLoading ? "Creating..." : "Create Fridge"}
             onPress={handleCreateFridge}
             style={styles.createButton}
-            disabled={isLoading} className={""}          />
+            disabled={isLoading}
+            className={""}
+          />
 
           {/*Navigate to Join Fridge page*/}
           <Text

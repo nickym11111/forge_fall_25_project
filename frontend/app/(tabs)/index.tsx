@@ -3,8 +3,8 @@ import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
-import { LoginRequest } from "../api/Login";
 import ToastMessage from "@/components/ToastMessage";
+import { useAuth } from "../context/authContext";  // NEW: Add this import
 
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
@@ -12,10 +12,17 @@ export default function TabOneScreen() {
 
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  
+
+  const { login } = useAuth();  // NEW: Get login from context
+
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  console.log("API URL:", apiUrl);
+
   return (
     <View style={styles.container}>
-      <CustomHeader title="Fridge Flow 🏠"/>
+      <CustomHeader 
+      title="Fridge Flow  " 
+      logo={require('../../assets/images/FridgeIcon.png')}/>
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.loginContainer}>
@@ -40,21 +47,25 @@ export default function TabOneScreen() {
               setTimeout(() => setIsToastVisible(false), 3000);
 
               try {
-                const response = await LoginRequest(email, password);
-                setToastMessage(
-                  response?.status === "Login successful"
-                    ? "Login successful!"
-                    : response?.error || "Login failed",
-                );
+                const result = await login(email, password);  // CHANGED: Use context login
+                
+                if (result.success) {  // CHANGED: Check result.success
+                  setToastMessage("Login successful!");
+                } else {
+                  setToastMessage(result.error || "Login failed");  // CHANGED: result.error
+                }
               } catch (e) {
                 setToastMessage("Network error");
                 console.log(e);
               }
+              
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
-            } }
+            }}
             style={styles.loginButton}
-            className="" disabled={false}          />
+            className="" 
+            disabled={false}
+          />
           <Text
             style={styles.createAccountButton}
             onPress={() => {

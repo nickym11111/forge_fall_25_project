@@ -69,7 +69,7 @@ export default function JoinFridgeScreen()
   }
 
   setIsLoading(true);
-  const API_URL = "http://127.0.0.1:8000/fridge/join-fridge";
+  const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/join-fridge`;
 
   try {
     const response = await fetch(API_URL, {
@@ -99,7 +99,10 @@ export default function JoinFridgeScreen()
 };
   return (
     <View style={styles.container}>
-      <CustomHeader title = "Join Fridge 🏠"/>
+      <CustomHeader 
+      title="Join Fridge  "
+      logo={require('../../assets/images/FridgeIcon.png')}
+      />
       <View style = {styles.joinContainer}>
         <View style = {styles.joinForm}>
           <TextInput
