@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Button, Image, Platform, StyleSheet } from "react-native";
+import { View, Text, Button, Image, Platform, StyleSheet, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as FileSystem from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
@@ -7,6 +7,7 @@ import CustomHeader from "@/components/CustomHeader";
 import { TouchableOpacity } from "react-native";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
+import ToastMessage from "@/components/ToastMessage";
 
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -14,6 +15,10 @@ export default function ParseReceiptScreen() {
   const [parsedItems, setParsedItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [userSession, setUserSession] = useState<any>(null);
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [addingItemIndex, setAddingItemIndex] = useState<number[]>([]);
+
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
@@ -59,20 +64,29 @@ export default function ParseReceiptScreen() {
     };
   }, []);
 
-
+  interface ApiResponse {
+    data?: any;
+    message: string;
+    detail?: string;
+  }
   const sendItemToFridge = async (item: any) => {
-    const response = await PredictExpiryDate(item.name);
-      const data = await response.json();
-      console.log("📦 Response data:", data);
+    if (!userSession) {
+      Alert.alert("Error", "User not logged in");
+      return;
+    }
+    const ExpiryDateResponse = await PredictExpiryDate(item.name);
+      const ExpiryDateData = await ExpiryDateResponse.json();
+      console.log("📦 Response data:", ExpiryDateData);
       const newExpiryDate = new Date(); // Default to today
 
-      if (data.days) {
-        const days = parseInt(data.days);
+      if (ExpiryDateData.days) {
+        const days = parseInt(ExpiryDateData.days);
         console.log("✅ AI predicted", days, "days for", item.name);
         newExpiryDate.setDate(newExpiryDate.getDate() + days);
       }
 
-    AddItemToFridge(
+    
+    const AddItemToFridgeResponse = await AddItemToFridge(
       userSession.access_token,
       item.name,
       item.quantity,
@@ -80,6 +94,26 @@ export default function ParseReceiptScreen() {
       "TEMP_USER_ID", // Placeholder for current user ID
       []
     );
+
+    const data: ApiResponse = await AddItemToFridgeResponse.json();
+      console.log("Response status:", AddItemToFridgeResponse.status);
+      console.log("Response data:", data);
+
+      setIsToastVisible(true);
+      setTimeout(() => setIsToastVisible(false), 3000);
+
+      if (AddItemToFridgeResponse.ok) {
+        Alert.alert("Success!", "Item added to fridge!");
+        setToastMessage("Item added to fridge!");
+        
+      } else {
+        Alert.alert("Error", data.detail || data.message || "Failed to add item.");
+        setToastMessage("Failed to add item.");
+      }
+
+    
+      setAddingItemIndex(prev => prev.filter(i => i !== item.index));
+
   }
 
   const parseReceipt = async () => {
@@ -129,6 +163,9 @@ export default function ParseReceiptScreen() {
   return (
     <View style={styles.container}>
       <CustomHeader title="Add Items 📷" />
+      <View style={{position: 'fixed', zIndex:999, left: 0, right: 20}}>
+      <ToastMessage message={toastMessage} visible={isToastVisible}/>
+      </View>
       <View style={styles.imageContainer}>
         <TouchableOpacity
           onPress={pickImage}
@@ -178,10 +215,17 @@ export default function ParseReceiptScreen() {
                   </Text>
                 </View>
                 <View style={{maxWidth: 120}}>
-                  <Button title="Add to Fridge" onPress={() => {
-                    console.log(itemData.quantity)
-                    sendItemToFridge({name: itemName, quantity: Math.ceil(itemData.quantity)})
-                  }} />{" "}
+                  {addingItemIndex.includes(index) ? (
+                  <Text>Adding...</Text>
+                  ) : (
+                    <Button title="Add to Fridge" onPress={() => {
+                    console.log(index);
+                    sendItemToFridge({name: itemName, quantity: Math.ceil(itemData.quantity), index});
+                    setAddingItemIndex(prev => [...prev, index]);
+                  }} />
+                    
+                  )}
+                  
                 </View>
               </View>
             );
