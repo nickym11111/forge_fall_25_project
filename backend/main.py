@@ -22,7 +22,6 @@ app = FastAPI()
 # app.include_router(users_router)
 app.include_router(ai_expiration.router, tags=["ai"])
 
-
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
     "http://localhost:8081",  # React/Next dev server
