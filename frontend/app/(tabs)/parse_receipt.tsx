@@ -5,12 +5,15 @@ import * as FileSystem from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
 import { TouchableOpacity } from "react-native";
+import { supabase } from "../utils/client";
+import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [parsedItems, setParsedItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userSession, setUserSession] = useState<any>(null);
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
@@ -28,6 +31,56 @@ export default function ParseReceiptScreen() {
       parseReceipt();
     }
   }, [imageUri]);
+
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error getting session:", error);
+        return;
+      }
+      if (isMounted) setUserSession(data.session);
+    };
+
+    fetchSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (isMounted) setUserSession(session);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+
+  const sendItemToFridge = async (item: any) => {
+    const response = await PredictExpiryDate(item.name);
+      const data = await response.json();
+      console.log("📦 Response data:", data);
+      const newExpiryDate = new Date(); // Default to today
+
+      if (data.days) {
+        const days = parseInt(data.days);
+        console.log("✅ AI predicted", days, "days for", item.name);
+        newExpiryDate.setDate(newExpiryDate.getDate() + days);
+      }
+
+    AddItemToFridge(
+      userSession.access_token,
+      item.name,
+      item.quantity,
+      newExpiryDate,
+      "TEMP_USER_ID", // Placeholder for current user ID
+      []
+    );
+  }
 
   const parseReceipt = async () => {
     if (!imageUri) {
@@ -77,14 +130,13 @@ export default function ParseReceiptScreen() {
     <View style={styles.container}>
       <CustomHeader title="Add Items 📷" />
       <View style={styles.imageContainer}>
-      <TouchableOpacity
-            onPress={pickImage}
-            style={{ width: "100%", height: "100%" }}
-          >
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
-        ) : (
-
+        <TouchableOpacity
+          onPress={pickImage}
+          style={{ width: "100%", height: "100%" }}
+        >
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.image} />
+          ) : (
             <View style={styles.imageSkeleton}>
               <View style={styles.imageTextContainer}>
                 <Text style={{ fontSize: 24 }}>📸</Text>
@@ -105,8 +157,7 @@ export default function ParseReceiptScreen() {
                 </Text>
               </View>
             </View>
-          
-        )}
+          )}
         </TouchableOpacity>
       </View>
       <View style={styles.responseTextContainer}>
@@ -119,11 +170,19 @@ export default function ParseReceiptScreen() {
             const itemData = item[itemName];
             return (
               <View key={index} style={styles.itemCard}>
-                <Text style={styles.itemName}>{itemName}</Text>
-                <Text style={styles.itemDetails}>
-                  Quantity: {itemData.quantity} | Price: $
-                  {itemData.price.toFixed(2)}
-                </Text>
+                <View>
+                  <Text style={styles.itemName}>{itemName}</Text>
+                  <Text style={styles.itemDetails}>
+                    Quantity: {itemData.quantity} | Price: $
+                    {itemData.price.toFixed(2)}
+                  </Text>
+                </View>
+                <View style={{maxWidth: 120}}>
+                  <Button title="Add to Fridge" onPress={() => {
+                    console.log(itemData.quantity)
+                    sendItemToFridge({name: itemName, quantity: Math.ceil(itemData.quantity)})
+                  }} />{" "}
+                </View>
               </View>
             );
           })
@@ -186,6 +245,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   itemName: {
     fontSize: 16,

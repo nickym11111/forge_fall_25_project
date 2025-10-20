@@ -5,6 +5,7 @@ import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
+import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 
 interface ApiResponse {
   data?: any;
@@ -366,22 +367,9 @@ export default function AddItemManual() {
 
     try {
       // First try the backend API
-      const url = `${API_URL}/expiry/predict-expiry`;
-      console.log("📡 Calling:", url);
-      
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
-      
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          item_name: itemName,
-        }),
-        signal: controller.signal,
-      });
+      const response = await PredictExpiryDate(itemName);
 
       clearTimeout(timeoutId);
       console.log("📥 Response status:", response.status);
@@ -540,21 +528,15 @@ export default function AddItemManual() {
         setIsLoading(false);
         return;
       }
-      
-      const response = await fetch(`${API_URL}/fridge_items/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          title: title.trim(),
-          quantity: quantity ? Number(quantity) : 1,
-          expiry_date: expiryDate.toISOString().split('T')[0],
-          added_by: currentUserId,
-          shared_by: sharedByUsers.length > 0 ? sharedByUsers : null,
-        }),
-      });
+
+      const response = await AddItemToFridge(
+        session.access_token,
+        title,
+        quantity,
+        expiryDate,
+        currentUserId,
+        sharedByUserIds
+      );
 
       const data: ApiResponse = await response.json();
       console.log("Response status:", response.status);
