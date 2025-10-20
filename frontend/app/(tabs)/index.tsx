@@ -14,7 +14,7 @@ export default function TabOneScreen() {
   const [toastMessage, setToastMessage] = useState("");
   
   return (
-    <View style={styles.container}>w
+    <View style={styles.container}>
       <CustomHeader title="Fridge Flow 🏠"/>
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />

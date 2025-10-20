@@ -54,6 +54,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
         }}
       />
+
+      <Tabs.Screen
+        name="shop"
+        options={{
+        title: "Shared List",
+        tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+    }}
+  />
     </Tabs>
   );
 }

@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from Join import app as join_router
 from Users import app as users_router
+from ShoppingList import app as shopping_router
 from typing import List, Optional, Any
 
 app = FastAPI()
@@ -26,6 +27,8 @@ app.add_middleware(
 
 app.include_router(join_router, prefix="/fridge")  # ← now /fridge/join works
 app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints work
+app.include_router(shopping_router, prefix="/shopping")
+
 
 @app.get("/")
 def read_root():
@@ -116,9 +119,9 @@ def create_fridge(fridge: FridgeCreate):
         "emails": fridge.emails
     }).execute()
 
-    if response.error:
-        return {"error": response.error}
-
+    if not response.data:
+        return {"error": "Failed to insert fridge. Check Supabase config or table name."}
+    
     return {"data": response.data, "status": "Fridge created successfully"}
 
 @app.get("/fridges")
