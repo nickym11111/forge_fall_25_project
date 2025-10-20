@@ -125,11 +125,25 @@ return (
         />
       </View>
       <PreviewLayout
-        values={["Find Ingredients", "Find Recipe"]}
+        values={["Find Ingredients"]}
         selectedValue={selectedPrompt}
         setSelectedValue={setSelectedPrompt}
       ></PreviewLayout>
       <FlatList
+        data={responseMessage}
+        renderItem={({ item }) => (
+          <Item
+            title={item}
+          />
+        )}
+        keyExtractor={(item) => item}
+      />
+      <PreviewLayout
+        values={["Find Recipe"]}
+        selectedValue={selectedPrompt}
+        setSelectedValue={setSelectedPrompt}
+      ></PreviewLayout>
+        <FlatList
         data={responseMessage}
         renderItem={({ item }) => (
           <Item
