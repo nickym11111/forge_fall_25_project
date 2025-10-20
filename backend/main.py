@@ -80,6 +80,7 @@ def read_root():
     return {"message": "Hello from backend with Supabase!"}
 
 # Fridge items endpoints, this is not done yet it doesn't have shared by or added by logic yet
+# Fridge items endpoints, this is not done yet it doesn't have shared by or added by logic yet
 @app.post("/fridge_items/")
 async def create_fridge_item(
     item: FridgeItemCreate,
@@ -98,9 +99,22 @@ async def create_fridge_item(
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
+        from datetime import datetime, date
+        
+        # Calculate days till expiration
+        expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
+        today = date.today()
+        days_till_expiration = (expiry - today).days
+
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+        
+        if not fridge_id:
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
+        
         response = supabase.table("fridge_items").insert({
             "title": item.title,
             "quantity": item.quantity,
+            "days_till_expiration": days_till_expiration, 
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
             "added_by": current_user.get("id"),
