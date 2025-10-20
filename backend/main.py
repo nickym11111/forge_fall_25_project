@@ -9,7 +9,8 @@ from service import get_current_user, generate_invite_code
 from Join import app as join_router
 from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
-from typing import Optional, Any, List
+from ShoppingList import app as shopping_router
+from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
 #from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
