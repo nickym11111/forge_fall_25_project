@@ -83,6 +83,7 @@ export default function ParseReceiptScreen() {
           </TouchableOpacity>
 
         )}
+        </TouchableOpacity>
       </View>
       <View style={styles.responseTextContainer}>
       <Text style={styles.responseText}>
