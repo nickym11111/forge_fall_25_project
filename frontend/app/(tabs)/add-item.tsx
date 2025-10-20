@@ -366,7 +366,7 @@ export default function AddItemManual() {
 
     try {
       // First try the backend API
-      const url = `${API_URL}/predict-expiry`;
+      const url = `${API_URL}/expiry/predict-expiry`;
       console.log("📡 Calling:", url);
       
       const controller = new AbortController();

@@ -77,13 +77,14 @@ export default function ParseReceiptScreen() {
     <View style={styles.container}>
       <CustomHeader title="Add Items 📷" />
       <View style={styles.imageContainer}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
-        ) : (
-          <TouchableOpacity
+      <TouchableOpacity
             onPress={pickImage}
             style={{ width: "100%", height: "100%" }}
           >
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.image} />
+        ) : (
+
             <View style={styles.imageSkeleton}>
               <View style={styles.imageTextContainer}>
                 <Text style={{ fontSize: 24 }}>📸</Text>
@@ -104,8 +105,9 @@ export default function ParseReceiptScreen() {
                 </Text>
               </View>
             </View>
-          </TouchableOpacity>
+          
         )}
+        </TouchableOpacity>
       </View>
       <View style={styles.responseTextContainer}>
         {isLoading && <Text>Parsing Receipt</Text>}
