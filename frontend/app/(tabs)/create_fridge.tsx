@@ -9,11 +9,10 @@ import {
 } from "react-native";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-
-//Custom components
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
+import React from "react";
 
 //Type for API response
 interface ApiResponse {
