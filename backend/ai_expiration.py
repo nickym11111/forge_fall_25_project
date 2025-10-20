@@ -5,7 +5,7 @@ import anthropic
 import os
 import re
 
-router = APIRouter()
+app = APIRouter()
 load_dotenv()
 
 
@@ -16,7 +16,7 @@ class ExpiryPredictionResponse(BaseModel):
     days: int
     item_name: str
 
-@router.post("/predict-expiry", response_model=ExpiryPredictionResponse)
+@app.post("/predict-expiry", response_model=ExpiryPredictionResponse)
 async def predict_expiry(request: ExpiryPredictionRequest):
     """
     Use Claude AI to predict how many days a food item lasts in the fridge
