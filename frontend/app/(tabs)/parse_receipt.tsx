@@ -7,6 +7,7 @@ import {
   Platform,
   StyleSheet,
   Alert,
+  ScrollView
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
     import { File } from 'expo-file-system';
@@ -152,7 +153,7 @@ export default function ParseReceiptScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <CustomHeader title="Add Items 📷" />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
@@ -179,7 +180,7 @@ export default function ParseReceiptScreen() {
         {responseText}
       </Text>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
