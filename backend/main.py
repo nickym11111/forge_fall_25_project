@@ -10,7 +10,7 @@ from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
 from receiptParsing.chatGPTParse import app as receipt_router
-from ai_expiration import app as ai_expiration_router
+#from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
 
 
@@ -19,7 +19,7 @@ load_dotenv()
 # Initialize routers
 app = FastAPI()
 app.include_router(users_router)
-app.include_router(ai_expiration_router, tags=["ai"])
+#app.include_router(ai_expiration_router, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
