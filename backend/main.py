@@ -11,15 +11,15 @@ from service import get_current_user, generate_invite_code
 from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
-from receiptParsing.chatGPTParse import app as receipt_router
-from ai_expiration import app as ai_expiration
+ # from receiptParsing.chatGPTParse import app as receipt_router
 from dotenv import load_dotenv
+import ai_expiration
 
 load_dotenv()
 
 # Initialize routers
 app = FastAPI()
-app.include_router(users_router)
+# app.include_router(users_router)
 app.include_router(ai_expiration.router, tags=["ai"])
 
 
@@ -58,31 +58,28 @@ class FridgeItemCreate(BaseModel):
 def read_root():
     return {"message": "Hello from backend with Supabase!"}
 
-# Fridge items endpoints
+# Fridge items endpoints, this is not done yet it doesn't have shared by or added by logic yet
 @app.post("/fridge_items/")
 async def create_fridge_item(
     item: FridgeItemCreate,
-    current_user = Depends(get_current_user)
 ):
     try:
-        # Get user's fridge_id
-        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
+        from datetime import datetime, date
         
-        if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=401, detail="User not found")
+        # Calculate days till expiration
+        expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
+        today = date.today()
+        days_till_expiration = (expiry - today).days
         
-        fridge_id = user_response.data[0].get("fridge_id")
+        # Hard-code test fridge for now
+        fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
         
-        if not fridge_id:
-            raise HTTPException(status_code=403, detail="User has no fridge assigned")
-        
-        # Create the fridge item with added_by automatically set to current user
         response = supabase.table("fridge_items").insert({
             "title": item.title,
             "quantity": item.quantity,
-            "expiry_date": item.expiry_date,
+            "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": current_user.id,  # Automatically use logged-in user
+            "added_by": "TEMP_USER_ID",
             "shared_by": item.shared_by
         }).execute()
         
@@ -91,8 +88,6 @@ async def create_fridge_item(
             "message": "Fridge item added successfully",
             "data": response.data
         }
-    except HTTPException:
-        raise
     except Exception as e:
         print(f"Error creating fridge item: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
@@ -266,8 +261,7 @@ async def accept_fridge_invite(
 # Include the routers with their prefixes
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
-app.include_router(receipt_router, prefix="/receipt")
-app.include_router(recipes_router, prefix="/recipes")
+# app.include_router(receipt_router, prefix="/receipt")
        
 
 # Login Page
