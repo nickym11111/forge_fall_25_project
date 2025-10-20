@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
+import { supabase } from "../utils/client";
+import { useAuth } from "../context/authContext";
 
 interface ApiResponse {
   data?: any;
@@ -509,6 +511,7 @@ export default function AddItemManual() {
 
     console.log("Starting to add item");
     setIsLoading(true);
+    const { data: { session }, error } = await supabase.auth.getSession();
 
     const sharedByUsers = sharedByUserIds.map(userId => {
       const user = users.find(u => u.id === userId);
@@ -532,10 +535,17 @@ export default function AddItemManual() {
         shared_by: sharedByUsers.length > 0 ? sharedByUsers : null,
       });
 
+      if (error || !session) {
+        Alert.alert("Error", "You must be logged in to add items");
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await fetch(`${API_URL}/fridge_items/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           title: title.trim(),

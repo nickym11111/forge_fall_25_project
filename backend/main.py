@@ -9,16 +9,17 @@ from service import get_current_user, generate_invite_code
 from Join import app as join_router
 from Users import app as users_router
 from typing import Optional, Any, List
- # from receiptParsing.chatGPTParse import app as receipt_router
+from receiptParsing.chatGPTParse import app as receipt_router
+from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
-import ai_expiration
+
 
 load_dotenv()
 
 # Initialize routers
 app = FastAPI()
 app.include_router(users_router)
-app.include_router(ai_expiration, tags=["ai"])
+app.include_router(ai_expiration_router, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
@@ -62,6 +63,7 @@ def read_root():
 @app.post("/fridge_items/")
 async def create_fridge_item(
     item: FridgeItemCreate,
+    current_user = Depends(get_current_user)
 ):
     try:
         from datetime import datetime, date
@@ -70,9 +72,20 @@ async def create_fridge_item(
         expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
         today = date.today()
         days_till_expiration = (expiry - today).days
+
         
         # Hard-code test fridge for now
-        fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
+        #fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
+
+        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
+        
+        if not user_response.data or len(user_response.data) == 0:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        fridge_id = user_response.data[0].get("fridge_id")
+        
+        if not fridge_id:
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
         response = supabase.table("fridge_items").insert({
             "title": item.title,
