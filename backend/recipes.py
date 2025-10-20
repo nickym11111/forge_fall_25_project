@@ -1,11 +1,9 @@
 from dotenv import load_dotenv # type: ignore
 import os
 from openai import OpenAI
-from dotenv import load_dotenv # type: ignore
-import os
-from openai import OpenAI
 from pydantic import BaseModel
 from fastapi import HTTPException, APIRouter
+from database import supabase
 
 
 load_dotenv()
@@ -17,6 +15,9 @@ class Ingredients(BaseModel):
     recipe: str
 
 def getChatGPTResponse(recipe: str):
+    existing_ingredients = (supabase.table("fridge_items")
+        .select("title")
+        .execute())
     response = client.responses.create(
         model="gpt-4.1-mini",
         input=[
@@ -24,8 +25,10 @@ def getChatGPTResponse(recipe: str):
                 "role": "user",
                 "content": [
                     { "type": "input_text", "text": f'''
-        What ingredients do I need to make {recipe}? Return this as a list of items.
-        ''' },
+                        What ingredients do I need to make {recipe}? Return this as a JSON object with no
+                        word response or ```. ONLY include items that aren't in {existing_ingredients}.
+                        The names won't be exact so use your judgement to determine matching items.''' 
+                    },
                 ],
             }
         ],

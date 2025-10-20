@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 200,
+    marginBottom: 100,
   },
 
   joinForm: 
@@ -34,7 +34,7 @@ const styles = StyleSheet.create({
 
   joinInput: 
   {
-    width: "100%",
+    width: "40%",
     marginVertical: 10,
     padding: 12,
     borderWidth: 1,
@@ -55,6 +55,14 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
   },
+
+  label:
+  {
+    fontSize: 14,
+    color: "#0c0c0cff",
+    marginBottom: 2,
+    marginTop: 10,
+  }
 });
 
 export default function JoinFridgeScreen()
@@ -105,7 +113,7 @@ export default function JoinFridgeScreen()
       />
       <ProfileIcon className="profileIcon" />
       <View style = {styles.joinContainer}>
-        <View style = {styles.joinForm}>
+          <Text style={styles.label}>Fridge Code:</Text>
           <TextInput
             onChangeText={setjCode}
             placeholder="abc-123"
@@ -129,6 +137,5 @@ export default function JoinFridgeScreen()
           </Text>
         </View>
       </View>
-    </View>
   );
 }

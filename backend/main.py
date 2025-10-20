@@ -23,8 +23,6 @@ from database import SessionLocal, engine
 
 
 # Initialize routers
-join_router = APIRouter()
-users_router = APIRouter()
 app = FastAPI()
 app.include_router(users_router)
 #app.include_router(ai_expiration, tags=["ai"])
@@ -44,22 +42,20 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
-    allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
     allow_headers=["*"],
 )
 
 # Data Transfer Objects
-# Data Transfer Objects
 class FridgeInviteDTO(BaseModel):
     fridge_id: str
-    email_to: str
-    invited_by: str
-    invite_code: str
+    emails: List[str]
+    invited_by: Optional[str] = None
+    invite_code: Optional[str] = None
 
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
 
-class FridgeItem(BaseModel):
+class FridgeItemCreate(BaseModel):
     title: str
     quantity: Optional[int] = 1
     expiry_date: str
@@ -90,7 +86,8 @@ async def create_fridge_item(
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
-        from datetime import datetime, date
+        if not user_response.data or len(user_response.data) == 0:
+            raise HTTPException(status_code=401, detail="User not found")
         
         # Calculate days till expiration
         expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
@@ -106,14 +103,19 @@ async def create_fridge_item(
             "title": item.title,
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
-            "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
             "added_by": current_user.get("id"),
             "shared_by": item.shared_by
         }).execute()
-        return {"data": response.data, "status": "Fridge item added successfully"}
+        
+        return {
+            "status": "success",
+            "message": "Fridge item added successfully",
+            "data": response.data
+        }
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Error creating fridge item: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
 
 @app.get("/fridge_items/")
 def get_fridge_items(current_user = Depends(get_current_user)):
@@ -146,21 +148,11 @@ def get_items_added_by(user_name: str):
                .select("*")
                .contains("added_by", {"name": user_name})
                .execute())
-    response = (supabase.table("fridge_items")
-               .select("*")
-               .contains("added_by", {"name": user_name})
-               .execute())
     return {"data": response.data}
-
-
 
 # Get items expiring soon
 @app.get("/fridge_items/expiring-soon/")
 def get_expiring_items():
-    response = (supabase.table("fridge_items")
-               .select("*")
-               .lte("days_till_expiration", 3)
-               .execute())
     response = (supabase.table("fridge_items")
                .select("*")
                .lte("days_till_expiration", 3)
@@ -172,7 +164,7 @@ def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-@app.post("/send-invite/")
+@join_router.post("/send-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
     fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
@@ -410,10 +402,8 @@ async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
         "message": "Invitation processing completed",
         "results": results
     }
-    
 
 # Accept fridge invite
-@join_router.post("/accept-invite/")
 @join_router.post("/accept-invite/")
 async def accept_fridge_invite(
     redeem_dto: RedeemFridgeInviteDTO,

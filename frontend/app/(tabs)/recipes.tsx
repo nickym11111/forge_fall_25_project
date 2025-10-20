@@ -163,6 +163,7 @@ return (
         setSelectedValue={setSelectedPrompt}
         onPress={handleSubmit}
       ></PreviewLayout>
+      <Text>Response: {responseMessage}</Text>
 
       <FlatList
         data={responseMessage}

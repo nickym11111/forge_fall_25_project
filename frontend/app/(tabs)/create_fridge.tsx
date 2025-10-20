@@ -1,4 +1,3 @@
-
 import {
   StyleSheet,
   TextInput,
@@ -9,11 +8,11 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useState, useCallback } from "react";
-import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 
 import { supabase } from "../utils/client";
+import { useAuth } from "../context/authContext";
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
@@ -153,7 +152,6 @@ export default function CreateFridgeScreen() {
   };
 
   //Handle fridge creation and sending invites
-  //Handle fridge creation and sending invites
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
       Alert.alert("Error", "Please enter a fridge name.");
@@ -243,14 +241,11 @@ export default function CreateFridgeScreen() {
           "Success!",
           "Fridge created and invites sent successfully!"
         );
-        Alert.alert(
-          "Success!",
-          "Fridge created and invites sent successfully!"
-        );
       }
+
+      await refreshUser();
       
     } catch (error) {
-      console.error("Error:", error);
       console.error("Error:", error);
       Alert.alert(
         "Error",
