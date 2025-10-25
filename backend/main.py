@@ -21,7 +21,7 @@ load_dotenv()
 # Initialize routers
 app = FastAPI()
 app.include_router(users_router)
-app.include_router(ai_expiration, tags=["ai"])
+#app.include_router(ai_expiration, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
