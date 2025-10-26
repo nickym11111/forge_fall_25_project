@@ -151,13 +151,18 @@ export default function ParseReceiptScreen() {
         base64Image = file.base64Sync();
       }
       const response = await CreateParseReceiptRequest(base64Image);
-      const parsed = JSON.parse(response.output[0].content[0].text);
+      try {
+        const parsed = JSON.parse(response.output[0].content[0].text);
 
-      setParsedItems(parsed);
-      console.log(parsed);
-      setResponseText("");
+        setParsedItems(parsed);
+        console.log(parsed);
+        setResponseText("");
 
-      setResponseText(JSON.stringify(parsed, null, 2));
+        setResponseText(JSON.stringify(parsed, null, 2));
+      } catch (error) {
+        console.error("Error parsing JSON:", error);
+        setResponseText("Failed to parse receipt data.");
+      }
     } catch (error) {
       console.error(error);
       setResponseText("Error parsing receipt");
