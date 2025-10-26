@@ -7,10 +7,10 @@ import {
   Platform,
   StyleSheet,
   Alert,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-    import { File } from 'expo-file-system';
+import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
 import { TouchableOpacity } from "react-native";
@@ -150,13 +150,18 @@ export default function ParseReceiptScreen() {
         base64Image = file.base64Sync();
       }
       const response = await CreateParseReceiptRequest(base64Image);
-      const parsed = JSON.parse(response.output[0].content[0].text);
+      try {
+        const parsed = JSON.parse(response.output[0].content[0].text);
 
-      setParsedItems(parsed);
-      console.log(parsed);
-      setResponseText("");
+        setParsedItems(parsed);
+        console.log(parsed);
+        setResponseText("");
 
-      setResponseText(JSON.stringify(parsed, null, 2));
+        setResponseText(JSON.stringify(parsed, null, 2));
+      } catch (error) {
+        console.error("Error parsing JSON:", error);
+        setResponseText("Failed to parse receipt data.");
+      }
     } catch (error) {
       console.error(error);
       setResponseText("Error parsing receipt");
@@ -208,22 +213,28 @@ export default function ParseReceiptScreen() {
           <Text style={styles.responseText}>{responseText}</Text>
         ) : parsedItems.length > 0 ? (
           <View>
-            <View style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-            <Button
-              title="Add All to Fridge"
-              onPress={() => {
-                parsedItems.forEach((item, index) => {
-                  const itemName = Object.keys(item)[0];
-                  const itemData = item[itemName];
-                  sendItemToFridge({
-                    name: itemName,
-                    quantity: Math.ceil(itemData.quantity),
-                    index,
-                  });
-                  setAddingItemIndex((prev) => [...prev, index]);
-                });
+            <View
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: 12,
               }}
-            />
+            >
+              <Button
+                title="Add All to Fridge"
+                onPress={() => {
+                  parsedItems.forEach((item, index) => {
+                    const itemName = Object.keys(item)[0];
+                    const itemData = item[itemName];
+                    sendItemToFridge({
+                      name: itemName,
+                      quantity: Math.ceil(itemData.quantity),
+                      index,
+                    });
+                    setAddingItemIndex((prev) => [...prev, index]);
+                  });
+                }}
+              />
             </View>
             {parsedItems.map((item, index) => {
               const itemName = Object.keys(item)[0];
