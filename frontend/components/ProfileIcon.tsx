@@ -1,4 +1,6 @@
 import { fetchUserDetails } from "@/app/api/UserDetails";
+import { useAuth } from "@/app/context/authContext";
+import { supabase } from "@/app/utils/client";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -9,6 +11,7 @@ import {
   ViewStyle,
   Image,
   Modal,
+  Button,
 } from "react-native";
 
 const ProfileIcon = (props: {
@@ -19,17 +22,24 @@ const ProfileIcon = (props: {
   const [userFirstName, setUserFirstName] = useState<string>("");
   const [userLastName, setUserLastName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
-
+  const [reload, setReload] = useState<boolean>(false);
+  const { logout } = useAuth();
   useEffect(() => {
-    fetchUserDetails().then((userData) => {
-      if (userData) {
-        console.log("Fetched user data:", userData);
-        setUserFirstName(userData.first_name);
-        setUserLastName(userData.last_name);
-        setUserEmail(userData.email);
-      }
-    });
-  }, []);
+    if (isModalVisible) {
+      fetchUserDetails().then((userData) => {
+        if (userData) {
+          console.log("Fetched user data:", userData);
+          setUserFirstName(userData.first_name);
+          setUserLastName(userData.last_name);
+          setUserEmail(userData.email);
+        } else {
+          setUserFirstName("");
+          setUserLastName("");
+          setUserEmail("");
+        }
+      });
+    }
+  }, [isModalVisible, reload]);
   return (
     <TouchableOpacity
       onPress={() => {
@@ -71,6 +81,13 @@ const ProfileIcon = (props: {
             <Text>First Name: {userFirstName}</Text>
             <Text>Last Name: {userLastName}</Text>
             <Text>Email: {userEmail}</Text>
+            <Button
+              onPress={async () => {
+                logout();
+                setReload(!reload);
+              }}
+              title="SignOut"
+            />
           </View>
         </View>
       </Modal>
