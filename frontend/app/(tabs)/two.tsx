@@ -15,6 +15,7 @@ import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -260,6 +261,7 @@ export default function TabOneScreen() {
       width: '100%', height: '100%',
     }}>
       <CustomHeader title="What's In Our Fridge?" />
+      <ProfileIcon className="profileIcon" />
     <View style={styles.container}>
       
       <View
