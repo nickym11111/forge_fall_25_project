@@ -6,6 +6,7 @@ import CustomHeader from "@/components/CustomHeader";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
+import ProfileIcon from "@/components/ProfileIcon";
 
 interface ApiResponse {
   data?: any;
@@ -623,6 +624,7 @@ export default function AddItemManual() {
       style={styles.container}
     >
       <CustomHeader title="Add Item 🍎" />
+      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.formContainer}>
           <View style={styles.form}>
