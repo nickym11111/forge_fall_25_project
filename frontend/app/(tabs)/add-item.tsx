@@ -4,7 +4,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { supabase } from "../utils/client";
-import { useAuth } from "../context/authContext";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import ProfileIcon from "@/components/ProfileIcon";
 

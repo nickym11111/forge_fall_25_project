@@ -14,6 +14,7 @@ import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
+import CustomHeader from "@/components/CustomHeader";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -255,8 +256,12 @@ export default function TabOneScreen() {
   }
 
   return (
+    <View style={{
+      width: '100%', height: '100%',
+    }}>
+      <CustomHeader title="What's In Our Fridge?" />
     <View style={styles.container}>
-      <Text style={styles.title}>What's In Our Fridge? </Text>
+      
       <View
         style={styles.separator}
         lightColor="#eee"
@@ -288,6 +293,7 @@ export default function TabOneScreen() {
         )}
         keyExtractor={(item) => item.id.toString()}
       />
+    </View>
     </View>
   );
 }
