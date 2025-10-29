@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web"
   },
   "dependencies": {
@@ -13,7 +13,9 @@
     "@emotion/styled": "^11.14.1",
     "@expo/vector-icons": "^15.0.2",
     "@mui/material": "^7.3.4",
+    "@radix-ui/react-dialog": "^1.1.15",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/native": "^7.1.18",
     "@reduxjs/toolkit": "^2.9.0",
     "@supabase/supabase-js": "^2.75.0",
@@ -30,6 +32,7 @@
     "expo-status-bar": "~3.0.8",
     "expo-web-browser": "~15.0.7",
     "react": "19.1.0",
+    "react-datepicker": "^8.8.0",
     "react-dom": "19.1.0",
     "react-native": "0.81.4",
     "react-native-elements": "^3.4.3",
@@ -44,6 +47,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.1.0",
+    "@types/react-datepicker": "^6.2.0",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },

@@ -3,6 +3,7 @@ import { useState } from "react";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
 
 interface ApiResponse {
   status: 'success' | 'error';
@@ -98,7 +99,11 @@ export default function JoinFridgeScreen()
 };
   return (
     <View style={styles.container}>
-      <CustomHeader title = "Join Fridge 🏠"/>
+      <CustomHeader 
+      title="Join Fridge  "
+      logo={require('../../assets/images/FridgeIcon.png')}
+      />
+      <ProfileIcon className="profileIcon" />
       <View style = {styles.joinContainer}>
         <View style = {styles.joinForm}>
           <TextInput

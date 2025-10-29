@@ -13,6 +13,9 @@ import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
+import { useAuth } from "../context/authContext";
+import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -100,6 +103,7 @@ const Item = ({
 };
 
 export default function TabOneScreen() {
+  const{ user } = useAuth();
   const [data, setData] = useState<FoodItem[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
   const originalHolder = useRef<FoodItem[]>([]);
@@ -125,7 +129,7 @@ export default function TabOneScreen() {
         throw new Error("You must be logged in to view fridge items");
       }
 
-      console.log("User ID:", session.user.id);
+      console.log("User ID:", user?.id);
 
       const response = await fetch(`${API_URL}/fridge_items/`, {
         method: "GET",
@@ -161,7 +165,7 @@ export default function TabOneScreen() {
       setError("");
     } catch (err) {
       console.error("Error fetching items:", err);
-      setError(`Failed to load items from ${API_URL}`);
+      setError(`${err}`);
     } finally {
       setLoading(false);
     }
@@ -169,6 +173,7 @@ export default function TabOneScreen() {
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
+
     const username = "John Doe";
     let temp_data = data;
 
@@ -252,8 +257,13 @@ export default function TabOneScreen() {
   }
 
   return (
+    <View style={{
+      width: '100%', height: '100%',
+    }}>
+      <CustomHeader title="What's In Our Fridge?" />
+      <ProfileIcon className="profileIcon" />
     <View style={styles.container}>
-      <Text style={styles.title}>What's In Our Fridge?</Text>
+      
       <View
         style={styles.separator}
         lightColor="#eee"
@@ -285,6 +295,7 @@ export default function TabOneScreen() {
         )}
         keyExtractor={(item) => item.id.toString()}
       />
+    </View>
     </View>
   );
 }

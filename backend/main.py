@@ -6,12 +6,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
 from Join import app as join_router
+from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
-from typing import Optional, Any, List
+from ShoppingList import app as shopping_router
+from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
 from recipes import app as recipes_router
+#from ai_expiration import app as ai_expiration_router
+from dotenv import load_dotenv
 
+
+load_dotenv()
 app = FastAPI()
+app.include_router(users_router)
+#app.include_router(ai_expiration_router, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
@@ -47,32 +55,62 @@ class RedeemFridgeInviteDTO(BaseModel):
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
 
-class FridgeItem(BaseModel):
+class FridgeItemCreate(BaseModel):
     title: str
-    added_by: Optional[Any] = None  # store JSON (user info)
-    shared_by: Optional[Any] = None  # store JSON (list or user info)
-    quantity: Optional[int] = None
-    days_till_expiration: Optional[int] = None
+    quantity: Optional[int] = 1
+    expiry_date: str
+    shared_by: Optional[List[dict]] = None
 
 # Root endpoint
 @app.get("/")
 def read_root():
     return {"message": "Hello from backend with Supabase!"}
 
-# Fridge items endpoints
-@join_router.post("/items/")
-def create_fridge_item(item: FridgeItem):
+# Fridge items endpoints, this is not done yet it doesn't have shared by or added by logic yet
+@app.post("/fridge_items/")
+async def create_fridge_item(
+    item: FridgeItemCreate,
+    current_user = Depends(get_current_user)
+):
     try:
+        from datetime import datetime, date
+        
+        # Calculate days till expiration
+        expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
+        today = date.today()
+        days_till_expiration = (expiry - today).days
+
+        
+        # Hard-code test fridge for now
+        #fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
+
+        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
+        
+        if not user_response.data or len(user_response.data) == 0:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        fridge_id = user_response.data[0].get("fridge_id")
+        
+        if not fridge_id:
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
+        
         response = supabase.table("fridge_items").insert({
             "title": item.title,
-            "added_by": item.added_by,
-            "shared_by": item.shared_by,
             "quantity": item.quantity,
-            "days_till_expiration": item.days_till_expiration
+            "days_till_expiration": days_till_expiration, 
+            "fridge_id": fridge_id,
+            "added_by": "TEMP_USER_ID",
+            "shared_by": item.shared_by
         }).execute()
-        return {"data": response.data, "status": "Fridge item added successfully"}
+        
+        return {
+            "status": "success",
+            "message": "Fridge item added successfully",
+            "data": response.data
+        }
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Error creating fridge item: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
 
 @app.get("/fridge_items/")
 def get_fridge_items(current_user = Depends(get_current_user)):
@@ -83,12 +121,12 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=401, detail="User not found")
         
         fridge_id = user_response.data[0].get("fridge_id")
         
         if not fridge_id:
-            raise HTTPException(status_code=404, detail="User has no fridge assigned")
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
         # Get items only from the user's fridge
         items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
@@ -245,6 +283,7 @@ app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
 app.include_router(recipes_router, prefix="/recipes")
+app.include_router(ai_expiration_router, prefix="/expiry")
        
 
 # Login Page
