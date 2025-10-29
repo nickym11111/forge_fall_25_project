@@ -54,7 +54,7 @@ class FridgeItemCreate(BaseModel):
     title: str
     quantity: Optional[int] = 1
     expiry_date: str
-    shared_by: Optional[List[dict]] = None
+    shared_by: Optional[List[str]] = None
 
 # Root endpoint
 @app.get("/")
@@ -94,7 +94,7 @@ async def create_fridge_item(
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": "TEMP_USER_ID",
+            "added_by": current_user.id,
             "shared_by": item.shared_by
         }).execute()
         
