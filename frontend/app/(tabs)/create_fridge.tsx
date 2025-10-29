@@ -121,7 +121,6 @@ export default function CreateFridgeScreen() {
       return;
     }
 
-
     // Filter out empty emails
     const validEmails = emails.filter((email) => email.trim() !== "");
     if (validEmails.length === 0) {
