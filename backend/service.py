@@ -46,10 +46,9 @@ async def get_current_user(
     except Exception as e:
         print(f"Authentication error: {str(e)}")
         raise HTTPException(status_code=401, detail="Authentication failed")
-    
-""""
+
 async def get_current_user_with_fridgeMates(
-current_user = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     #Get user with their fridgeMates
     try:
@@ -59,51 +58,7 @@ current_user = Depends(get_current_user)
             current_user["fridgeMates"] = []
             return current_user
         
-        # Get fridge emails
-        fridge_response = supabase.table("fridges").select("emails").eq("id", fridge_id).execute()
-        
-        if not fridge_response.data:
-            current_user["fridgeMates"] = []
-            return current_user
-        
-        fridge_emails = fridge_response.data[0].get("emails", [])
-        
-        # Parse if string
-        if isinstance(fridge_emails, str):
-            import ast
-            try:
-                fridge_emails = ast.literal_eval(fridge_emails)
-            except:
-                fridge_emails = []
-        
-        # Get fridgeMates
-        if fridge_emails and len(fridge_emails) > 0:
-            fridgeMates_response = supabase.table("users").select("id, email, first_name, last_name").in_("email", fridge_emails).execute()
-            current_user["fridgeMates"] = fridgeMates_response.data if fridgeMates_response.data else []
-        else:
-            current_user["fridgeMates"] = []
-        
-        return current_user
-        
-    except Exception as e:
-        print(f"Error getting fridgeMates: {str(e)}")
-        current_user["fridgeMates"] = []
-        return current_user
-"""
-
-
-async def get_current_user_with_fridgeMates(
-    current_user = Depends(get_current_user)
-):
-    """Get user with their fridgeMates"""
-    try:
-        fridge_id = current_user.get("fridge_id")
-        
-        if not fridge_id:
-            current_user["fridgeMates"] = []
-            return current_user
-        
-        # Get all users with the same fridge_id (excluding current user)
+        # Get all users with the same fridge_id, not including the current user
         fridgeMates_response = supabase.table("users").select(
             "id, email, first_name, last_name"
         ).eq("fridge_id", fridge_id).neq("id", current_user["id"]).execute()
