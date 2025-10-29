@@ -75,16 +75,7 @@ async def create_fridge_item(
         today = date.today()
         days_till_expiration = (expiry - today).days
 
-        
-        # Hard-code test fridge for now
-        #fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
-
-        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
-        
-        if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        fridge_id = user_response.data[0].get("fridge_id")
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
@@ -94,7 +85,7 @@ async def create_fridge_item(
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": "TEMP_USER_ID",
+            "added_by": current_user.get("id"),
             "shared_by": item.shared_by
         }).execute()
         
@@ -113,12 +104,7 @@ def get_fridge_items(current_user = Depends(get_current_user)):
 
     try:
         #Get the user's fridge_id
-        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
-        
-        if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        fridge_id = user_response.data[0].get("fridge_id")
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
