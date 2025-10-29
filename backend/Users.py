@@ -46,7 +46,7 @@ async def create_user(user: UserCreate):
                 "email_redirect_to": "http://localhost:8081/" # Redirect to this URL after email confirmation
             }
         })  
-        #supabase.table("users").insert({"first_name": user.firstName, "last_name": user.lastName, "email": user.email}).execute()
+        #supabase.table("users").insert({"first_name": user.firstName, "last_name": user.lastName, "email": user.email}).execute() removed this line because Supabase handles user table insert with trigger, uncomment if needed
         return {"email": user.email, 
                 "firstName": user.firstName,
                 "lastName": user.lastName,
