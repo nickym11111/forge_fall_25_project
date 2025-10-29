@@ -9,23 +9,10 @@ import os
 from supabase import create_client
 from functools import lru_cache
 import os
-from supabase import create_client
 
 def generate_invite_code():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
-
-@lru_cache()
-def get_supabase_client():
-    return create_client(
-        os.getenv("SUPABASE_URL"),
-        os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-    )
-
-async def get_current_user(
-    authorization: str = Header(None),
-    supabase = Depends(get_supabase_client)
-):
 
 @lru_cache()
 def get_supabase_client():
@@ -45,7 +32,6 @@ async def get_current_user(
         token = authorization.replace("Bearer ", "")
         response = supabase.auth.get_user(token)
         
-        if not response or not response.user:
         if not response or not response.user:
             raise HTTPException(status_code=401, detail="Invalid token")
         
@@ -85,10 +71,6 @@ async def get_current_user_with_fridgeMates(
         return current_user
         
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        current_user["fridgeMates"] = []
-        return current_user
         import traceback
         traceback.print_exc()
         current_user["fridgeMates"] = []
