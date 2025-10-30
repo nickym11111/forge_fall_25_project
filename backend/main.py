@@ -54,7 +54,7 @@ class FridgeItemCreate(BaseModel):
     title: str
     quantity: Optional[int] = 1
     expiry_date: str
-    shared_by: Optional[List[dict]] = None
+    shared_by: Optional[List[str]] = None
 
 # Root endpoint
 @app.get("/")
