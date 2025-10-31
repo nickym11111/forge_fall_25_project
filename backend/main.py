@@ -1,6 +1,4 @@
 # EXAMPLE TEMPLATE SETUP
-from dotenv import load_dotenv
-load_dotenv()
 from typing import Optional, Any
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
@@ -8,23 +6,30 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
-from receiptParsing.chatGPTParse import getChatGPTResponse
 from Join import app as join_router
+from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
-from typing import Optional, Any, List
+from ShoppingList import app as shopping_router
+from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
+#from ai_expiration import app as ai_expiration_router
+from dotenv import load_dotenv
+
+
+load_dotenv()
 
 # Initialize routers
-join_router = APIRouter()
-users_router = APIRouter()
 app = FastAPI()
-# app.include_router(users_router)
-app.include_router(ai_expiration.router, tags=["ai"])
+app.include_router(users_router)
+#app.include_router(ai_expiration, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
     "http://localhost:8081",  # React/Next dev server
+    "http://localhost:8081",
+    "http://127.0.0.1:8081",
     "http://localhost:8082",
+    "http://127.0.0.1:8082",
 ]
 
 app.add_middleware(
@@ -32,36 +37,36 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
-    allow_methods=["*"],  # allow POST, GET, OPTIONS, etc.
     allow_headers=["*"],
 )
 
 # Data Transfer Objects
-# Data Transfer Objects
 class FridgeInviteDTO(BaseModel):
     fridge_id: str
-    email_to: str
-    invited_by: str
-    invite_code: str
+    emails: List[str]
+    invited_by: Optional[str] = None
+    invite_code: Optional[str] = None
 
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
 
-class FridgeItem(BaseModel):
+class FridgeItemCreate(BaseModel):
     title: str
-    added_by: Optional[Any] = None  # store JSON (user info)
-    shared_by: Optional[Any] = None  # store JSON (list or user info)
-    quantity: Optional[int] = None
-    days_till_expiration: Optional[int] = None
+    quantity: Optional[int] = 1
+    expiry_date: str
+    shared_by: Optional[List[str]] = None
 
 # Root endpoint
 @app.get("/")
 def read_root():
     return {"message": "Hello from backend with Supabase!"}
 
-# Fridge items endpoints
-@join_router.post("/items/")
-def create_fridge_item(item: FridgeItem):
+# Fridge items endpoints, this is not done yet it doesn't have shared by or added by logic yet
+@app.post("/fridge_items/")
+async def create_fridge_item(
+    item: FridgeItemCreate,
+    current_user = Depends(get_current_user)
+):
     try:
         from datetime import datetime, date
         
@@ -69,21 +74,29 @@ def create_fridge_item(item: FridgeItem):
         expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
         today = date.today()
         days_till_expiration = (expiry - today).days
+
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
         
-        # Hard-code test fridge for now
-        fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
+        if not fridge_id:
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
         response = supabase.table("fridge_items").insert({
             "title": item.title,
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": "TEMP_USER_ID",
+            "added_by": current_user.get("id"),
             "shared_by": item.shared_by
         }).execute()
-        return {"data": response.data, "status": "Fridge item added successfully"}
+        
+        return {
+            "status": "success",
+            "message": "Fridge item added successfully",
+            "data": response.data
+        }
     except Exception as e:
-        return {"error": str(e)}
+        print(f"Error creating fridge item: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
 
 @app.get("/fridge_items/")
 def get_fridge_items(current_user = Depends(get_current_user)):
@@ -91,15 +104,10 @@ def get_fridge_items(current_user = Depends(get_current_user)):
 
     try:
         #Get the user's fridge_id
-        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
-        
-        if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        fridge_id = user_response.data[0].get("fridge_id")
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
         
         if not fridge_id:
-            raise HTTPException(status_code=404, detail="User has no fridge assigned")
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
         # Get items only from the user's fridge
         items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
@@ -121,20 +129,11 @@ def get_items_added_by(user_name: str):
                .select("*")
                .contains("added_by", {"name": user_name})
                .execute())
-    response = (supabase.table("fridge_items")
-               .select("*")
-               .contains("added_by", {"name": user_name})
-               .execute())
     return {"data": response.data}
-
 
 # Get items expiring soon
 @app.get("/fridge_items/expiring-soon/")
 def get_expiring_items():
-    response = (supabase.table("fridge_items")
-               .select("*")
-               .lte("days_till_expiration", 3)
-               .execute())
     response = (supabase.table("fridge_items")
                .select("*")
                .lte("days_till_expiration", 3)
@@ -146,7 +145,7 @@ def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-@app.post("/send-invite/")
+@join_router.post("/send-invite/")
 async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
     # Check if fridge exists
     fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
@@ -206,10 +205,8 @@ async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
         "message": "Invitation processing completed",
         "results": results
     }
-    
 
 # Accept fridge invite
-@join_router.post("/accept-invite/")
 @join_router.post("/accept-invite/")
 async def accept_fridge_invite(
     redeem_dto: RedeemFridgeInviteDTO,
@@ -265,7 +262,10 @@ async def accept_fridge_invite(
 # Include the routers with their prefixes
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
+app.include_router(receipt_router, prefix="/receipt")
+app.include_router(ai_expiration_router, prefix="/expiry")
        
+
 # Login Page
 class UserLogin(BaseModel):
     email: str
@@ -334,15 +334,3 @@ def get_fridges():
     except Exception as e:
         print(f"Error fetching fridges: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-    
-class Receipt(BaseModel):
-    base64Image: str
-
-@app.post("/parse-receipt")
-def parse_receipt(receipt: Receipt):
-    try:
-        return getChatGPTResponse(receipt.base64Image);
-    except Exception as e:
-        error_msg = f"Error parsing receipt: {str(e)}"
-        print(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
