@@ -5,17 +5,19 @@ import {
   FlatList,
   TextInput,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
 
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import ProfileIcon from "@/components/ProfileIcon";
+import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -63,7 +65,14 @@ const Item = ({
     if (mate.first_name && mate.last_name) {
       return `${mate.first_name} ${mate.last_name}`;
     }
-    return mate.name || "Unknown";
+    if (mate.first_name) return mate.first_name;
+    if (mate.last_name) return mate.last_name;
+    if (mate.name) return mate.name;
+    if (mate.email) {
+      // Use email prefix as fallback
+      return mate.email.split('@')[0];
+    }
+    return "Unknown";
   };
 
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
@@ -111,12 +120,15 @@ export default function TabOneScreen() {
     "All Items",
   ]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  // Fetch data from backend when component mounts
-  useEffect(() => {
-    fetchFridgeItems();
-  }, []);
+  // Auto-refresh when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchFridgeItems();
+    }, [])
+  );
 
   const fetchFridgeItems = async () => {
     try {
@@ -168,7 +180,14 @@ export default function TabOneScreen() {
       setError(`${err}`);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  // Manual refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFridgeItems();
   };
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
@@ -294,6 +313,14 @@ export default function TabOneScreen() {
           />
         )}
         keyExtractor={(item) => item.id.toString()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["purple"]}
+            tintColor="purple"
+          />
+        }
       />
     </View>
     </View>

@@ -5,7 +5,8 @@ export async function AddItemToFridge(
   title: string,
   quantity: string,
   expiryDate: Date,
-  sharedByUserIds: string[]
+  sharedByUserIds: string[],
+  price?: number
 ) {
   const response = await fetch(`${API_URL}/fridge_items/`, {
     method: "POST",
@@ -18,6 +19,7 @@ export async function AddItemToFridge(
       quantity: quantity ? Number(quantity) : 1,
       expiry_date: expiryDate.toISOString().split("T")[0],
       shared_by: sharedByUserIds.length > 0 ? sharedByUserIds : null,
+      price: price || 0.0,
     }),
   });
 

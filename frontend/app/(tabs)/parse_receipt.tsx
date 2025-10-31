@@ -99,8 +99,8 @@ export default function ParseReceiptScreen() {
       item.name,
       item.quantity,
       newExpiryDate,
-      "TEMP_USER_ID", // Placeholder for current user ID
-      []
+      [], // Empty array means shared by all fridge mates
+      item.price
     );
 
     const data: ApiResponse = await AddItemToFridgeResponse.json();
@@ -233,6 +233,7 @@ export default function ParseReceiptScreen() {
                     sendItemToFridge({
                       name: itemName,
                       quantity: Math.ceil(itemData.quantity),
+                      price: itemData.price,
                       index,
                     });
                     setAddingItemIndex((prev) => [...prev, index]);
@@ -262,6 +263,7 @@ export default function ParseReceiptScreen() {
                           sendItemToFridge({
                             name: itemName,
                             quantity: Math.ceil(itemData.quantity),
+                            price: itemData.price,
                             index,
                           });
                           setAddingItemIndex((prev) => [...prev, index]);
