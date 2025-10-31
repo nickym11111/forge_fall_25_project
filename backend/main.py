@@ -100,7 +100,8 @@ async def create_fridge_item(
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
             "added_by": "TEMP_USER_ID",
-            "shared_by": item.shared_by
+            "shared_by": item.shared_by,
+            "fridge_id": fridge_id #CHANGED HERE
         }).execute()
         
         return {

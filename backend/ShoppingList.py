@@ -12,11 +12,15 @@ class ShoppingItem(BaseModel):
     requested_by: str
     bought_by: Optional[str] = None
     checked: Optional[bool] = False
-    need_by: Optional[str] = None        
+    need_by: Optional[str] = None    
+
+class User(BaseModel):
+    id: str
+    fridge_id: str #should this be an array?
 
 #Create New Item
 @app.post("/items/")
-def add_item(item: ShoppingItem):
+def add_item(item: ShoppingItem, user: User):
     try:
         response = (
             supabase.table("ShoppingList")
@@ -28,6 +32,7 @@ def add_item(item: ShoppingItem):
                 "checked": item.checked,
                 "need_by": item.need_by,
                 "shared_with": item.shared_with,
+                "fridge_id" : user.fridge_id
             })
             .execute()
         )

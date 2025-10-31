@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import supabase  
 from pydantic import BaseModel
 from typing import List, Optional, Union
+from fastapi import Header
+from service import get_current_user
+import ast
 
 app = APIRouter()
 #TEMPLATE to get started :)
@@ -52,6 +55,7 @@ async def create_user(user: UserCreate):
                 "status": "User created successfully"}
     except Exception as e:
         return {"error": str(e)}
+
     
 @app.get("/userInfo")
 async def get_current_user_info(current_user = Depends(get_current_user)):
