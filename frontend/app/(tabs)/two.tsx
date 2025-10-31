@@ -12,12 +12,13 @@ import { Ionicons } from "@expo/vector-icons";
 
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import ProfileIcon from "@/components/ProfileIcon";
+import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -56,7 +57,14 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
     if (mate.first_name && mate.last_name) {
       return `${mate.first_name} ${mate.last_name}`;
     }
-    return mate.name || "Unknown";
+    if (mate.first_name) return mate.first_name;
+    if (mate.last_name) return mate.last_name;
+    if (mate.name) return mate.name;
+    if (mate.email) {
+      // Use email prefix as fallback
+      return mate.email.split('@')[0];
+    }
+    return "Unknown";
   };
 
   const addedByName = item.added_by ? getDisplayName(item.added_by) : "Unknown";
@@ -311,7 +319,14 @@ export default function TabOneScreen() {
       originalHolder.current = [];
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  // Manual refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFridgeItems();
   };
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
@@ -480,7 +495,6 @@ export default function TabOneScreen() {
           />
         )}
         keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
       />
     </View>
   </View>

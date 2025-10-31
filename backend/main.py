@@ -10,6 +10,7 @@ from Join import app as join_router
 #from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
+from CostSplitting import app as cost_splitting_router
 from typing import List, Optional, Any
 #from receiptParsing.chatGPTParse import app as receipt_router
 from dotenv import load_dotenv
@@ -54,6 +55,7 @@ class FridgeItemCreate(BaseModel):
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
+    price: Optional[float] = 0.0
 
 # Root endpoint
 @app.get("/")
@@ -100,7 +102,7 @@ async def create_fridge_item(
 
 @app.get("/fridge_items/")
 def get_fridge_items(current_user = Depends(get_current_user)):
-    #Get items from the current user's fridge
+    #Get items from the current user's fridge with user details
 
     try:
         #Get the user's fridge_id
@@ -117,13 +119,15 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         
         return {
             "status": "success",
-            "data": items_response.data
+            "data": transformed_items
         }
         
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error getting fridge items: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get fridge items: {str(e)}")
 
 @app.get("/items/added-by/{user_name}")
@@ -217,13 +221,17 @@ async def accept_fridge_invite(
     authorization: str = Header(None)
 ):
     try:
+        # Get user data from dict
+        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+        user_email = current_user.get("email") if isinstance(current_user, dict) else current_user.email
+        
         # Check if invite exists and is valid
         invite_response = supabase.table("fridge_invitations").select(
             "*, fridges(name)"
         ).eq(
             "invite_code", redeem_dto.invite_code.upper()
         ).eq(
-            "invited_email", current_user.email.lower()
+            "invited_email", user_email.lower()
         ).eq(
             "used", False
         ).execute()
@@ -236,7 +244,7 @@ async def accept_fridge_invite(
         # Update user profile with fridge_id
         profile_response = supabase.table("users").update({
             "fridge_id": invitation["fridge_id"]
-        }).eq("id", current_user.id).execute()
+        }).eq("id", user_id).execute()
 
         if not profile_response.data:
             raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
@@ -281,6 +289,9 @@ class FridgeCreate(BaseModel):
 @app.post("/fridges")
 def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
+        # Get user ID from dict
+        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+        
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
             "name": fridge.name,

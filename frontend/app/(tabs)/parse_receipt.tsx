@@ -270,6 +270,7 @@ export default function ParseReceiptScreen() {
                     await sendItemToFridge({
                       name: itemName,
                       quantity: Math.ceil(itemData.quantity),
+                      price: itemData.price,
                       index,
                     });
                     
@@ -308,6 +309,7 @@ export default function ParseReceiptScreen() {
                           sendItemToFridge({
                             name: itemName,
                             quantity: Math.ceil(itemData.quantity),
+                            price: itemData.price,
                             index,
                           });
                           setAddingItemIndex((prev) => [...prev, index]);
