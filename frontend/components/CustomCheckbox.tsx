@@ -8,7 +8,7 @@ import { StyleSheet, View, Text, TouchableOpacity } from "react-native";
 const CustomCheckbox = ({
   value,
   onToggle,
-  checkedColor = "#4caf50",
+  checkedColor = "#14b8a6",
   uncheckedColor = "white",
   size = 24,
   borderRadius = 4,

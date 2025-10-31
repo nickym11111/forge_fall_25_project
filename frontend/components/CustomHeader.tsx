@@ -18,7 +18,7 @@ const CustomHeader = ({ title, logo }: CustomHeaderProps) => {
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#4caf50",
+    backgroundColor: "#14b8a6",
     paddingTop: 20,
     paddingBottom: 20,
     alignItems: "center",

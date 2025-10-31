@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
 
   aiSuggestionText: {
     fontSize: 11,
-    color: "#2E7D32",
+    color: "#14b8a6",
     fontWeight: "600",
   },
 
@@ -349,6 +349,7 @@ export default function AddItemManual() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
 
   // AI Expiry Date Prediction
   useEffect(() => {

@@ -7,12 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
 from Join import app as join_router
-from ai_expiration import app as ai_expiration_router
+#from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
 from typing import List, Optional, Any
-from receiptParsing.chatGPTParse import app as receipt_router
-#from ai_expiration import app as ai_expiration_router
+#from receiptParsing.chatGPTParse import app as receipt_router
 from dotenv import load_dotenv
 
 
@@ -20,7 +19,7 @@ load_dotenv()
 
 # Initialize routers
 app = FastAPI()
-app.include_router(users_router)
+#app.include_router(users_router)
 #app.include_router(ai_expiration, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
@@ -262,8 +261,8 @@ async def accept_fridge_invite(
 # Include the routers with their prefixes
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
-app.include_router(receipt_router, prefix="/receipt")
-app.include_router(ai_expiration_router, prefix="/expiry")
+#app.include_router(receipt_router, prefix="/receipt")
+#app.include_router(ai_expiration_router, prefix="/expiry")
        
 
 # Login Page

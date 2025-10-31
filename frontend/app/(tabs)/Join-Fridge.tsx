@@ -64,7 +64,7 @@ export default function JoinFridgeScreen()
   
   const handleJoinFridge = async () => {
   if (!jCode.trim()){
-    Alert.alert("error", "Please enter a fridge code.");
+    Alert.alert("error", "Please enter a kitchen code.");
     return;
   }
 
@@ -100,7 +100,7 @@ export default function JoinFridgeScreen()
   return (
     <View style={styles.container}>
       <CustomHeader 
-      title="Join Fridge  "
+      title="Join Kitchen  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ProfileIcon className="profileIcon" />
@@ -125,7 +125,7 @@ export default function JoinFridgeScreen()
             onPress={() =>
               !isLoading && navigate("/(tabs)/create_fridge")} // connect to "create fridge" page
           >
-            Create a fridge instead
+            Create a kitchen instead
           </Text>
         </View>
       </View>

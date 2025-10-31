@@ -120,7 +120,7 @@ export default function CreateFridgeScreen() {
   //Handle fridge creation and sending invites
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
-      Alert.alert("Error", "Please enter a fridge name.");
+      Alert.alert("Error", "Please enter a Kitchen name.");
       return;
     }
 
@@ -158,15 +158,15 @@ export default function CreateFridgeScreen() {
       });
 
       const fridgeData: ApiResponse = await createFridgeResponse.json();
-      console.log("Fridge creation response:", fridgeData);
+      console.log("Kitchen creation response:", fridgeData);
 
       if (!createFridgeResponse.ok || fridgeData.status !== "success") {
-        throw new Error(fridgeData.message || "Failed to create fridge");
+        throw new Error(fridgeData.message || "Failed to create Kitchen");
       }
 
       const fridgeId = fridgeData.fridge_id;
       if (!fridgeId) {
-        throw new Error("No fridge ID returned from server");
+        throw new Error("No Kitchen ID returned from server");
       }
 
       // 2. Then, send invites to all provided emails
@@ -198,14 +198,14 @@ export default function CreateFridgeScreen() {
       if (failedInvites.length > 0) {
         Alert.alert(
           "Partial Success",
-          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
+          `Kitchen created successfully, but failed to send invites to: ${failedInvites.join(
             ", "
           )}`
         );
       } else {
         Alert.alert(
           "Success!",
-          "Fridge created and invites sent successfully!"
+          "Kitchen created and invites sent successfully!"
         );
       }
 
@@ -234,7 +234,7 @@ export default function CreateFridgeScreen() {
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}
-          <Text style={styles.label}>Fridge Name:</Text>
+          <Text style={styles.label}>Kitchen Name:</Text>
           <TextInput
             style={styles.input}
             placeholder="example"
@@ -245,7 +245,7 @@ export default function CreateFridgeScreen() {
           />
 
           {/*Invite Fridgemates*/}
-          <Text style={styles.label}>Invite Fridgemates (Email):</Text>
+          <Text style={styles.label}>Invite KitchenMates (Email):</Text>
 
           {/*Email fields*/}
           {emails.map((email, index) => (
@@ -278,7 +278,7 @@ export default function CreateFridgeScreen() {
 
           {/*Create button*/}
           <CustomButton
-            title={isLoading ? "Creating..." : "Create Fridge"}
+            title={isLoading ? "Creating..." : "Create Kitchen"}
             onPress={handleCreateFridge}
             style={styles.createButton}
             disabled={isLoading}
@@ -290,7 +290,7 @@ export default function CreateFridgeScreen() {
             style={styles.joinFridgeText}
             onPress={() => !isLoading && navigate("/(tabs)/Join-Fridge")}
           >
-            Join a fridge instead
+            Join a kitchen instead
           </Text>
         </View>
       </ScrollView>

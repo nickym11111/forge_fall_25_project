@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#4caf50",
+    backgroundColor: "#14b8a6",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#6C63FF",
@@ -584,7 +584,7 @@ const styles = StyleSheet.create({
   // Buttons
   addItemButton: {
     marginTop: 14,
-    backgroundColor: "#5FA35F",
+    backgroundColor: "#14b8a6",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
