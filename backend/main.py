@@ -281,7 +281,7 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
             "name": fridge.name,
-            "created_by": current_user.id,
+            "created_by": current_user["id"],
             "created_at": "now()"
         }).execute()
 
@@ -290,13 +290,13 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             print(f"No data returned from database: {createFridge_response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
         
-        # Extract the ID from the response
         fridge_id = createFridge_response.data[0].get("id")
+
 
         # Gets the response for updating the fridge id for a user
         updateFridgeID_response = supabase.table("users").update({
             "fridge_id": fridge_id
-        }).eq("id", current_user.id).execute()
+        }).eq("id", current_user["id"]).execute()
 
         if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
             print(f"Error updating user fridge ID: {updateFridgeID_response}")
