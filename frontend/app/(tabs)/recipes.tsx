@@ -143,20 +143,24 @@ const PreviewLayout = ({
 
 return (
     <View style={styles.container}>
+      
       <Text style={styles.title}>Share Recipes!</Text>
       <View
         style={styles.separator}
         lightColor="#eee"
         darkColor="rgba(255,255,255,0.1)"
       />
+      <View style={styles.boxContainer}>
       <View>
         <TextInput
           style={styles.search_bar}
           onChangeText={searchFunction}
           value={inputValue}
           placeholder="Recipe Item..."
+          
         />
       </View>
+    
       <PreviewLayout
         values={["Find Ingredients"]}
         selectedValue={selectedPrompt}
@@ -174,12 +178,18 @@ return (
         )}
         keyExtractor={(item) => item}
       />
+      </View>
+      <View
+        style={styles.separator2}
+        lightColor="#eee"
+        darkColor="rgba(255,255,255,0.1)"
+      />
+      <View style={styles.boxContainer}>
       <PreviewLayout
         values={["Find Recipe"]}
         selectedValue={selectedPrompt}
         setSelectedValue={setSelectedPrompt}
         onPress={handleFindRecipe}
-
       ></PreviewLayout>
 
         <FlatList
@@ -188,8 +198,10 @@ return (
           <RecipeItem 
             item={item} />
         )}
+
         keyExtractor={(item, index) => `recipe-${index}`}
       />
+      </View>
     </View>
   );
 };
@@ -242,7 +254,13 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   separator: {
-    marginVertical: 3,
+    marginVertical: 20,
+    height: 1,
+    width: "80%",
+    backgroundColor: "#F8F9FF",
+  },
+  separator2: {
+    marginVertical: 20,
     height: 1,
     width: "80%",
     backgroundColor: "#F8F9FF",
@@ -284,5 +302,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     fontStyle: 'italic',
+  },
+  boxContainer: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   }
 });

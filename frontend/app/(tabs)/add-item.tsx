@@ -1,4 +1,3 @@
-
 import {
   StyleSheet,
   TextInput,
@@ -20,8 +19,6 @@ import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
-import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
-import ProfileIcon from "@/components/ProfileIcon";
 
 interface ApiResponse {
   data?: any;

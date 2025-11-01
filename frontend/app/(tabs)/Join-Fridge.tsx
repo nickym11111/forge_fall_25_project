@@ -45,7 +45,11 @@ const styles = StyleSheet.create({
 
   joinButton: 
   {
-    width: 217,
+    width: "30%",
+    marginVertical: -10,
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 15,
   },
 
   createFridgeButton: 

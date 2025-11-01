@@ -22,7 +22,12 @@ import ProfileIcon from "@/components/ProfileIcon";
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
-
+  const [parsedItems, setParsedItems] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userSession, setUserSession] = useState<any>(null);
+  const [isToastVisible, setIsToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [addingItemIndex, setAddingItemIndex] = useState<number[]>([]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -126,6 +131,7 @@ export default function ParseReceiptScreen() {
     }
 
     try {
+      setIsLoading(true);
       setResponseText("Parsing receipt...");
 
       let base64Image: string;
@@ -146,10 +152,17 @@ export default function ParseReceiptScreen() {
       }
       const response = await CreateParseReceiptRequest(base64Image);
       const parsed = JSON.parse(response.output[0].content[0].text);
+
+      setParsedItems(parsed);
+      console.log(parsed);
+      setResponseText("");
+
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
       console.error(error);
       setResponseText("Error parsing receipt");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,26 +174,106 @@ export default function ParseReceiptScreen() {
         <ToastMessage message={toastMessage} visible={isToastVisible} />
       </View>
       <View style={styles.imageContainer}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
-        ) : (
-          <TouchableOpacity onPress={pickImage} style={{width: "100%", height: "100%"}}> 
-          <View style={styles.imageSkeleton} >
-            <View style={styles.imageTextContainer}>
-              <Text style={{fontSize: 24}}>📸</Text>
-              <Text style={{fontWeight: "bold", color: "white", fontSize: 18, textAlign: "center",}}>Scan Receipt or Take Photo</Text>
-              <Text style={{color: "white", fontSize: 15, textAlign: "center",}}>AI will detect items and expiry dates</Text>
+        <TouchableOpacity
+          onPress={pickImage}
+          style={{ width: "100%", height: "100%" }}
+        >
+          {imageUri ? (
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: imageUri }} style={styles.image} />
+              <View style={styles.imageOverlay}>
+                <Text style={styles.imageOverlayText}>
+                  Click to Change Image
+                </Text>
+              </View>
             </View>
-          </View>
-          </TouchableOpacity>
-
-        )}
+          ) : (
+            <View style={styles.imageSkeleton}>
+              <View style={styles.imageTextContainer}>
+                <Text style={{ fontSize: 24 }}>📸</Text>
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    color: "white",
+                    fontSize: 18,
+                    textAlign: "center",
+                  }}
+                >
+                  Scan Receipt or Take Photo
+                </Text>
+                <Text
+                  style={{ color: "white", fontSize: 15, textAlign: "center" }}
+                >
+                  AI will detect items and expiry dates
+                </Text>
+              </View>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
       <View style={styles.responseTextContainer}>
-      <Text style={styles.responseText}>
-        {responseText}
-      </Text>
+        {isLoading && <Text>Parsing Receipt</Text>}
+        {!parsedItems ? (
+          <Text style={styles.responseText}>{responseText}</Text>
+        ) : parsedItems.length > 0 ? (
+          <View>
+            <View
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: 12,
+              }}
+            >
+              <Button
+                title="Add All to Fridge"
+                onPress={() => {
+                  parsedItems.forEach((item, index) => {
+                    const itemName = Object.keys(item)[0];
+                    const itemData = item[itemName];
+                    sendItemToFridge({
+                      name: itemName,
+                      quantity: Math.ceil(itemData.quantity),
+                      index,
+                    });
+                    setAddingItemIndex((prev) => [...prev, index]);
+                  });
+                }}
+              />
+            </View>
+            {parsedItems.map((item, index) => {
+              const itemName = Object.keys(item)[0];
+              const itemData = item[itemName];
+              return (
+                <View key={index} style={styles.itemCard}>
+                  <View>
+                    <Text style={styles.itemName}>{itemName}</Text>
+                    <Text style={styles.itemDetails}>
+                      Quantity: {itemData.quantity} | Price: $
+                      {itemData.price.toFixed(2)}
+                    </Text>
+                  </View>
+                  <View style={{ maxWidth: 120 }}>
+                    {addingItemIndex.includes(index) ? (
+                      <Text>Adding...</Text>
+                    ) : (
+                      <Button
+                        title="Add to Fridge"
+                        onPress={() => {
+                          sendItemToFridge({
+                            name: itemName,
+                            quantity: Math.ceil(itemData.quantity),
+                            index,
+                          });
+                          setAddingItemIndex((prev) => [...prev, index]);
+                        }}
+                      />
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
       </View>
     </ScrollView>
   );
@@ -190,7 +283,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F9FF",
+    overflowY: "scroll",
   },
+  imageWrapper: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  imageOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.25)", // subtle dim so text is readable
+  },
+  imageOverlayText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 6,
+  },
+
   imageContainer: {
     width: "100%",
     height: "100%",
@@ -211,7 +332,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   imageTextContainer: {
     alignItems: "center",
     gap: 22,
@@ -224,9 +344,32 @@ const styles = StyleSheet.create({
   },
   responseTextContainer: {
     width: "100%",
-    display: "flex",
-    alignItems: "center",
+    padding: 16,
   },
   responseText: {
+    textAlign: "center",
+  },
+  itemCard: {
+    backgroundColor: "white",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  itemName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  itemDetails: {
+    fontSize: 14,
+    color: "#666",
   },
 });
