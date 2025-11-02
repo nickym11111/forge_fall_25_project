@@ -98,9 +98,8 @@ export default function ParseReceiptScreen() {
       userSession.access_token,
       item.name,
       item.quantity,
-      newExpiryDate,
-      "TEMP_USER_ID", // Placeholder for current user ID
-      []
+      newExpiryDate, // Placeholder for current user ID
+      ["TEMP_USER_ID"]
     );
 
     const data: ApiResponse = await AddItemToFridgeResponse.json();
