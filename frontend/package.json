@@ -46,8 +46,20 @@
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__template": "^7.4.4",
+    "@types/babel__traverse": "^7.28.0",
+    "@types/graceful-fs": "^4.1.9",
+    "@types/istanbul-lib-coverage": "^2.0.6",
+    "@types/istanbul-lib-report": "^3.0.3",
+    "@types/istanbul-reports": "^3.0.4",
+    "@types/node": "^24.9.0",
     "@types/react": "~19.1.0",
     "@types/react-datepicker": "^6.2.0",
+    "@types/stack-utils": "^2.0.3",
+    "@types/yargs": "^17.0.33",
+    "@types/yargs-parser": "^21.0.3",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },

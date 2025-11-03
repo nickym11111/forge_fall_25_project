@@ -16,15 +16,18 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
+import { useAuth } from "../context/authContext"; 
+import { useFridge } from "../context/FridgeContext";
 
-interface ShoppingItem {
-  id?: string;
-  name: string;
-  quantity: number;
-  need_by?: string;
-  requested_by?: string;
-  checked?: boolean;
-}
+interface ShoppingItem { 
+  id?: string; name: string; 
+  quantity?: number; 
+  price?: number; 
+  requested_by: string; 
+  bought_by?: string | null; 
+  checked?: boolean; 
+  need_by?: string; 
+  fridge_id?: string; }
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/shopping`;
 
@@ -44,6 +47,11 @@ const isoToShort = (iso?: string) => {
 };
 
 export default function SharedListScreen() {
+  const { user } = useAuth(); 
+  const { fridge } = useFridge(); 
+  const user_id = user?.id; 
+  const fridge_id = fridge?.id;
+
   // ---------- State ----------
   const [items, setItems] = useState<ShoppingItem[]>([]);
 
@@ -82,44 +90,52 @@ const resetForm = () => {
 
   //Actions
   const addItem = async () => {
-    if (!formName.trim()) return;
+  if (!formName.trim()) return;
 
-    const newItem: ShoppingItem = {
-      name: formName.trim(),
-      quantity: Math.max(1, Math.floor(formQuantity)),
-      need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
-      requested_by: "You",
-      checked: false,
-    };
+  if (!user_id || !fridge_id) {
+    console.warn("Cannot add item: user or fridge not loaded yet.");
+    return;
+  }
 
-    setItems((prev) => [...prev, newItem]);
-    setFormName("");
-    closeModal();
-
-    try {
-      const resp = await fetch(`${API_URL}/items/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newItem),
-      });
-      const data = await resp.json();
-
-      if (resp.ok && data?.data?.length) {
-        const returned = data.data[0];
-        setItems((prev) => {
-          const idx = prev.findIndex((it) => !it.id && it.name === returned.name);
-          if (idx !== -1) {
-            const copy = [...prev];
-            copy[idx] = returned;
-            return copy;
-          }
-          return [...prev, returned];
-        });
-      }
-    } catch (err) {
-      console.error("addItem error:", err);
-    }
+  const newItem: ShoppingItem = {
+    name: formName.trim(),
+    quantity: Math.max(1, Math.floor(formQuantity)),
+    need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
+    requested_by: user_id,
+    bought_by: null,
+    checked: false,
+    fridge_id: fridge_id,
   };
+
+  setItems((prev) => [...prev, newItem]);
+  resetForm();
+  closeModal();
+
+  try {
+    const resp = await fetch(`${API_URL}/items/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newItem),
+    });
+    const data = await resp.json();
+
+    if (resp.ok && data?.data?.length) {
+      const returned = data.data[0];
+      setItems((prev) => {
+        const idx = prev.findIndex((it) => !it.id && it.name === returned.name);
+        if (idx !== -1) {
+          const copy = [...prev];
+          copy[idx] = returned;
+          return copy;
+        }
+        return [...prev, returned];
+      });
+    }
+  } catch (err) {
+    console.error("addItem error:", err);
+  }
+};
+
 
   const deleteItem = async (item: ShoppingItem) => {
     setItems((prev) => prev.filter((i) => i !== item));
@@ -149,21 +165,28 @@ const resetForm = () => {
     }
   };
 
-  const toggleChecked = async (item: ShoppingItem) => {
-    const updated = { ...item, checked: !item.checked };
-    setItems((prev) => prev.map((it) => (it === item ? updated : it)));
-
-    if (!item.id) return;
-    try {
-      await fetch(`${API_URL}/items/${item.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
-    } catch (err) {
-      console.error("toggleChecked error:", err);
-    }
+ const toggleChecked = async (item: ShoppingItem) => {
+  if (!user_id) return;
+  const updated = { 
+    ...item, 
+    checked: !item.checked, 
+    bought_by: !item.checked ? user_id : null 
   };
+
+  setItems((prev) => prev.map((it) => (it === item ? updated : it)));
+
+  if (!item.id) return;
+  try {
+    await fetch(`${API_URL}/items/${item.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updated),
+    });
+  } catch (err) {
+    console.error("toggleChecked error:", err);
+  }
+};
+
 
   const onChangeNeedBy = (event: any, selected?: Date) => {
     if (selected) setFormNeedBy(selected);
