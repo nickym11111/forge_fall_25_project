@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
+import { router } from 'expo-router';
 
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
@@ -252,6 +253,33 @@ export default function TabOneScreen() {
         >
           <Text style={styles.buttonLabel}>Retry</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (data.length === 0 && !loading && !error) {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            You haven't joined a fridge yet!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Create or join a fridge to start tracking your food items.
+          </Text>
+          <TouchableOpacity
+            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
+            onPress={() => {
+              // Navigate to your create fridge screen
+              // Replace with your actual navigation route
+              router.push("/(tabs)/create_fridge"); // or whatever your route is
+            }}
+          >
+            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
