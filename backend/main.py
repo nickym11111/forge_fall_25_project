@@ -106,8 +106,11 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
         
         if not fridge_id:
-            raise HTTPException(status_code=403, detail="User has no fridge assigned")
-        
+            return {
+                "status": "success",
+                "message": "User has no fridge assigned",
+                "data": []
+            }
         # Get items only from the user's fridge
         items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
         
