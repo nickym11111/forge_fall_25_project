@@ -288,6 +288,7 @@ export default function TabOneScreen() {
         return;
       }
 
+
       // Transform backend data to match frontend format
       const transformedData = result.data
         .map((item: any) => ({
@@ -385,6 +386,31 @@ export default function TabOneScreen() {
       <View style={[styles.container, { justifyContent: "center" }]}>
         <ActivityIndicator size="large" color="#14b8a6" />
         <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
+      </View>
+    );
+  }
+
+  if (error === "NO_FRIDGE") {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            You haven't joined a fridge yet!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Create or join a fridge to start tracking your food items.
+          </Text>
+          <TouchableOpacity
+            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
+            onPress={() => {
+              router.push("/(tabs)/create_fridge");
+            }}
+          >
+            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
