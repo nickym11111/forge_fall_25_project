@@ -181,8 +181,7 @@ const ProfileIcon = (props: {
                 }
                 setReload(!reload);
               }}
-              title="Manage Fridges"
-              style={{ width: 200 }}
+              title="SignOut"
             />
           </TouchableOpacity>
         </TouchableOpacity>
