@@ -2,6 +2,8 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useUser } from '../hooks/useUser';
 import { supabase } from '../utils/client';
 import { clearUserCache, refreshUserCache } from '../hooks/useUser';
+import { Alert } from 'react-native';
+import { router } from 'expo-router';
 
 interface fridgeMate {
     id: string;
@@ -64,6 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
+      router.replace('/(tabs)');
       clearUserCache();
     } catch (error) {
       console.error('Logout error:', error);
