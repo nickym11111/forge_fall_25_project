@@ -329,6 +329,7 @@ export default function TabOneScreen() {
     fetchFridgeItems();
   };
 
+
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
 

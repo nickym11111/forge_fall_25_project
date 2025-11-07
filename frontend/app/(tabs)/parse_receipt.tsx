@@ -87,13 +87,17 @@ export default function ParseReceiptScreen() {
       return;
     }
 
-    try {
-      // Get expiry date prediction
-      let newExpiryDate = new Date();
-      try {
-        const ExpiryDateResponse = await PredictExpiryDate(item.name);
-        const ExpiryDateData = await ExpiryDateResponse.json();
-        console.log("📦 Response data:", ExpiryDateData);
+    const userId = userSession.user?.id;
+  
+  if (!userId) {
+    Alert.alert("Error", "Could not get user ID");
+    return;
+  }
+
+    const ExpiryDateResponse = await PredictExpiryDate(item.name);
+    const ExpiryDateData = await ExpiryDateResponse.json();
+    console.log("📦 Response data:", ExpiryDateData);
+    const newExpiryDate = new Date(); // Default to today
 
         if (ExpiryDateData.days) {
           const days = parseInt(ExpiryDateData.days);
