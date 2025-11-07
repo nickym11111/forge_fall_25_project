@@ -258,6 +258,9 @@ export default function TabOneScreen() {
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (error || !session) {
+        setData([]);
+        originalHolder.current = [];
+        setError("");
         throw new Error("You must be logged in to view fridge items");
       }
 
@@ -282,13 +285,8 @@ export default function TabOneScreen() {
         setData([]);
         originalHolder.current = [];
         setError("NO_FRIDGE");
-<<<<<<< HEAD
-=======
-        setLoading(false);
->>>>>>> 662d094 (Added layering for login page.)
         return;
       }
-
 
       // Transform backend data to match frontend format
       const transformedData = result.data
@@ -309,11 +307,13 @@ export default function TabOneScreen() {
     } catch (err) {
       console.error("Error fetching items:", err);
       setError(`${err}`);
+      setData([]);
+      originalHolder.current = [];
     } finally {
       setLoading(false);
     }
   };
-*/
+
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
 
@@ -388,31 +388,6 @@ export default function TabOneScreen() {
       </View>
     );
   }
-  
-  if (error === "NO_FRIDGE") {
-    return (
-      <View style={{width: '100%', height: '100%'}}>
-        <CustomHeader title="What's In Our Fridge?" />
-        <ProfileIcon className="profileIcon" />
-        <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
-            You haven't joined a fridge yet!
-          </Text>
-          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
-            Create or join a fridge to start tracking your food items.
-          </Text>
-          <TouchableOpacity
-            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
-            onPress={() => {
-              router.push("/(tabs)/create_fridge");
-            }}
-          >
-            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   if (error === "NO_FRIDGE") {
     return (
@@ -455,7 +430,24 @@ export default function TabOneScreen() {
       </View>
     );
   }
-*/
+
+  if (data.length === 0) {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            Your fridge is empty!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Add some items to get started.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
   <View style={{
     width: '100%', height: '100%',
