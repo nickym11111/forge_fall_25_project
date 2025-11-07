@@ -87,13 +87,17 @@ export default function ParseReceiptScreen() {
       return;
     }
 
-    try {
-      // Get expiry date prediction
-      let newExpiryDate = new Date();
-      try {
-        const ExpiryDateResponse = await PredictExpiryDate(item.name);
-        const ExpiryDateData = await ExpiryDateResponse.json();
-        console.log("📦 Response data:", ExpiryDateData);
+    const userId = userSession.user?.id;
+  
+  if (!userId) {
+    Alert.alert("Error", "Could not get user ID");
+    return;
+  }
+
+    const ExpiryDateResponse = await PredictExpiryDate(item.name);
+    const ExpiryDateData = await ExpiryDateResponse.json();
+    console.log("📦 Response data:", ExpiryDateData);
+    const newExpiryDate = new Date(); // Default to today
 
         if (ExpiryDateData.days) {
           const days = parseInt(ExpiryDateData.days);
@@ -105,14 +109,14 @@ export default function ParseReceiptScreen() {
         // Continue with default date (today)
       }
 
-      // Add item to fridge
-      const AddItemToFridgeResponse = await AddItemToFridge(
-        userSession.access_token,
-        item.name,
-        item.quantity,
-        newExpiryDate,
-        ["TEMP_USER_ID"],
-      );
+    const AddItemToFridgeResponse = await AddItemToFridge(
+      userSession.access_token,
+      item.name,
+      item.quantity,
+      newExpiryDate,
+      //"TEMP_USER_ID", // Placeholder for current user ID
+      [userId]
+    );
 
       const data: ApiResponse = await AddItemToFridgeResponse.json();
       console.log("Response status:", AddItemToFridgeResponse.status);
