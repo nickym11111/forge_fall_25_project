@@ -1,4 +1,4 @@
-import { fetchUserDetails } from "@/app/api/UserDetails";
+import { fetchUserDetails, leaveFridge } from "@/app/api/UserDetails";
 import { useAuth } from "@/app/context/authContext";
 import { supabase } from "@/app/utils/client";
 import React, { useEffect, useState } from "react";
@@ -33,6 +33,8 @@ const ProfileIcon = (props: {
   const [fridges, setFridges] = useState<Fridge[]>([]);
   const [fridgeMates, setFridgeMates] = useState<string[]>([]);
   const [reload, setReload] = useState<boolean>(false);
+  const [userInfoVisible, setUserInfoVisible] = useState<boolean>(true);
+
   const { logout } = useAuth();
   useEffect(() => {
     if (isModalVisible) {
@@ -84,10 +86,14 @@ const ProfileIcon = (props: {
           justifyContent: "center",
         }}
       >
-        <View
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsModalVisible(false)}
           style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
         >
-          <View
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => e.stopPropagation()}
             style={{
               backgroundColor: "#FFF",
               width: 300,
@@ -113,29 +119,73 @@ const ProfileIcon = (props: {
                 gap: 10,
               }}
             >
-              <Text style={styles.profileText}>Hello {userFirstName}!</Text>
-              <Text style={styles.profileText}>
-                Full Name: {userFirstName} {userLastName}
-              </Text>
-              <Text style={styles.profileText}>Email: {userEmail}</Text>
-              <Text style={styles.profileText}>
-                Fridges: {fridges.map((f) => f.name).join(", ")}
-              </Text>
-              <Text style={styles.profileText}>
-                Fridge Mates: {fridgeMates.join(", ")}
-              </Text>
+              {userInfoVisible ? (
+                <>
+                  <Text style={styles.profileText}>Hello {userFirstName}!</Text>
+                  <Text style={styles.profileText}>
+                    Full Name: {userFirstName} {userLastName}
+                  </Text>
+                  <Text style={styles.profileText}>Email: {userEmail}</Text>
+                  <Text style={styles.profileText}>
+                    Fridges: {fridges.map((f) => f.name).join(", ")}
+                  </Text>
+                  <Text style={styles.profileText}>
+                    Fridge Mates: {fridgeMates.join(", ")}
+                  </Text>
+                </>
+              ) : (
+                <>
+                {
+                  fridges.map((fridge) => (
+                    <>
+                      <Text style={styles.profileText}>
+                        Fridge Name: {fridge.name}
+                      </Text>
+                      <Text style={styles.profileText}>
+                        {fridge.id}
+                      </Text>
+                      <CustomButton
+                        className="Leave Fridge"
+                        onPress={() => {
+                          leaveFridge(fridge.id).then(() => {
+                            setReload(!reload);
+                          });
+                        }}
+                        title="Leave Fridge"
+                        style={{ width: 150, marginTop: 5 }}
+                      />
+                    </>
+                  ))
+                }
+                </>
+              )}
             </View>
+            {userInfoVisible ? (
+              <CustomButton
+                className="sign-out-button"
+                onPress={async () => {
+                  logout();
+                  setReload(!reload);
+                }}
+                title="Sign Out"
+                style={{ width: 200 }}
+              />
+            ) : null}
             <CustomButton
-              className="sign-out-button"
+              className="Manage Fridges"
               onPress={async () => {
-                logout();
+                if (userInfoVisible) {
+                  setUserInfoVisible(false);
+                } else {
+                  setUserInfoVisible(true);
+                }
                 setReload(!reload);
               }}
-              title="Sign Out"
+              title="Manage Fridges"
               style={{ width: 200 }}
             />
-          </View>
-        </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
       </Modal>
       <View
         style={{
@@ -143,7 +193,7 @@ const ProfileIcon = (props: {
         }}
       >
         <Image
-          source={require("../assets/images/profile-icon.svg")}
+          source={require("../assets/images/profile-icon.png")}
           style={styles.profileIcon}
         />
       </View>
