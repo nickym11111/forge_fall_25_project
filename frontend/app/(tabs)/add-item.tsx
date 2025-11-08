@@ -530,7 +530,9 @@ export default function AddItemManual() {
     return user.email;
   };
 
-  const handleAddItem = async () => {
+  const handleAddItem = async (retryCount = 0) => {
+    const MAX_RETRIES = 1; // Will try twice total (initial + 1 retry)
+    
     if (!title.trim()) {
       Alert.alert("Error", "Please enter an item name.");
       return;
@@ -580,17 +582,33 @@ export default function AddItemManual() {
         setSharedByUserIds([]);
         setAiSuggested(false);
       } else {
-        Alert.alert(
-          "Error",
-          data.detail || data.message || "Failed to add item."
-        );
+        throw new Error(data.detail || data.message || "Failed to add item");
       }
     } catch (error) {
-      console.error("Network request failed:", error);
-      Alert.alert(
-        "Connection Error",
-        "Could not connect to the server. Please check your internet connection."
-      );
+      console.error(`Network request failed (attempt ${retryCount + 1}):`, error);
+      
+      // Retry logic
+      if (retryCount < MAX_RETRIES) {
+        console.log(`🔄 Retrying... (attempt ${retryCount + 2})`);
+        Alert.alert(
+          "Connection Issue",
+          "Failed to add item. Retrying...",
+          [{ text: "OK" }]
+        );
+        
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsLoading(false);
+        return handleAddItem(retryCount + 1);
+      } else {
+        // Failed after retries
+        Alert.alert(
+          "Error",
+          error instanceof Error 
+            ? error.message 
+            : "Could not connect to the server. Please check your internet connection and try again."
+        );
+      }
     } finally {
       setIsLoading(false);
     }
