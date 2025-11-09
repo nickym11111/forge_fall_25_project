@@ -2,7 +2,6 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { useUser } from '../hooks/useUser';
 import { supabase } from '../utils/client';
 import { clearUserCache, refreshUserCache } from '../hooks/useUser';
-import { Alert } from 'react-native';
 
 interface fridgeMate {
     id: string;
@@ -78,18 +77,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const forgotPassword = async (email: string) => {
     try {
       const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'exp://localhost:8081/account/reset-password' // Adjust this URL as needed
+        redirectTo: 'http://localhost:8081/account/reset-password'
       });
 
       if (error) {
-        Alert.alert('Error', error.message);
         return { success: false, error: error.message };
-      } else {
-        Alert.alert('Success', 'Password reset email sent');
-        return { success: true };
       }
+      
+      return { success: true };
     } catch (error) {
-      Alert.alert('Error', 'Failed to send password reset email');
       return { 
         success: false, 
         error: error instanceof Error ? error.message : 'Failed to send password reset email' 
