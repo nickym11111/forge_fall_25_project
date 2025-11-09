@@ -20,9 +20,10 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader 
-      title="Fridge Flow  " 
-      logo={require('../../assets/images/FridgeIcon.png')}/>
+      <CustomHeader
+        title="Fridge Flow  "
+        logo={require("../../assets/images/FridgeIcon.png")}
+      />
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.loginContainer}>
@@ -48,8 +49,8 @@ export default function TabOneScreen() {
 
               try {
                 const result = await login(email, password);
-                
-                if (result.success) { 
+
+                if (result.success) {
                   setToastMessage("Login successful!");
                 } else {
                   setToastMessage(result.error || "Login failed");
@@ -58,14 +59,23 @@ export default function TabOneScreen() {
                 setToastMessage("Network error");
                 console.log(e);
               }
-              
+
               setIsToastVisible(true);
               setTimeout(() => setIsToastVisible(false), 3000);
             }}
             style={styles.loginButton}
-            className="" 
+            className=""
             disabled={false}
           />
+          <Text 
+            style={styles.createAccountButton} 
+            onPress={() => {
+              navigate("/account/reset-password");
+            }}
+          >
+            Forgot Password?
+          </Text>
+
           <Text
             style={styles.createAccountButton}
             onPress={() => {
@@ -114,7 +124,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   redText: {
-    color: '#d32f2f', 
-    fontWeight: 'bold',
+    color: "#d32f2f",
+    fontWeight: "bold",
   },
 });
