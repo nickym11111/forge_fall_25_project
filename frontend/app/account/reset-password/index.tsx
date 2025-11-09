@@ -6,6 +6,7 @@ import CustomHeader from "@/components/CustomHeader";
 import ToastMessage from "@/components/ToastMessage";
 import { useAuth } from "../../context/authContext";
 import { navigate } from "expo-router/build/global-state/routing";
+import { useLocalSearchParams } from "expo-router";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
@@ -14,18 +15,103 @@ export default function ResetPassword() {
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [sessionInitialized, setSessionInitialized] = useState(false);
   
   const { forgotPassword } = useAuth();
+  const params = useLocalSearchParams();
+
+  /**
+   * Check for error parameters in URL (e.g., expired or invalid links)
+   * Also check for recovery type to enable password reset mode
+   */
+  useEffect(() => {
+    console.log("URL Params:", params);
+    
+    // Parse hash fragment if it exists (expo-router puts URL hash in "#" key)
+    let hashParams: Record<string, string> = {};
+    if (params["#"]) {
+      const hashString = params["#"] as string;
+      const searchParams = new URLSearchParams(hashString);
+      searchParams.forEach((value, key) => {
+        hashParams[key] = value;
+      });
+      console.log("Parsed Hash Params:", hashParams);
+    }
+    
+    // Check for errors first (in both params and hashParams)
+    const error = params.error || hashParams.error;
+    const errorCode = params.error_code || hashParams.error_code;
+    const errorDescription = params.error_description || hashParams.error_description;
+    
+    if (error) {
+      let errorMessage = "An error occurred";
+      
+      if (error === "access_denied") {
+        if (errorCode === "otp_expired") {
+          errorMessage = "This reset link has expired. Please request a new one.";
+        } else if (errorDescription) {
+          errorMessage = decodeURIComponent(errorDescription as string);
+        }
+      }
+      
+      setToastMessage(errorMessage);
+      setIsToastVisible(true);
+      setTimeout(() => setIsToastVisible(false), 5000);
+      return;
+    }
+
+    // Check if this is a recovery link (type=recovery in URL)
+    const type = params.type || hashParams.type;
+    const accessToken = params.access_token || hashParams.access_token;
+    const refreshToken = params.refresh_token || hashParams.refresh_token;
+    
+    if (type === "recovery" && accessToken && refreshToken && !sessionInitialized) {
+      console.log("Setting session from URL tokens");
+      setSessionInitialized(true);
+      
+      // Set the session manually using the tokens from the URL
+      supabase.auth.setSession({
+        access_token: accessToken as string,
+        refresh_token: refreshToken as string,
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error("Error setting session:", error);
+          setToastMessage(`Error: ${error.message}`);
+          setIsToastVisible(true);
+          setTimeout(() => setIsToastVisible(false), 5000);
+          setSessionInitialized(false); // Reset on error so user can retry
+        } else {
+          console.log("Session set successfully:", data);
+          setIsRecoveryMode(true);
+          setToastMessage("Please enter your new password");
+          setIsToastVisible(true);
+          setTimeout(() => setIsToastVisible(false), 3000);
+        }
+      });
+    }
+  }, [params, sessionInitialized]);
 
   /**
    * Step 2: Once the user is redirected back to your application,
    * ask the user to reset their password.
+   * This listener catches the PASSWORD_RECOVERY event from Supabase
    */
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
+      
       if (event === "PASSWORD_RECOVERY") {
+        console.log("PASSWORD_RECOVERY event detected");
         setIsRecoveryMode(true);
+        setToastMessage("Please enter your new password");
+        setIsToastVisible(true);
+        setTimeout(() => setIsToastVisible(false), 3000);
       }
+    });
+
+    // Check current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Current session on mount:", session);
     });
 
     return () => {
@@ -58,6 +144,8 @@ export default function ResetPassword() {
   };
 
   const handleUpdatePassword = async () => {
+    console.log("handleUpdatePassword called");
+    
     if (!newPassword || !confirmPassword) {
       setToastMessage("Please fill in all fields");
       setIsToastVisible(true);
@@ -80,11 +168,15 @@ export default function ResetPassword() {
     }
 
     try {
+      console.log("Calling supabase.auth.updateUser");
       const { data, error } = await supabase.auth.updateUser({ 
         password: newPassword 
       });
 
+      console.log("Update response:", { data, error });
+
       if (error) {
+        console.error("Update error:", error);
         setToastMessage(`Error: ${error.message}`);
         setIsToastVisible(true);
         setTimeout(() => setIsToastVisible(false), 3000);
@@ -92,6 +184,7 @@ export default function ResetPassword() {
       }
 
       if (data) {
+        console.log("Password updated successfully");
         setToastMessage("Password updated successfully!");
         setIsToastVisible(true);
         setTimeout(() => {
@@ -100,6 +193,7 @@ export default function ResetPassword() {
         }, 2000);
       }
     } catch (error) {
+      console.error("Catch block error:", error);
       const errorMessage = error instanceof Error ? error.message : "Failed to update password";
       setToastMessage(`Error: ${errorMessage}`);
       setIsToastVisible(true);
