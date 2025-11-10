@@ -17,6 +17,7 @@ import { TouchableOpacity } from "react-native";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import ToastMessage from "@/components/ToastMessage";
+import ProfileIcon from "@/components/ProfileIcon";
 
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -77,50 +78,77 @@ export default function ParseReceiptScreen() {
     message: string;
     detail?: string;
   }
-  const sendItemToFridge = async (item: any) => {
+  const sendItemToFridge = async (item: any, retryCount = 0) => {
+    const MAX_RETRIES = 1; // Will try twice total (initial + 1 retry)
+    
     if (!userSession) {
       Alert.alert("Error", "User not logged in");
+      setAddingItemIndex((prev) => prev.filter((i) => i !== item.index));
       return;
     }
-    const ExpiryDateResponse = await PredictExpiryDate(item.name);
-    const ExpiryDateData = await ExpiryDateResponse.json();
-    console.log("📦 Response data:", ExpiryDateData);
-    const newExpiryDate = new Date(); // Default to today
 
-    if (ExpiryDateData.days) {
-      const days = parseInt(ExpiryDateData.days);
-      console.log("✅ AI predicted", days, "days for", item.name);
-      newExpiryDate.setDate(newExpiryDate.getDate() + days);
-    }
+    try {
+      // Get expiry date prediction
+      let newExpiryDate = new Date();
+      try {
+        const ExpiryDateResponse = await PredictExpiryDate(item.name);
+        const ExpiryDateData = await ExpiryDateResponse.json();
+        console.log("📦 Response data:", ExpiryDateData);
 
-    const AddItemToFridgeResponse = await AddItemToFridge(
-      userSession.access_token,
-      item.name,
-      item.quantity,
-      newExpiryDate,
-      "TEMP_USER_ID", // Placeholder for current user ID
-      []
-    );
+        if (ExpiryDateData.days) {
+          const days = parseInt(ExpiryDateData.days);
+          console.log("✅ AI predicted", days, "days for", item.name);
+          newExpiryDate.setDate(newExpiryDate.getDate() + days);
+        }
+      } catch (expiryError) {
+        console.warn("⚠️ Failed to predict expiry date, using default:", expiryError);
+        // Continue with default date (today)
+      }
 
-    const data: ApiResponse = await AddItemToFridgeResponse.json();
-    console.log("Response status:", AddItemToFridgeResponse.status);
-    console.log("Response data:", data);
-
-    setIsToastVisible(true);
-    setTimeout(() => setIsToastVisible(false), 3000);
-
-    if (AddItemToFridgeResponse.ok) {
-      Alert.alert("Success!", "Item added to fridge!");
-      setToastMessage("Item added to fridge!");
-    } else {
-      Alert.alert(
-        "Error",
-        data.detail || data.message || "Failed to add item."
+      // Add item to fridge
+      const AddItemToFridgeResponse = await AddItemToFridge(
+        userSession.access_token,
+        item.name,
+        item.quantity,
+        newExpiryDate,
+        ["TEMP_USER_ID"],
       );
-      setToastMessage("Failed to add item.");
-    }
 
-    setAddingItemIndex((prev) => prev.filter((i) => i !== item.index));
+      const data: ApiResponse = await AddItemToFridgeResponse.json();
+      console.log("Response status:", AddItemToFridgeResponse.status);
+      console.log("Response data:", data);
+
+      if (AddItemToFridgeResponse.ok) {
+        setIsToastVisible(true);
+        setTimeout(() => setIsToastVisible(false), 3000);
+        setToastMessage(`✅ ${item.name} added to fridge!`);
+        console.log(`✅ Successfully added ${item.name}`);
+      } else {
+        throw new Error(data.detail || data.message || "Failed to add item");
+      }
+    } catch (error) {
+      console.error(`❌ Error adding ${item.name} (attempt ${retryCount + 1}):`, error);
+      
+      // Retry logic
+      if (retryCount < MAX_RETRIES) {
+        console.log(`🔄 Retrying ${item.name}... (attempt ${retryCount + 2})`);
+        setToastMessage(`Retrying ${item.name}...`);
+        setIsToastVisible(true);
+        setTimeout(() => setIsToastVisible(false), 2000);
+        
+        // Wait a bit before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return sendItemToFridge(item, retryCount + 1);
+      } else {
+        // Failed after retries
+        console.error(`❌ Failed to add ${item.name} after ${MAX_RETRIES + 1} attempts`);
+        setIsToastVisible(true);
+        setTimeout(() => setIsToastVisible(false), 3000);
+        setToastMessage(`⚠️ Skipped ${item.name} - failed to add`);
+      }
+    } finally {
+      setAddingItemIndex((prev) => prev.filter((i) => i !== item.index));
+    }
   };
 
   const parseReceipt = async () => {
@@ -173,6 +201,7 @@ export default function ParseReceiptScreen() {
   return (
     <ScrollView style={styles.container}>
       <CustomHeader title="Add Items 📷" />
+      <ProfileIcon className="profileIcon" />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
       </View>
@@ -182,7 +211,14 @@ export default function ParseReceiptScreen() {
           style={{ width: "100%", height: "100%" }}
         >
           {imageUri ? (
-            <Image source={{ uri: imageUri }} style={styles.image} />
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: imageUri }} style={styles.image} />
+              <View style={styles.imageOverlay}>
+                <Text style={styles.imageOverlayText}>
+                  Click to Change Image
+                </Text>
+              </View>
+            </View>
           ) : (
             <View style={styles.imageSkeleton}>
               <View style={styles.imageTextContainer}>
@@ -222,17 +258,32 @@ export default function ParseReceiptScreen() {
             >
               <Button
                 title="Add All to Fridge"
-                onPress={() => {
-                  parsedItems.forEach((item, index) => {
+                onPress={async () => {
+                  // Add all items with error handling
+                  for (let index = 0; index < parsedItems.length; index++) {
+                    const item = parsedItems[index];
                     const itemName = Object.keys(item)[0];
                     const itemData = item[itemName];
-                    sendItemToFridge({
+                    
+                    setAddingItemIndex((prev) => [...prev, index]);
+                    
+                    // Process items sequentially to avoid overwhelming the server
+                    await sendItemToFridge({
                       name: itemName,
                       quantity: Math.ceil(itemData.quantity),
                       index,
                     });
-                    setAddingItemIndex((prev) => [...prev, index]);
-                  });
+                    
+                    // Small delay between items
+                    if (index < parsedItems.length - 1) {
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                  }
+                  
+                  // Show final summary
+                  setIsToastVisible(true);
+                  setToastMessage("✅ Finished adding items!");
+                  setTimeout(() => setIsToastVisible(false), 3000);
                 }}
               />
             </View>
@@ -281,6 +332,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FF",
     overflowY: "scroll",
   },
+  imageWrapper: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  imageOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.25)", // subtle dim so text is readable
+  },
+  imageOverlayText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 6,
+  },
+
   imageContainer: {
     width: "100%",
     height: "100%",

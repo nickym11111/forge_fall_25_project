@@ -17,7 +17,7 @@ import { useAuth } from "../context/authContext";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
-
+import ProfileIcon from "@/components/ProfileIcon";
 
 //Type for API response
 interface ApiResponse {
@@ -230,7 +230,7 @@ export default function CreateFridgeScreen() {
       title="Create Fridge  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
-
+<ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}

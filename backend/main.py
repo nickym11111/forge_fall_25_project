@@ -21,7 +21,7 @@ load_dotenv()
 # Initialize routers
 app = FastAPI()
 app.include_router(users_router)
-#app.include_router(ai_expiration_router, tags=["ai"])
+#app.include_router(ai_expiration, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
@@ -54,7 +54,7 @@ class FridgeItemCreate(BaseModel):
     title: str
     quantity: Optional[int] = 1
     expiry_date: str
-    shared_by: Optional[List[dict]] = None
+    shared_by: Optional[List[str]] = None
 
 # Root endpoint
 @app.get("/")
@@ -75,16 +75,7 @@ async def create_fridge_item(
         today = date.today()
         days_till_expiration = (expiry - today).days
 
-        
-        # Hard-code test fridge for now
-        #fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
-
-        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
-        
-        if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        fridge_id = user_response.data[0].get("fridge_id")
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
@@ -94,8 +85,9 @@ async def create_fridge_item(
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": "TEMP_USER_ID",
-            "shared_by": item.shared_by
+            "added_by": current_user.get("id"),
+            "shared_by": item.shared_by,
+            "fridge_id": fridge_id
         }).execute()
         
         return {
@@ -113,12 +105,7 @@ def get_fridge_items(current_user = Depends(get_current_user)):
 
     try:
         #Get the user's fridge_id
-        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
-        
-        if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=401, detail="User not found")
-        
-        fridge_id = user_response.data[0].get("fridge_id")
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
@@ -295,7 +282,7 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
             "name": fridge.name,
-            "created_by": current_user.id,
+            "created_by": current_user["id"],
             "created_at": "now()"
         }).execute()
 
@@ -304,13 +291,13 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             print(f"No data returned from database: {createFridge_response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
         
-        # Extract the ID from the response
         fridge_id = createFridge_response.data[0].get("id")
+
 
         # Gets the response for updating the fridge id for a user
         updateFridgeID_response = supabase.table("users").update({
             "fridge_id": fridge_id
-        }).eq("id", current_user.id).execute()
+        }).eq("id", current_user["id"]).execute()
 
         if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
             print(f"Error updating user fridge ID: {updateFridgeID_response}")

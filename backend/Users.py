@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from database import supabase  
 from pydantic import BaseModel
 from typing import List, Optional
-from service import get_current_user, generate_invite_code
+from service import get_current_user, generate_invite_code, get_current_user_with_fridgeMates
 import ast
 
 app = APIRouter()
@@ -46,55 +46,36 @@ async def create_user(user: UserCreate):
                 "email_redirect_to": "http://localhost:8081/" # Redirect to this URL after email confirmation
             }
         })  
-        supabase.table("users").insert({"first_name": user.firstName, "last_name": user.lastName, "email": user.email}).execute()
+        #supabase.table("users").insert({"first_name": user.firstName, "last_name": user.lastName, "email": user.email}).execute()
         return {"email": user.email, 
                 "firstName": user.firstName,
                 "lastName": user.lastName,
-                "dietaryRestrictions": user.dietaryRestrictions,
                 "status": "User created successfully"}
     except Exception as e:
         return {"error": str(e)}
-    
+
+
 @app.get("/userInfo")
-async def get_current_user_info(current_user = Depends(get_current_user)):
-    #Get current user's info including fridge data
+async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
     try:
-        # Get user data
-        user_response = supabase.table("users").select("id, first_name, last_name, email, fridge_id").eq("id", current_user.id).execute()
+        user_data = current_user if isinstance(current_user, dict) else {
+            "id": current_user.id,
+            "email": current_user.email,
+            "fridge_id": None,
+            "first_name": None,
+            "last_name": None,
+            "fridgeMates": []
+        }
         
-        if not user_response.data or len(user_response.data) == 0:
-            raise HTTPException(status_code=404, detail="User not found")
-        
-        user_data = user_response.data[0]
-        
-        # If user has a fridge, get fridge details
         if user_data.get("fridge_id"):
             fridge_response = supabase.table("fridges").select("*").eq("id", user_data["fridge_id"]).execute()
             
-            # Get fridge data for the user
             if fridge_response.data and len(fridge_response.data) > 0:
                 user_data["fridge"] = fridge_response.data[0]
-                fridge_emails = fridge_response.data[0].get("emails", [])
-
-                # Get user fridge mate info
-                if isinstance(fridge_emails, str):
-                    try:
-                        fridge_emails = ast.literal_eval(fridge_emails)
-                    except:
-                        fridge_emails = []
-                fridgeMates = []
-                if fridge_emails and len(fridge_emails) > 0:
-                    fridgeMates_response = supabase.table("users").select("id, email, first_name, last_name").in_("email", fridge_emails).execute()
-
-                    if fridgeMates_response.data:
-                        fridgeMates = fridgeMates_response.data
-                user_data["fridgeMates"] = fridgeMates
             else:
                 user_data["fridge"] = None
-                user_data["fridgeMates"] = []
         else:
             user_data["fridge"] = None
-            user_data[fridgeMates] = []
         
         return user_data
         

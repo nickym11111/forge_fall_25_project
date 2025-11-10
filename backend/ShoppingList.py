@@ -12,7 +12,8 @@ class ShoppingItem(BaseModel):
     requested_by: str
     bought_by: Optional[str] = None
     checked: Optional[bool] = False
-    need_by: Optional[str] = None        
+    need_by: Optional[str] = None     
+    fridge_id: str   
 
 #Create New Item
 @app.post("/items/")
@@ -27,6 +28,7 @@ def add_item(item: ShoppingItem):
                 "bought_by": item.bought_by,
                 "checked": item.checked,
                 "need_by": item.need_by,
+                "fridge_id": item.fridge_id,
                 "shared_with": item.shared_with,
             })
             .execute()
