@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
 import { router } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
