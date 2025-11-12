@@ -14,6 +14,8 @@ from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
 #from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
+from recipes import router as ingredients_router
+from RecipeGen2 import router as recipe_router
 
 
 load_dotenv()
@@ -21,6 +23,8 @@ load_dotenv()
 # Initialize routers
 app = FastAPI()
 app.include_router(users_router)
+app.include_router(ingredients_router)
+app.include_router(recipe_router, prefix="/recipes")
 #app.include_router(ai_expiration, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.

@@ -13,6 +13,7 @@ import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
+import CustomHeader from "@/components/CustomHeader";
 
 // Defines props type for the Item component
 interface ItemProps {
@@ -67,7 +68,7 @@ export default function recipes() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/find_ingredients', {
+      const response = await fetch('${process.env.EXPO_PUBLIC_API_URL}/find_ingredients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +84,6 @@ export default function recipes() {
   };
 
   const handleFindRecipe = async () => {
-
     try {
         const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/recipes/generate-recipes/`);
         const data = await response.json();
@@ -143,13 +143,10 @@ const PreviewLayout = ({
 
 return (
     <View style={styles.container}>
+    <CustomHeader title="Share Recipes!  "
+      logo={require('../../assets/images/FridgeIcon.png')}/>
       
-      <Text style={styles.title}>Share Recipes!</Text>
-      <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
-      />
+      <View style={styles.separator}>
       <View style={styles.boxContainer}>
       <View>
         <TextInput
@@ -157,7 +154,6 @@ return (
           onChangeText={searchFunction}
           value={inputValue}
           placeholder="Recipe Item..."
-          
         />
       </View>
     
@@ -179,11 +175,9 @@ return (
         keyExtractor={(item) => item}
       />
       </View>
-      <View
-        style={styles.separator2}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
-      />
+      </View>
+
+      <View style={styles.separator2}>
       <View style={styles.boxContainer}>
       <PreviewLayout
         values={["Find Recipe"]}
@@ -203,9 +197,9 @@ return (
       />
       </View>
     </View>
+    </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   box: {
@@ -246,7 +240,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    alignItems: "center",
+    backgroundColor: "#F8F9FF",
   },
   title: {
     fontSize: 20,
@@ -254,16 +248,22 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   separator: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 40,
     marginVertical: 20,
-    height: 1,
-    width: "80%",
     backgroundColor: "#F8F9FF",
   },
   separator2: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     marginVertical: 20,
-    height: 1,
-    width: "80%",
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#F8F9FF"
   },
   item: {
     backgroundColor: "#f0f0f0",

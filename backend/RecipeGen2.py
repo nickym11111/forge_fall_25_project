@@ -1,15 +1,14 @@
 import os
-import openai
 import json
 from fastapi import APIRouter, HTTPException
 from database import supabase 
 from dotenv import load_dotenv
+from openai import OpenAI
 
 #Load environment variables and configure OpenAI client
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 router = APIRouter()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @router.get("/generate-recipes/")
 def generate_recipes2():
@@ -17,10 +16,8 @@ def generate_recipes2():
     response = supabase.table("fridge_items").select("title").execute()
     
     if not response.data:
-        # Return a clean message instead of a 404 error for a better user experience
-        return {"status": "info", "message": "No items found in this fridge. Add some ingredients to get started!"}
+          return {"status": "info", "message": "No items found in this fridge. Add some ingredients to get started!"}
     
-    #Formats the ingredients into a simple list
     ingredients = [item['title'] for item in response.data]
     ingredient_list_str = ", ".join(ingredients)
 
@@ -35,7 +32,7 @@ def generate_recipes2():
 
     try:
         #Call the OpenAI API
-        completion = openai.ChatCompletion.create(
+        completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful recipe assistant that only responds with valid JSON."},
