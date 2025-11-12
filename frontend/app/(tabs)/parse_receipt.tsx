@@ -95,15 +95,14 @@ export default function ParseReceiptScreen() {
         const ExpiryDateData = await ExpiryDateResponse.json();
         console.log("📦 Response data:", ExpiryDateData);
 
-        if (ExpiryDateData.days) {
-          const days = parseInt(ExpiryDateData.days);
-          console.log("✅ AI predicted", days, "days for", item.name);
-          newExpiryDate.setDate(newExpiryDate.getDate() + days);
-        }
-      } catch (expiryError) {
-        console.warn("⚠️ Failed to predict expiry date, using default:", expiryError);
-        // Continue with default date (today)
-      }
+    const AddItemToFridgeResponse = await AddItemToFridge(
+      userSession.access_token,
+      item.name,
+      item.quantity,
+      newExpiryDate,
+      [], // Empty array means shared by all fridge mates
+      item.price
+    );
 
       // Add item to fridge
       const AddItemToFridgeResponse = await AddItemToFridge(
@@ -271,6 +270,7 @@ export default function ParseReceiptScreen() {
                     await sendItemToFridge({
                       name: itemName,
                       quantity: Math.ceil(itemData.quantity),
+                      price: itemData.price,
                       index,
                     });
                     
@@ -309,6 +309,7 @@ export default function ParseReceiptScreen() {
                           sendItemToFridge({
                             name: itemName,
                             quantity: Math.ceil(itemData.quantity),
+                            price: itemData.price,
                             index,
                           });
                           setAddingItemIndex((prev) => [...prev, index]);
