@@ -20,7 +20,7 @@ app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
 app.include_router(ai_expiration_router, prefix="/expiry")
-
+app.include_router(shopping_router, prefix="/shopping")
 origins = [
     "http://localhost:8081",
     "http://127.0.0.1:8081",

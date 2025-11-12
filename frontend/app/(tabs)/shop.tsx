@@ -18,9 +18,11 @@ import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import { useAuth } from "../context/authContext"; 
 import { useFridge } from "../context/FridgeContext";
+import { supabase } from "../utils/client";
 
 interface ShoppingItem { 
-  id?: string; name: string; 
+  id?: number; 
+  name: string; 
   quantity?: number; 
   price?: number; 
   requested_by: string; 
@@ -75,74 +77,64 @@ export default function SharedListScreen() {
   }, [modalOpen]);
 */
 
-const resetForm = () => {
-    setFormQuantity(1);
-    setFormNeedBy(null);
-    setShowDatePicker(false);
-  };
+  const resetForm = () => {
+      setFormQuantity(1);
+      setFormNeedBy(null);
+      setShowDatePicker(false);
+    };
 
-  const openModal = () => {
-    resetForm();
-    setModalOpen(true);
-  };
+    const openModal = () => {
+      resetForm();
+      setModalOpen(true);
+    };
 
-  const closeModal = () => setModalOpen(false);
+    const closeModal = () => setModalOpen(false);
 
-  //Actions
-  const addItem = async () => {
-  if (!formName.trim()) return;
+    //Actions
+    const addItem = async () => {
+      if (!formName.trim()) return;
 
-  if (!user_id || !fridge_id) {
-    console.warn("Cannot add item: user or fridge not loaded yet.");
-    return;
-  }
+      const newItem: ShoppingItem = {
+        name: formName.trim(),
+        quantity: Math.max(1, Math.floor(formQuantity)),
+        need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
+        requested_by: user?.id ?? "TEST_USER",
+        bought_by: null,
+        checked: false,
+        fridge_id: fridge?.id ?? "TEST_FRIDGE",
+      };
 
-  const newItem: ShoppingItem = {
-    name: formName.trim(),
-    quantity: Math.max(1, Math.floor(formQuantity)),
-    need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
-    requested_by: user_id,
-    bought_by: null,
-    checked: false,
-    fridge_id: fridge_id,
-  };
+      try {
+        const { data, error } = await supabase
+          .from("shopping_list") // <-- your Supabase table name
+          .insert([newItem])
+          .select();
 
-  setItems((prev) => [...prev, newItem]);
-  resetForm();
-  closeModal();
+        if (error) throw error;
 
-  try {
-    const resp = await fetch(`${API_URL}/items/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newItem),
-    });
-    const data = await resp.json();
-
-    if (resp.ok && data?.data?.length) {
-      const returned = data.data[0];
-      setItems((prev) => {
-        const idx = prev.findIndex((it) => !it.id && it.name === returned.name);
-        if (idx !== -1) {
-          const copy = [...prev];
-          copy[idx] = returned;
-          return copy;
+        if (data && data.length > 0) {
+          setItems((prev) => [...prev, data[0]]);
         }
-        return [...prev, returned];
-      });
-    }
-  } catch (err) {
-    console.error("addItem error:", err);
-  }
-};
+
+        resetForm();
+        closeModal();
+      } catch (err) {
+        console.error("addItem error:", err);
+      }
+    };
 
 
   const deleteItem = async (item: ShoppingItem) => {
-    setItems((prev) => prev.filter((i) => i !== item));
-    if (!item.id) return;
+    setItems((prev) => prev.filter((i) => i.id !== item.id));
 
+    if (!item.id) return;
     try {
-      await fetch(`${API_URL}/items/${item.id}`, { method: "DELETE" });
+      const { error } = await supabase
+        .from("shopping_list")
+        .delete()
+        .eq("id", item.id);
+
+      if (error) throw error;
     } catch (err) {
       console.error("deleteItem error:", err);
     }
@@ -151,44 +143,48 @@ const resetForm = () => {
   const changeItemQuantity = async (item: ShoppingItem, delta: number) => {
     const newQty = Math.max(1, (item.quantity || 1) + delta);
     const updated = { ...item, quantity: newQty };
-    setItems((prev) => prev.map((it) => (it === item ? updated : it)));
+    setItems((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
 
     if (!item.id) return;
     try {
-      await fetch(`${API_URL}/items/${item.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
+      const { error } = await supabase
+        .from("shopping_list")
+        .update({ quantity: newQty })
+        .eq("id", item.id);
+
+      if (error) throw error;
     } catch (err) {
       console.error("changeItemQuantity error:", err);
     }
   };
 
- const toggleChecked = async (item: ShoppingItem) => {
-  if (!user_id) return;
-  const updated = { 
-    ...item, 
-    checked: !item.checked, 
-    bought_by: !item.checked ? user_id : null 
-  };
+  const toggleChecked = async (item: ShoppingItem) => {
+    if (!user_id) return;
 
-  setItems((prev) => prev.map((it) => (it === item ? updated : it)));
+    const updated = {
+      checked: !item.checked,
+      bought_by: !item.checked ? user_id : null,
+    };
+
+  setItems((prev) =>
+    prev.map((it) => (it.id === item.id ? { ...it, ...updated } : it))
+  );
 
   if (!item.id) return;
   try {
-    await fetch(`${API_URL}/items/${item.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updated),
-    });
+    const { error } = await supabase
+      .from("shopping_list")
+      .update(updated)
+      .eq("id", item.id);
+
+    if (error) throw error;
   } catch (err) {
     console.error("toggleChecked error:", err);
   }
 };
 
 
-  const onChangeNeedBy = (event: any, selected?: Date) => {
+const onChangeNeedBy = (event: any, selected?: Date) => {
     if (selected) setFormNeedBy(selected);
     if (Platform.OS !== "ios") setShowDatePicker(false);
   };
@@ -277,7 +273,7 @@ const resetForm = () => {
 
       <FlatList
         data={items}
-        keyExtractor={(it, i) => it.id ?? `${it.name}-${i}`}
+        keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
         renderItem={renderItemCard}
         contentContainerStyle={styles.itemsList}
       />
