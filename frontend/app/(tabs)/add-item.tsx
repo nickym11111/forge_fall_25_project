@@ -332,6 +332,7 @@ const styles = StyleSheet.create({
 export default function AddItemManual() {
   const [title, setTitle] = useState("");
   const [quantity, setQuantity] = useState("");
+  const [price, setPrice] = useState("");
   const [expiryDate, setExpiryDate] = useState<Date>(new Date());
   const [tempExpiryDate, setTempExpiryDate] = useState<Date>(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -567,7 +568,8 @@ export default function AddItemManual() {
         title,
         quantity,
         expiryDate,
-        sharedByUserIds
+        sharedByUserIds,
+        price ? Number(price) : undefined
       );
 
       const data: ApiResponse = await response.json();
@@ -579,6 +581,7 @@ export default function AddItemManual() {
 
         setTitle("");
         setQuantity("");
+        setPrice("");
         setExpiryDate(new Date());
         setSharedByUserIds([]);
         setAiSuggested(false);
@@ -700,6 +703,16 @@ export default function AddItemManual() {
               value={quantity}
               onChangeText={setQuantity}
               keyboardType="numeric"
+              editable={!isLoading}
+            />
+
+            <Text style={styles.label}>Price ($)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., 4.99 (optional)"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
               editable={!isLoading}
             />
 
