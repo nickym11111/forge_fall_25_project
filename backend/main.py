@@ -10,6 +10,7 @@ from Join import app as join_router
 from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
+from CostSplitting import app as cost_splitting_router
 from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
 #from ai_expiration import app as ai_expiration_router
@@ -55,6 +56,7 @@ class FridgeItemCreate(BaseModel):
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
+    price: Optional[float] = 0.0
 
 # Root endpoint
 @app.get("/")
@@ -87,7 +89,7 @@ async def create_fridge_item(
             "fridge_id": fridge_id,
             "added_by": current_user.get("id"),
             "shared_by": item.shared_by,
-            "fridge_id": fridge_id
+            "price": item.price
         }).execute()
         
         return {
@@ -101,7 +103,7 @@ async def create_fridge_item(
 
 @app.get("/fridge_items/")
 def get_fridge_items(current_user = Depends(get_current_user)):
-    #Get items from the current user's fridge
+    #Get items from the current user's fridge with user details
 
     try:
         #Get the user's fridge_id
@@ -112,19 +114,78 @@ def get_fridge_items(current_user = Depends(get_current_user)):
                 "status": "success",
                 "message": "User has no fridge assigned",
                 "data": []
+            }        
+        # Get items with added_by user details
+        items_response = supabase.table("fridge_items").select(
+            "*, added_by_user:users!fridge_items_added_by_fkey(id, email, first_name, last_name)"
+        ).eq("fridge_id", fridge_id).execute()
+        
+        # Get all users in this fridge for shared_by lookup
+        fridge_users_response = supabase.table("users").select(
+            "id, email, first_name, last_name"
+        ).eq("fridge_id", fridge_id).execute()
+        
+        # Create a lookup map of user_id -> user data
+        users_map = {}
+        for user_data in fridge_users_response.data:
+            users_map[user_data["id"]] = {
+                "id": user_data["id"],
+                "email": user_data.get("email"),
+                "first_name": user_data.get("first_name"),
+                "last_name": user_data.get("last_name"),
             }
-        # Get items only from the user's fridge
-        items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
+        
+        # Transform the data to populate shared_by with user details
+        transformed_items = []
+        for item in items_response.data:
+            # Handle added_by user
+            added_by_data = item.get("added_by_user")
+            if added_by_data:
+                added_by = {
+                    "id": added_by_data.get("id"),
+                    "email": added_by_data.get("email"),
+                    "first_name": added_by_data.get("first_name"),
+                    "last_name": added_by_data.get("last_name"),
+                }
+            else:
+                added_by = None
+            
+            # Handle shared_by - it's stored as a JSONB array of user_ids
+            shared_by = []
+            shared_by_ids = item.get("shared_by")
+            
+            if shared_by_ids and isinstance(shared_by_ids, list):
+                # Map user IDs to full user objects
+                for user_id in shared_by_ids:
+                    if user_id in users_map:
+                        shared_by.append(users_map[user_id])
+            elif not shared_by_ids or shared_by_ids == []:
+                # If shared_by is null or empty, it's a receipt item - shared by all
+                shared_by = list(users_map.values())
+            
+            transformed_items.append({
+                "id": item["id"],
+                "title": item["title"],
+                "quantity": item.get("quantity"),
+                "days_till_expiration": item.get("days_till_expiration"),
+                "price": item.get("price", 0.0),
+                "fridge_id": item["fridge_id"],
+                "added_by": added_by,
+                "shared_by": shared_by if shared_by else None,
+                "created_at": item.get("created_at")
+            })
         
         return {
             "status": "success",
-            "data": items_response.data
+            "data": transformed_items
         }
         
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error getting fridge items: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get fridge items: {str(e)}")
 
 @app.get("/items/added-by/{user_name}")
@@ -218,13 +279,17 @@ async def accept_fridge_invite(
     authorization: str = Header(None)
 ):
     try:
+        # Get user data from dict
+        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+        user_email = current_user.get("email") if isinstance(current_user, dict) else current_user.email
+        
         # Check if invite exists and is valid
         invite_response = supabase.table("fridge_invitations").select(
             "*, fridges(name)"
         ).eq(
             "invite_code", redeem_dto.invite_code.upper()
         ).eq(
-            "invited_email", current_user.email.lower()
+            "invited_email", user_email.lower()
         ).eq(
             "used", False
         ).execute()
@@ -237,7 +302,7 @@ async def accept_fridge_invite(
         # Update user profile with fridge_id
         profile_response = supabase.table("users").update({
             "fridge_id": invitation["fridge_id"]
-        }).eq("id", current_user.id).execute()
+        }).eq("id", user_id).execute()
 
         if not profile_response.data:
             raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
@@ -268,6 +333,7 @@ app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
 app.include_router(ai_expiration_router, prefix="/expiry")
+app.include_router(cost_splitting_router, prefix="/cost-splitting")
        
 
 # Login Page
@@ -282,10 +348,13 @@ class FridgeCreate(BaseModel):
 @app.post("/fridges")
 def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
+        # Get user ID from dict
+        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+        
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
             "name": fridge.name,
-            "created_by": current_user["id"],
+            "created_by": user_id,
             "created_at": "now()"
         }).execute()
 
@@ -300,7 +369,7 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         # Gets the response for updating the fridge id for a user
         updateFridgeID_response = supabase.table("users").update({
             "fridge_id": fridge_id
-        }).eq("id", current_user["id"]).execute()
+        }).eq("id", user_id).execute()
 
         if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
             print(f"Error updating user fridge ID: {updateFridgeID_response}")
