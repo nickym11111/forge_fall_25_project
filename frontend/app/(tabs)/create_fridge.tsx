@@ -12,11 +12,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
+import { router } from 'expo-router';
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
-import { navigate } from "expo-router/build/global-state/routing";
 import ProfileIcon from "@/components/ProfileIcon";
 
 //Type for API response
@@ -124,7 +124,6 @@ export default function CreateFridgeScreen() {
       return;
     }
 
-
     // Filter out empty emails
     const validEmails = emails.filter((email) => email.trim() !== "");
     if (validEmails.length === 0) {
@@ -151,8 +150,9 @@ export default function CreateFridgeScreen() {
       // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json",
-                   "Authorization": `Bearer ${session.access_token}`
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ name: fridgeName }),
       });
@@ -173,8 +173,10 @@ export default function CreateFridgeScreen() {
       const invitePromises = validEmails.map(async (email) => {
         const inviteResponse = await fetch(SEND_INVITE_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json",
-                     "Authorization": `Bearer ${session.access_token}`},
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${session.access_token}`
+          },
           body: JSON.stringify({
             fridge_id: fridgeId.toString(),
             emails: emails,
@@ -195,30 +197,49 @@ export default function CreateFridgeScreen() {
         )
         .filter(Boolean);
 
+      await refreshUser();
+
+      // Reset state first
+      setIsLoading(false);
+      setFridgeName("");
+      setEmails([""]);
+
+      // Show alert immediately
       if (failedInvites.length > 0) {
         Alert.alert(
           "Partial Success",
-          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
-            ", "
-          )}`
+          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(", ")}`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                router.push("/(tabs)/two");
+              }
+            }
+          ]
         );
       } else {
         Alert.alert(
           "Success!",
-          "Fridge created and invites sent successfully!"
+          "Fridge created and invites sent successfully!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                router.push("/(tabs)/two");
+              }
+            }
+          ]
         );
       }
-
-      await refreshUser();
       
     } catch (error) {
       console.error("Error:", error);
+      setIsLoading(false);
       Alert.alert(
         "Error",
         error instanceof Error ? error.message : "An unexpected error occurred"
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -227,10 +248,10 @@ export default function CreateFridgeScreen() {
     <View style={styles.container}>
       {/*Page Header*/}
       <CustomHeader 
-      title="Create Fridge  "
-      logo={require('../../assets/images/FridgeIcon.png')}
+        title="Create Fridge  "
+        logo={require('../../assets/images/FridgeIcon.png')}
       />
-<ProfileIcon className="profileIcon" />
+      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}
@@ -288,7 +309,7 @@ export default function CreateFridgeScreen() {
           {/*Navigate to Join Fridge page*/}
           <Text
             style={styles.joinFridgeText}
-            onPress={() => !isLoading && navigate("/(tabs)/Join-Fridge")}
+            onPress={() => !isLoading && router.push("/(tabs)/Join-Fridge")}
           >
             Join a fridge instead
           </Text>
