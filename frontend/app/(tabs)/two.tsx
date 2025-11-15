@@ -6,6 +6,9 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  View,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -324,8 +327,7 @@ export default function TabOneScreen() {
   /* const onRefresh = () => {
     setRefreshing(true);
     fetchFridgeItems();
-  };
-
+  }; */
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
@@ -406,7 +408,6 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
-        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
@@ -448,7 +449,6 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
-        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!
@@ -459,14 +459,13 @@ export default function TabOneScreen() {
         </View>
       </View>
     );
-  }
+  } */
 
   return (
   <View style={{
     width: '100%', height: '100%',
   }}>
     <CustomHeader title="What's In Our Kitchen?" />
-    <ProfileIcon className="profileIcon" />
     <View style={styles.container}>
       
       <TextInput

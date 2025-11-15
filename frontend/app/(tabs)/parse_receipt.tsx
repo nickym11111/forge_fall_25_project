@@ -83,36 +83,22 @@ export default function ParseReceiptScreen() {
       Alert.alert("Error", "User not logged in");
       return;
     }
-    const ExpiryDateResponse = await PredictExpiryDate(item.name);
-    const ExpiryDateData = await ExpiryDateResponse.json();
-    console.log("📦 Response data:", ExpiryDateData);
     const newExpiryDate = new Date(); // Default to today
 
-    if (ExpiryDateData.days) {
-      const days = parseInt(ExpiryDateData.days);
-      console.log("✅ AI predicted", days, "days for", item.name);
-      newExpiryDate.setDate(newExpiryDate.getDate() + days);
+    try {
+      const ExpiryDateResponse = await PredictExpiryDate(item.name);
+      const ExpiryDateData = await ExpiryDateResponse.json();
+      console.log("📦 Response data:", ExpiryDateData);
+
+      if (ExpiryDateData.days) {
+        const days = parseInt(ExpiryDateData.days);
+        console.log("✅ AI predicted", days, "days for", item.name);
+        newExpiryDate.setDate(newExpiryDate.getDate() + days);
+      }
+    } catch (expiryError) {
+      console.warn("⚠️ Failed to predict expiry date, using default:", expiryError);
+      // Continue with default date (today)
     }
-
-        if (ExpiryDateData.days) {
-          const days = parseInt(ExpiryDateData.days);
-          console.log("✅ AI predicted", days, "days for", item.name);
-          newExpiryDate.setDate(newExpiryDate.getDate() + days);
-        }
-      } catch (expiryError) {
-        console.warn("⚠️ Failed to predict expiry date, using default:", expiryError);
-        // Continue with default date (today)
-      }
-
-        if (ExpiryDateData.days) {
-          const days = parseInt(ExpiryDateData.days);
-          console.log("✅ AI predicted", days, "days for", item.name);
-          newExpiryDate.setDate(newExpiryDate.getDate() + days);
-        }
-      } catch (expiryError) {
-        console.warn("⚠️ Failed to predict expiry date, using default:", expiryError);
-        // Continue with default date (today)
-      }
 
     const AddItemToFridgeResponse = await AddItemToFridge(
       userSession.access_token,
