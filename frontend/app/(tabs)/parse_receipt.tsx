@@ -7,15 +7,17 @@ import {
   Platform,
   StyleSheet,
   Alert,
+  ScrollView,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import * as FileSystem from "expo-file-system";
+import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
 import { TouchableOpacity } from "react-native";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import ToastMessage from "@/components/ToastMessage";
+import ProfileIcon from "@/components/ProfileIcon";
 
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -97,8 +99,8 @@ export default function ParseReceiptScreen() {
       item.name,
       item.quantity,
       newExpiryDate,
-      "TEMP_USER_ID", // Placeholder for current user ID
-      []
+      [], // Empty array means shared by all fridge mates
+      item.price
     );
 
     const data: ApiResponse = await AddItemToFridgeResponse.json();
@@ -145,11 +147,9 @@ export default function ParseReceiptScreen() {
           reader.readAsDataURL(blob);
         });
       } else {
-        base64Image = await FileSystem.readAsStringAsync(imageUri, {
-          encoding: "base64",
-        });
+        const file = new File(imageUri);
+        base64Image = file.base64Sync();
       }
-
       const response = await CreateParseReceiptRequest(base64Image);
       const parsed = JSON.parse(response.output[0].content[0].text);
 
@@ -167,8 +167,9 @@ export default function ParseReceiptScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <CustomHeader title="Add Items 📷" />
+      <ProfileIcon className="profileIcon" />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
       </View>
@@ -178,7 +179,14 @@ export default function ParseReceiptScreen() {
           style={{ width: "100%", height: "100%" }}
         >
           {imageUri ? (
-            <Image source={{ uri: imageUri }} style={styles.image} />
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: imageUri }} style={styles.image} />
+              <View style={styles.imageOverlay}>
+                <Text style={styles.imageOverlayText}>
+                  Click to Change Image
+                </Text>
+              </View>
+            </View>
           ) : (
             <View style={styles.imageSkeleton}>
               <View style={styles.imageTextContainer}>
@@ -209,22 +217,29 @@ export default function ParseReceiptScreen() {
           <Text style={styles.responseText}>{responseText}</Text>
         ) : parsedItems.length > 0 ? (
           <View>
-            <View style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-            <Button
-              title="Add All to Fridge"
-              onPress={() => {
-                parsedItems.forEach((item, index) => {
-                  const itemName = Object.keys(item)[0];
-                  const itemData = item[itemName];
-                  sendItemToFridge({
-                    name: itemName,
-                    quantity: Math.ceil(itemData.quantity),
-                    index,
-                  });
-                  setAddingItemIndex((prev) => [...prev, index]);
-                });
+            <View
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginBottom: 12,
               }}
-            />
+            >
+              <Button
+                title="Add All to Fridge"
+                onPress={() => {
+                  parsedItems.forEach((item, index) => {
+                    const itemName = Object.keys(item)[0];
+                    const itemData = item[itemName];
+                    sendItemToFridge({
+                      name: itemName,
+                      quantity: Math.ceil(itemData.quantity),
+                      price: itemData.price,
+                      index,
+                    });
+                    setAddingItemIndex((prev) => [...prev, index]);
+                  });
+                }}
+              />
             </View>
             {parsedItems.map((item, index) => {
               const itemName = Object.keys(item)[0];
@@ -248,6 +263,7 @@ export default function ParseReceiptScreen() {
                           sendItemToFridge({
                             name: itemName,
                             quantity: Math.ceil(itemData.quantity),
+                            price: itemData.price,
                             index,
                           });
                           setAddingItemIndex((prev) => [...prev, index]);
@@ -261,7 +277,7 @@ export default function ParseReceiptScreen() {
           </View>
         ) : null}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -271,6 +287,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FF",
     overflowY: "scroll",
   },
+  imageWrapper: {
+    width: "100%",
+    height: "100%",
+    position: "relative",
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  imageOverlay: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.25)", // subtle dim so text is readable
+  },
+  imageOverlayText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    borderRadius: 6,
+  },
+
   imageContainer: {
     width: "100%",
     height: "100%",

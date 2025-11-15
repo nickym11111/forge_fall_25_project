@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../utils/client';
+import { useState, useEffect } from "react";
+import { supabase } from "../utils/client";
+import { fetchUserDetails } from "../api/UserDetails";
 
 interface fridgeMate {
-    id: string;
-    email: string;
-    first_name?: string;
-    last_name?: string;
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 interface UserData {
@@ -17,9 +18,9 @@ interface UserData {
   fridge?: {
     id: string;
     name: string;
-    emails?: string[]
+    emails?: string[];
   } | null;
-  fridgeMates?: fridgeMate[]
+  fridgeMates?: fridgeMate[];
 }
 
 let cachedUser: UserData | null = null;
@@ -27,7 +28,7 @@ let listeners: Set<(user: UserData | null) => void> = new Set();
 
 // Notify all listeners when user changes
 const notifyListeners = () => {
-  listeners.forEach(listener => listener(cachedUser));
+  listeners.forEach((listener) => listener(cachedUser));
 };
 
 export const useUser = () => {
@@ -73,6 +74,7 @@ export const useUser = () => {
       } finally {
         setLoading(false);
       }
+      setLoading(false);
     };
 
     fetchUser();
@@ -93,8 +95,10 @@ export const clearUserCache = () => {
 
 export const refreshUserCache = async () => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
       cachedUser = null;
       notifyListeners();
@@ -119,7 +123,7 @@ export const refreshUserCache = async () => {
       return cachedUser;
     }
   } catch (error) {
-    console.error('Error refreshing user:', error);
+    console.error("Error refreshing user:", error);
   }
   return null;
 };

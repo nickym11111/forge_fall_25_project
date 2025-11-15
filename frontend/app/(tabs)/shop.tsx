@@ -19,6 +19,7 @@ import CustomCheckbox from "@/components/CustomCheckbox";
 import { useAuth } from "../context/authContext"; 
 import { useFridge } from "../context/FridgeContext";
 import { supabase } from "../utils/client";
+import ProfileIcon from "@/components/ProfileIcon";
 
 interface ShoppingItem { 
   id?: number; 
@@ -110,23 +111,26 @@ export default function SharedListScreen() {
       };
 
       try {
-        const { data, error } = await supabase
-          .from("shopping_list") // <-- your Supabase table name
-          .insert([newItem])
-          .select();
+      const resp = await fetch(`${API_URL}/items/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newItem),
+      });
+      const data = await resp.json();
 
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          setItems((prev) => [...prev, data[0]]);
-        }
-
-        resetForm();
-        closeModal();
-      } catch (err) {
-        console.error("addItem error:", err);
-      }
-    };
+      if (resp.ok && data?.data?.length) {
+        const returned = data.data[0];
+        setItems((prev) => {
+          const idx = prev.findIndex(
+            (it) => !it.id && it.name === returned.name
+          );
+          if (idx !== -1) {
+            const copy = [...prev];
+            copy[idx] = returned;
+            return copy;
+          }
+          return [...prev, returned];
+        });
 
 
   const deleteItem = async (item: ShoppingItem) => {
@@ -210,7 +214,10 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
         </View>
 
         <View style={styles.itemCenter}>
-          <Text style={[styles.itemTitle, item.checked && styles.itemChecked]} numberOfLines={1}>
+          <Text
+            style={[styles.itemTitle, item.checked && styles.itemChecked]}
+            numberOfLines={1}
+          >
             {item.name}
           </Text>
 
@@ -218,8 +225,14 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
             <Text style={styles.itemMeta}>Bought by You</Text>
           ) : (
             <>
-              {item.need_by && <Text style={styles.itemMeta}>Need by: {isoToShort(item.need_by)}</Text>}
-              <Text style={styles.itemMeta}>Requested by {item.requested_by ?? "You"}</Text>
+              {item.need_by && (
+                <Text style={styles.itemMeta}>
+                  Need by: {isoToShort(item.need_by)}
+                </Text>
+              )}
+              <Text style={styles.itemMeta}>
+                Requested by {item.requested_by ?? "You"}
+              </Text>
             </>
           )}
         </View>
@@ -227,11 +240,17 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
         <View style={styles.itemRight}>
           <View style={styles.controlBox}>
             {qty === 1 ? (
-              <TouchableOpacity onPress={() => deleteItem(item)} style={styles.controlIcon}>
+              <TouchableOpacity
+                onPress={() => deleteItem(item)}
+                style={styles.controlIcon}
+              >
                 <Ionicons name="trash-outline" size={20} color="#222" />
               </TouchableOpacity>
             ) : (
-              <TouchableOpacity onPress={() => changeItemQuantity(item, -1)} style={styles.controlIcon}>
+              <TouchableOpacity
+                onPress={() => changeItemQuantity(item, -1)}
+                style={styles.controlIcon}
+              >
                 <Ionicons name="remove-circle-outline" size={22} color="#222" />
               </TouchableOpacity>
             )}
@@ -240,7 +259,10 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
               <Text style={styles.qtyText}>{qty}</Text>
             </View>
 
-            <TouchableOpacity onPress={() => changeItemQuantity(item, 1)} style={styles.controlIcon}>
+            <TouchableOpacity
+              onPress={() => changeItemQuantity(item, 1)}
+              style={styles.controlIcon}
+            >
               <Ionicons name="add-circle-outline" size={22} color="#222" />
             </TouchableOpacity>
           </View>
@@ -251,9 +273,12 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
 
   //Main Render
   return (
-    <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <CustomHeader title="Shared Shopping List 🛒" />
-
+      <ProfileIcon className="profileIcon" />
       {/* Top Card (Add Item quick input) */}
       <View style={styles.topCard}>
         <Text style={styles.cardTitle}>Add Item</Text>
@@ -284,18 +309,26 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
       />
 
       {/* Popup (Add Item) */}
-      <Modal visible={modalOpen} transparent animationType="none" onRequestClose={closeModal}>
+      <Modal
+        visible={modalOpen}
+        transparent
+        animationType="none"
+        onRequestClose={closeModal}
+      >
         <Pressable style={styles.modalOverlay} onPress={closeModal} />
 
         <View style={[styles.modalCard]}>
-          <ScrollView contentContainerStyle={{ padding: 10 }} nestedScrollEnabled>
+          <ScrollView
+            contentContainerStyle={{ padding: 10 }}
+            nestedScrollEnabled
+          >
             <Text style={styles.modalTitle}>Add Item</Text>
 
             {/* Name */}
             <Text style={styles.inputLabel}>Item Name *</Text>
             <TextInput
               style={styles.input}
-              placeholder= "eg. Milk, Eggs, Bread"
+              placeholder="eg. Milk, Eggs, Bread"
               placeholderTextColor="#888"
               value={formName}
               onChangeText={setFormName}
@@ -306,21 +339,40 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
               <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>Quantity</Text>
                 <View style={styles.qtyRow}>
-                  <TouchableOpacity onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}>
-                    <Ionicons name="remove-circle-outline" size={25} color="#222" />
+                  <TouchableOpacity
+                    onPress={() =>
+                      setFormQuantity(Math.max(1, formQuantity - 1))
+                    }
+                  >
+                    <Ionicons
+                      name="remove-circle-outline"
+                      size={25}
+                      color="#222"
+                    />
                   </TouchableOpacity>
                   <Text style={styles.qtyNumber}>{formQuantity}</Text>
-                  <TouchableOpacity onPress={() => setFormQuantity(formQuantity + 1)}>
-                    <Ionicons name="add-circle-outline" size={25} color="#222" />
+                  <TouchableOpacity
+                    onPress={() => setFormQuantity(formQuantity + 1)}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={25}
+                      color="#222"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
 
-              <View style={{ flex: 1}}>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>Need by</Text>
-                <TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
                   <Text style={styles.dateText}>
-                    {formNeedBy ? formatShortDate(formNeedBy) : "Tap to select date"}
+                    {formNeedBy
+                      ? formatShortDate(formNeedBy)
+                      : "Tap to select date"}
                   </Text>
                   <Ionicons name="calendar-outline" size={20} color="#222" />
                 </TouchableOpacity>
@@ -328,24 +380,23 @@ const onChangeNeedBy = (event: any, selected?: Date) => {
             </View>
 
             {showDatePicker && (
-              (
-                <DateTimePicker
-                  value={formNeedBy || new Date()}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "inline" : "default"}
-                  onChange={onChangeNeedBy}
-                />
-              )
+              <DateTimePicker
+                value={formNeedBy || new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "inline" : "default"}
+                onChange={onChangeNeedBy}
+              />
             )}
-
-
 
             {/* Add Button */}
             <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
               <Text style={styles.addItemButtonText}>Add Item</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={closeModal} style={{ marginTop: 8, alignSelf: "center" }}>
+            <TouchableOpacity
+              onPress={closeModal}
+              style={{ marginTop: 8, alignSelf: "center" }}
+            >
               <Text style={{ color: "#666" }}>Cancel</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -370,10 +421,11 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  cardTitle: { 
-    fontSize: 20, 
-    fontWeight: "700", 
-    marginBottom: 8 },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 8,
+  },
   topRow: { flexDirection: "row", alignItems: "center" },
   topInput: {
     flex: 1,
@@ -399,19 +451,20 @@ const styles = StyleSheet.create({
   },
 
   // Section headers
-  section: { 
-    marginHorizontal: 22, 
-    marginTop: 6 },
-  sectionTitle: { 
-    fontSize: 20, 
-    fontWeight: "700", 
-    color: "#2C2C54" 
+  section: {
+    marginHorizontal: 22,
+    marginTop: 6,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2C2C54",
   },
 
   // Item cards
-  itemsList: { 
-    paddingHorizontal: 10, 
-    paddingBottom: 140 
+  itemsList: {
+    paddingHorizontal: 10,
+    paddingBottom: 140,
   },
   itemCard: {
     marginHorizontal: 18,
@@ -425,33 +478,33 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
   },
-  itemLeft: { 
-    width: 40, 
-    alignItems: "center" 
+  itemLeft: {
+    width: 40,
+    alignItems: "center",
   },
-  itemCenter: { 
-    flex: 1, 
-    paddingRight: 12
+  itemCenter: {
+    flex: 1,
+    paddingRight: 12,
   },
-  itemTitle: { 
-    fontSize: 17, 
-    fontWeight: "700", 
-    color: "#111" 
+  itemTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#111",
   },
-  itemChecked: { 
-    textDecorationLine: "line-through", 
-    color: "#8c8c8c" 
+  itemChecked: {
+    textDecorationLine: "line-through",
+    color: "#8c8c8c",
   },
-  itemMeta: { 
-    marginTop: 6, 
-    color: "#666", 
-    fontSize: 13 
+  itemMeta: {
+    marginTop: 6,
+    color: "#666",
+    fontSize: 13,
   },
 
-  itemRight: { 
-    width: 120, 
-    alignItems: "center", 
-    justifyContent: "center" 
+  itemRight: {
+    width: 120,
+    alignItems: "center",
+    justifyContent: "center",
   },
   controlBox: {
     width: 110,
@@ -463,8 +516,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     flexDirection: "row",
   },
-  controlIcon: { 
-    paddingHorizontal: 6 
+  controlIcon: {
+    paddingHorizontal: 6,
   },
   qtyBadge: {
     backgroundColor: "#fff",
@@ -474,16 +527,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#eee",
   },
-  qtyText: { 
-    fontSize: 16, 
-    fontWeight: "700", 
-    color: "#111" 
+  qtyText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
   },
 
   // Modal
-  modalOverlay: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: "rgba(0,0,0,0.45)" 
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
   modalCard: {
     position: "absolute",
@@ -498,17 +551,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 12,
   },
-  modalTitle: { 
-    fontSize: 20, 
-    fontWeight: "700", 
-    marginBottom: 12 
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
   },
 
   // Inputs
-  inputLabel: { 
-    fontSize: 13, 
-    color: "#555", 
-    marginBottom: 6 
+  inputLabel: {
+    fontSize: 13,
+    color: "#555",
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,
@@ -518,10 +571,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAFBFF",
     fontSize: 16,
   },
-  row: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    marginTop: 10 
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
   },
   qtyRow: {
     flexDirection: "row",
@@ -533,10 +586,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: 140,
   },
-  qtyNumber: { 
-    fontSize: 18, 
-    fontWeight: "700", 
-    marginHorizontal: 8 
+  qtyNumber: {
+    fontSize: 18,
+    fontWeight: "700",
+    marginHorizontal: 8,
   },
   dateInput: {
     flexDirection: "row",
@@ -549,8 +602,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E8E8E8",
   },
-  dateText: { 
-    color: "#333" 
+  dateText: {
+    color: "#333",
   },
 
   // Buttons
@@ -561,9 +614,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     alignItems: "center",
   },
-  addItemButtonText: { 
-    color: "#fff", 
-    fontWeight: "700", 
-    fontSize: 16 
+  addItemButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
   },
 });
