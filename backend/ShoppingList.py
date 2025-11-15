@@ -31,7 +31,7 @@ def add_item(item: ShoppingItem):
         item.requested_by = "TEST_USER"
 
     response = (
-    supabase.table("ShoppingList")
+    supabase.table("shopping_list")
     .insert({
         "name": item.name,
         "quantity": item.quantity,
@@ -56,7 +56,7 @@ def add_item(item: ShoppingItem):
 @app.get("/items/")
 def get_items(fridge_id: str = Query(...)):
     response = (
-        supabase.table("ShoppingList")
+        supabase.table("shopping_list")
         .select("*")
         .eq("fridge_id", fridge_id)
         .execute()
@@ -69,7 +69,7 @@ def update_item(item_id: str, item: ShoppingItem):
     #if not item.fridge_id:
         #raise HTTPException(status_code=400, detail="fridge_id is required")
     response = (
-        supabase.table("ShoppingList")
+        supabase.table("shopping_list")
         .update({
             "name": item.name,
             "quantity": item.quantity,
@@ -88,14 +88,14 @@ def update_item(item_id: str, item: ShoppingItem):
 # Delete an item by ID
 @app.delete("/items/{item_id}")
 def delete_item(item_id: str):
-    response = supabase.table("ShoppingList").delete().eq("id", item_id).execute()
+    response = supabase.table("shopping_list").delete().eq("id", item_id).execute()
     return {"data": response.data, "status": "Item deleted successfully"}
 
 # Delete an item by name
 @app.delete("/items/remove_by_name")
 def remove_item_by_name(name: str, fridge_id: str):
     response = (
-        supabase.table("ShoppingList")
+        supabase.table("shopping_list")
         .delete()
         .ilike("name", name)
         .eq("fridge_id", fridge_id)

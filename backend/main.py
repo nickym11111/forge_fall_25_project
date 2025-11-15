@@ -105,7 +105,7 @@ async def create_fridge_item(
         )
 
         #Remove matching item from shopping list
-        supabase.table("ShoppingList") \
+        supabase.table("shopping_list") \
             .delete() \
             .eq("name", item.title.lower()) \
             .eq("fridge_id", fridge_id) \

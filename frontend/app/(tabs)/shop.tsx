@@ -23,8 +23,7 @@ import { supabase } from "../utils/client";
 interface ShoppingItem { 
   id?: number; 
   name: string; 
-  quantity?: number; 
-  price?: number; 
+  quantity?: number;  
   requested_by: string; 
   bought_by?: string | null; 
   checked?: boolean; 
@@ -94,14 +93,20 @@ export default function SharedListScreen() {
     const addItem = async () => {
       if (!formName.trim()) return;
 
+      const fridge_id = user?.fridge_id; // ✅ user must have a fridge_id field
+      if (!fridge_id) {
+        console.error("Cannot add item: user does not have a fridge_id!");
+        return;
+      }
+
       const newItem: ShoppingItem = {
         name: formName.trim(),
         quantity: Math.max(1, Math.floor(formQuantity)),
         need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
-        requested_by: user?.id ?? "TEST_USER",
+        requested_by: user?.id,
         bought_by: null,
         checked: false,
-        fridge_id: fridge?.id ?? "TEST_FRIDGE",
+        fridge_id,
       };
 
       try {

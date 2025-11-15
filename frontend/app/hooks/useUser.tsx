@@ -55,11 +55,12 @@ export const useUser = () => {
           return;
         }
 
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        });
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/userInfo`, {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
+      });
+
 
         if (response.ok) {
           const userData = await response.json();
@@ -100,11 +101,11 @@ export const refreshUserCache = async () => {
       return null;
     }
 
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`
-      }
-    });
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/userInfo`, {
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`
+    }
+  });
 
     if (response.ok) {
       const userData = await response.json();

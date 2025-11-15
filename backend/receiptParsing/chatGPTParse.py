@@ -65,7 +65,7 @@ def parse_receipt(receipt: Receipt):
             }).execute()
 
             #Automatically remove from ShoppingList
-            supabase.table("ShoppingList").delete() \
+            supabase.table("shopping_list").delete() \
                 .eq("name", name) \
                 .eq("fridge_id", receipt.fridge_id) \
                 .execute()
