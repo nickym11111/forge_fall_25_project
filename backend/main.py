@@ -1,5 +1,4 @@
-# EXAMPLE TEMPLATE SETUP
-from typing import Optional, Any
+from typing import List, Any, Optional, Dict
 from fastapi import FastAPI, HTTPException, Depends, Header
 from database import supabase
 from pydantic import BaseModel
@@ -12,20 +11,15 @@ from Users import app as users_router
 from ShoppingList import app as shopping_router
 from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
-#from ai_expiration import app as ai_expiration_router
+from recipes import app as recipes_router
+from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
-from recipes import router as ingredients_router
-from RecipeGen2 import router as recipe_router
 
 
 load_dotenv()
-
-# Initialize routers
 app = FastAPI()
 app.include_router(users_router)
-app.include_router(ingredients_router)
-app.include_router(recipe_router, prefix="/recipes")
-#app.include_router(ai_expiration, tags=["ai"])
+#app.include_router(ai_expiration_router, tags=["ai"])
 
 # Allow CORS origin policy to allow requests from local origins.
 origins = [
@@ -44,12 +38,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Data Transfer Objects
+
+app.include_router(join_router, prefix="/fridge")  # ← now /fridge/join works
+app.include_router(users_router, prefix="/users")  # ← now /user/ endpoints work
+# Data Transfer Object for fridge invite
 class FridgeInviteDTO(BaseModel):
     fridge_id: str
     emails: List[str]
     invited_by: Optional[str] = None
     invite_code: Optional[str] = None
+
+# Data Transfer Object for redeem fridge invite
+class RedeemFridgeInviteDTO(BaseModel):
+    invite_code: str
 
 class RedeemFridgeInviteDTO(BaseModel):
     invite_code: str
@@ -58,7 +59,7 @@ class FridgeItemCreate(BaseModel):
     title: str
     quantity: Optional[int] = 1
     expiry_date: str
-    shared_by: Optional[List[str]] = None
+    shared_by: Optional[List[dict]] = None
 
 # Root endpoint
 @app.get("/")
@@ -79,7 +80,16 @@ async def create_fridge_item(
         today = date.today()
         days_till_expiration = (expiry - today).days
 
-        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+        
+        # Hard-code test fridge for now
+        #fridge_id = "04c3cc6a-a3f3-4abe-a83c-344a75dc8878"  # Replace with real fridge_id later
+
+        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
+        
+        if not user_response.data or len(user_response.data) == 0:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        fridge_id = user_response.data[0].get("fridge_id")
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
@@ -89,8 +99,9 @@ async def create_fridge_item(
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": current_user.get("id"),
-            "shared_by": item.shared_by
+            "added_by": "TEMP_USER_ID",
+            "shared_by": item.shared_by,
+            "fridge_id": fridge_id #CHANGED HERE
         }).execute()
         
         return {
@@ -108,7 +119,12 @@ def get_fridge_items(current_user = Depends(get_current_user)):
 
     try:
         #Get the user's fridge_id
-        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+        user_response = supabase.table("users").select("fridge_id").eq("id", current_user.id).execute()
+        
+        if not user_response.data or len(user_response.data) == 0:
+            raise HTTPException(status_code=401, detail="User not found")
+        
+        fridge_id = user_response.data[0].get("fridge_id")
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
@@ -267,6 +283,7 @@ async def accept_fridge_invite(
 app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
+app.include_router(recipes_router, prefix="/recipes")
 app.include_router(ai_expiration_router, prefix="/expiry")
        
 
@@ -321,6 +338,184 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         print(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
 
+
+@app.get("/fridges")
+def get_fridges():
+    response = supabase.table("fridges").select("*").execute()
+    return {"data": response.data, "error": response.error}
+
+@join_router.post("/send-invite/")
+async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
+    # Check if fridge exists
+    fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
+    
+    if not fridge_data.data:
+        raise HTTPException(status_code=404, detail="Fridge not found")
+    
+    # Get owner name for email (use a default name if not available)
+    owner_name = "a friend"
+    if fridge_data.data[0].get("created_by"):
+        owner_data = supabase.table("users").select("first_name").eq("id", fridge_data.data[0]["created_by"]).execute()
+        if owner_data.data and owner_data.data[0].get("first_name"):
+            owner_name = owner_data.data[0]["first_name"]
+    
+    results = []
+    
+    for email in fridge_invite_dto.emails:
+        # Generate unique invite code for each email
+        invite_code = generate_invite_code()
+        
+        invitation_data = {
+            "fridge_id": fridge_invite_dto.fridge_id,
+            "email_to": email,
+            "invite_code": invite_code
+        }
+        
+        # Insert invitation data into table
+        response = supabase.table("fridge_invitations").insert(invitation_data).execute()
+        
+        if not response.data:
+            results.append({"email": email, "status": "failed", "error": "Failed to create invitation"})
+            continue
+        
+        try:
+            # Send email to each recipient
+            email_response = supabase.functions.invoke("send-fridge-invite", { "body": {
+                "inviteCode": invite_code,
+                "recipientEmail": email,
+                "senderName": owner_name
+            }})
+            
+            if not email_response:
+                results.append({"email": email, "status": "partial", "message": "Invite created but email may not have been sent"})
+            else:
+                results.append({"email": email, "status": "success", "invite_code": invite_code})
+                
+        except Exception as email_error:
+            print(f"Email error for {email}: {str(email_error)}")
+            results.append({"email": email, "status": "partial", "message": f"Error sending email: {str(email_error)}"})
+    
+    # Check if all invites failed
+    if all(result.get("status") == "failed" for result in results):
+        raise HTTPException(status_code=500, detail="Failed to send all invitations")
+    
+    return {
+        "status": "success",
+        "message": "Invitation processing completed",
+        "results": results
+    }
+
+# Accept fridge invite
+@app.post("/accept-fridge-invite/")
+async def accept_fridge_invite(
+    redeem_dto: RedeemFridgeInviteDTO,
+    current_user = Depends(get_current_user),
+    authorization: str = Header(None)
+):
+    try:
+        # Check if invite exists and is valid
+        invite_response = supabase.table("fridge_invitations").select(
+            "*, fridges(name)"
+        ).eq(
+            "invite_code", redeem_dto.invite_code.upper()
+        ).eq(
+            "invited_email", current_user.email.lower()
+        ).eq(
+            "used", False
+        ).execute()
+
+        if not invite_response.data:
+            raise HTTPException(status_code=404, detail="Invalid code, expired, or not sent to your email")
+
+        invitation = invite_response.data[0]
+
+        # Update user profile with fridge_id
+        profile_response = supabase.table("profiles").update({
+            "fridge_id": invitation["fridge_id"]
+        }).eq("id", current_user.id).execute()
+
+        if not profile_response.data:
+            raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
+
+        # Mark invitation as used
+        supabase.table("fridge_invitations").update({
+            "used": True,
+            "used_at": datetime.utcnow().isoformat(),
+        }).eq("id", invitation["id"]).execute()
+
+        return {
+            "status": "success",
+            "message": f"Successfully joined {invitation['fridges']['name']}!",
+            "data": {
+                "fridge_id": invitation["fridge_id"],
+                "fridge_name": invitation["fridges"]["name"]
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+            
+    
+       
+# Login Page
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+@app.post("/log-in/")
+async def login_user(user: UserLogin):
+    try:
+        res = supabase.auth.sign_in_with_password({
+            "email": user.email,
+            "password": user.password
+        })
+
+        # The response contains user + session data if valid
+        return {
+            "user": res.user,
+            "session": res.session,  # includes access_token, refresh_token, etc.
+            "status": "Login successful"
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+#Create a Fridge
+class FridgeCreate(BaseModel):
+    name: str
+
+@app.post("/fridges")
+def create_fridge(fridge: FridgeCreate):
+    try:
+        # Insert the fridge and get the response
+        response = supabase.table("fridges").insert({
+            "name": fridge.name,
+            "created_at": "now()"
+        }).execute()
+
+        # Check if the response contains data
+        if not response.data or len(response.data) == 0:
+            print(f"No data returned from database: {response}")
+            raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
+        
+        # Extract the ID from the response
+        fridge_id = response.data[0].get("id")
+        if not fridge_id:
+            print(f"No ID in response data: {response.data}")
+            raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
+            
+        return {
+            "status": "success",
+            "message": "Fridge created successfully",
+            "fridge_id": fridge_id,
+            "data": response.data
+        }
+    except Exception as e:
+        error_msg = f"Error creating fridge: {str(e)}"
+        print(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)
 
 @app.get("/fridges")
 def get_fridges():

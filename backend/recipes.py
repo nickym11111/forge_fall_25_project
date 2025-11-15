@@ -7,7 +7,7 @@ from database import supabase
 
 
 load_dotenv()
-router = APIRouter()
+app = APIRouter()
 api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
@@ -15,7 +15,7 @@ class Ingredients(BaseModel):
     recipe: str
 
 def getChatGPTResponse(recipe: str):
-    existing_ingredients = (supabase.table("fridge_items").select("title").execute())
+    existing_ingredients = (supabase.table("fridge_items").select("name").execute())
 
     response = client.responses.create(
         model="gpt-4.1-mini",
@@ -36,7 +36,7 @@ def getChatGPTResponse(recipe: str):
     return response
 
 
-@router.post("/find_ingredients")
+@app.post("/find_ingredients")
 def find_ingredients(ingredients: Ingredients):
     try:
         return getChatGPTResponse(ingredients.recipe);
