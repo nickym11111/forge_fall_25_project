@@ -20,32 +20,11 @@ interface ItemProps {
   title: string;
 }
 
-// Recipe items component
-const RecipeItem = ({ item }: { item: any }) => {
-  // Handles cases where the backend sends an error or a message like "Need more ingredients"
-  if (!item.recipe_name) {
-      return (
-          <View style={styles.item}>
-              <Text style={styles.itemText}>{item.message || "Could not generate recipes. Check fridge contents."}</Text>
-          </View>
-      );
-  }
-  return (
-    <View style={styles.item}>
-      <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
-      <Text style={styles.recipeDescription}>{item.description}</Text>
-      <Text style={styles.recipeIngredients}>
-        Ingredients: {Array.isArray(item.ingredients_used) ? item.ingredients_used.join(", ") : 'N/A'}
-      </Text>
-    </View>
-  );
-};
-
+// Recipe items component (potential issue)
 // Individual item component
 const Item = ({
   title
 }: ItemProps) => {
-
   return (
     <View style={styles.item}>
       <Text style={[styles.itemText]}>
@@ -55,11 +34,11 @@ const Item = ({
   );
 };
 
+
 export default function recipes() {
   const [inputValue, setInputValue] = useState<string>('');
   const [responseMessage, setResponseMessage] = useState<string[]>();
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
-
   const [recipes, setRecipes] = useState<any[]>([]);
 
    const searchFunction = (text: string) => {
@@ -68,15 +47,31 @@ export default function recipes() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch('${process.env.EXPO_PUBLIC_API_URL}/find_ingredients', {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/find_ingredients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: inputValue }), // Send data as JSON
+        body: JSON.stringify({ recipe: inputValue }), // Send data as JSON
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch ingredients');
+      }
+
       const data = await response.json();
-      setResponseMessage(data.message);
+      console.log('Received response from backend:', data);
+      const rawText = data.output[0].content[0].text;
+      const jsonString = rawText.replace(/^Response:\s*/, '');
+      let ingredients: string[] = [];
+      try {
+        const parsed = JSON.parse(jsonString);
+        ingredients = parsed.ingredients;
+      } catch (error) {
+        console.error("Failed to parse JSON:", error);
+        ingredients = ['Error parsing response'];
+      }
+      setResponseMessage(ingredients);
     } catch (error) {
       console.error('Error sending data:', error);
       setResponseMessage(['Error sending data to backend.']);
@@ -85,28 +80,72 @@ export default function recipes() {
 
   const handleFindRecipe = async () => {
     try {
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/recipes/generate-recipes/`);
-        const data = await response.json();
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/generate-recipes/`);
+        const data2 = await response.json();
 
+          // DEBUG: Log the entire response
+          console.log('=== FULL RESPONSE ===');
+          console.log(JSON.stringify(data2, null, 2));
+          console.log('=== END RESPONSE ===');
+          
         if (!response.ok) {
-            throw new Error(data.detail || "Failed to fetch recipes.");
+            throw new Error(data2.detail || "Failed to fetch recipes.");
         }
-        
-        // Sets the state with either the list of recipes or the message from the backend
-        setRecipes(data.recipes || [{ message: data.detail }]);
 
-    } catch (error) {
+        // Handle different response types from backend
+        if (data2.status === "success") {
+          if (Array.isArray(data2.recipes)) {
+            setRecipes(data2.recipes);
+          } else if (data2.recipes && data2.recipes.message) {
+            // Handle "Need more ingredients" case
+            setRecipes([{ recipe_name: data2.recipes.message }]);
+          }
+        } else if (data2.status === "info") {
+          // Handle "No items in fridge" case
+          setRecipes([{ recipe_name: data2.message }]);
+        } else {
+          // Fallback
+          setRecipes([{ message: "No recipes found" }]);
+        }
+      
+      } catch (error) {
         console.error('Error fetching recipes:', error);
-        setRecipes([{ message: String(error) }]);
-    }
-  };
-  
+        setRecipes([{ message: 'Error sending data to backend.' }]);
+      }
+    };
+
+ // Updated Item component to handle both string and object
+  const RecipeItem = ({ item }: { item: any }) => {
+  // Handle recipe objects
+  if (item.recipe_name) {
+    return (
+      <View style={styles.item}>
+        <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
+        {item.description && (
+          <Text style={styles.recipeDescription}>{item.description}</Text>
+        )}
+        {item.ingredients_used && Array.isArray(item.ingredients_used) && (
+          <Text style={styles.recipeIngredients}>
+            Ingredients: {item.ingredients_used.join(', ')}
+          </Text>
+        )}
+      </View>
+    );
+  }
+  // Fallback for any other format
+  return (
+    <View style={styles.item}>
+      <Text style={styles.itemText}>{String(item)}</Text>
+    </View>
+  );
+};
+
   type PreviewLayoutProps = PropsWithChildren<{
-  values: string[];
-  selectedValue: string;
-  setSelectedValue: Dispatch<SetStateAction<string>>;
-  onPress: () => void; 
-}>;
+    values: string[];
+    selectedValue: string;
+    setSelectedValue: Dispatch<SetStateAction<string>>;
+    onPress: () => void; 
+  }>;
 
 const PreviewLayout = ({
   values,
@@ -143,60 +182,51 @@ const PreviewLayout = ({
 
 return (
     <View style={styles.container}>
-    <CustomHeader title="Share Recipes!  "
-      logo={require('../../assets/images/FridgeIcon.png')}/>
-      
+    <CustomHeader 
+      title="Share Recipes!  "
+      logo={require('../../assets/images/FridgeIcon.png')}
+      />
       <View style={styles.separator}>
-      <View style={styles.boxContainer}>
-      <View>
-        <TextInput
-          style={styles.search_bar}
-          onChangeText={searchFunction}
-          value={inputValue}
-          placeholder="Recipe Item..."
-        />
-      </View>
-    
-      <PreviewLayout
-        values={["Find Ingredients"]}
-        selectedValue={selectedPrompt}
-        setSelectedValue={setSelectedPrompt}
-        onPress={handleSubmit}
-      ></PreviewLayout>
-      <Text>Response: {responseMessage}</Text>
+        <View style={styles.boxContainer}>
+          <View>
+            <TextInput
+              style={styles.search_bar}
+              onChangeText={searchFunction}
+              value={inputValue}
+              placeholder="Recipe Item..."
+            />
+          </View>
 
-      <FlatList
-        data={responseMessage}
-        renderItem={({ item }) => (
-          <Item
-            title={item}
+          <PreviewLayout
+            values={["Find Ingredients"]}
+            selectedValue={selectedPrompt}
+            setSelectedValue={setSelectedPrompt}
+            onPress={handleSubmit}
           />
-        )}
-        keyExtractor={(item) => item}
-      />
-      </View>
-      </View>
 
-      <View style={styles.separator2}>
-      <View style={styles.boxContainer}>
-      <PreviewLayout
-        values={["Find Recipe"]}
-        selectedValue={selectedPrompt}
-        setSelectedValue={setSelectedPrompt}
-        onPress={handleFindRecipe}
-      ></PreviewLayout>
-
-        <FlatList
-        data={recipes}
-        renderItem={({ item }) => (
-          <RecipeItem 
-            item={item} />
-        )}
-
-        keyExtractor={(item, index) => `recipe-${index}`}
-      />
+          <FlatList
+            data={responseMessage}
+            renderItem={({ item }) => <Item title={item} />}
+            keyExtractor={(item, index) => index.toString()}
+          />
+        </View>
+        
+        <View style={styles.separator2}>
+          <View style={styles.boxContainer}>
+            <PreviewLayout
+              values={["Find Recipe"]}
+              selectedValue={selectedPrompt}
+              setSelectedValue={setSelectedPrompt}
+              onPress={handleFindRecipe}
+            />
+            <FlatList
+              data={recipes}
+              renderItem={({ item }) => <RecipeItem item={item} />}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          </View>
+        </View>
       </View>
-    </View>
     </View>
   );
 };
