@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Image, ImageSourcePropType } from "react-native";
+import { StyleSheet, View, Text, Image, ImageSourcePropType, Platform, StatusBar } from "react-native";
 
 type CustomHeaderProps = {
   title: string;
@@ -9,11 +9,16 @@ type CustomHeaderProps = {
 const CustomHeader = ({ title, logo, subtitle }: CustomHeaderProps) => {
   return (
     <View style={styles.header}>
-      <View style={styles.row}>
-        <Text style={styles.headerTitle}>{title}</Text>
-        {logo && <Image source={logo} style={styles.logo} />}
+      <StatusBar barStyle="light-content" backgroundColor="#14b8a6" />
+      <View style={styles.content}>
+        <View style={styles.titleRow}>
+          {logo && <Image source={logo} style={styles.logo} />}
+          <View style={styles.titleContainer}>
+            <Text style={styles.headerTitle}>{title}</Text>
+            {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          </View>
+        </View>
       </View>
-      {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
     </View>
   );
 };
@@ -21,30 +26,41 @@ const CustomHeader = ({ title, logo, subtitle }: CustomHeaderProps) => {
 const styles = StyleSheet.create({
   header: {
     backgroundColor: "#14b8a6",
-    paddingTop: 20,
+    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 20,
     paddingBottom: 20,
-    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  row: {
+  content: {
+    paddingHorizontal: 20,
+  },
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 12,
   },
   logo: {
-    width: 28,
-    height: 28,
-    marginRight: 8,
+    width: 32,
+    height: 32,
     resizeMode: "contain",
+  },
+  titleContainer: {
+    flex: 1,
   },
   headerTitle: {
     color: "white",
-    fontSize: 20,
-    fontWeight: "bold",
+    fontSize: 24,
+    fontWeight: "700",
+    letterSpacing: -0.5,
   },
-  headerSubtitle: {
-    color: "white",
+  subtitle: {
+    color: "rgba(255, 255, 255, 0.9)",
     fontSize: 14,
     marginTop: 4,
-    opacity: 0.9,
+    fontWeight: "400",
   },
 });
 

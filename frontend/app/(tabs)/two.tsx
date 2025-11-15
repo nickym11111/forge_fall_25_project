@@ -11,7 +11,7 @@ import { type SetStateAction, type Dispatch } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
 import { Text } from "@/components/Themed";
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";

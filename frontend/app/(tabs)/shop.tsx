@@ -11,12 +11,13 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
-import ProfileIcon from "@/components/ProfileIcon";
 
 interface ShoppingItem {
   id?: string;
@@ -253,9 +254,10 @@ export default function SharedListScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <CustomHeader title="Shared Shopping List 🛒" />
-      <ProfileIcon className="profileIcon" />
-      {/* Top Card (Add Item quick input) */}
-      <View style={styles.topCard}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View>
+          {/* Top Card (Add Item quick input) */}
+          <View style={styles.topCard}>
         <Text style={styles.cardTitle}>Add Item</Text>
 
         <View style={styles.topRow}>
@@ -281,7 +283,10 @@ export default function SharedListScreen() {
         keyExtractor={(it, i) => it.id ?? `${it.name}-${i}`}
         renderItem={renderItemCard}
         contentContainerStyle={styles.itemsList}
+        keyboardShouldPersistTaps="handled"
       />
+        </View>
+      </TouchableWithoutFeedback>
 
       {/* Popup (Add Item) */}
       <Modal
@@ -355,12 +360,14 @@ export default function SharedListScreen() {
             </View>
 
             {showDatePicker && (
-              <DateTimePicker
-                value={formNeedBy || new Date()}
-                mode="date"
-                display={Platform.OS === "ios" ? "inline" : "default"}
-                onChange={onChangeNeedBy}
-              />
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={formNeedBy || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "default"}
+                  onChange={onChangeNeedBy}
+                />
+              </View>
             )}
 
             {/* Add Button */}
@@ -579,6 +586,11 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: "#333",
+  },
+  datePickerContainer: {
+    marginTop: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Buttons

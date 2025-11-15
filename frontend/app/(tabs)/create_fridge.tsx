@@ -34,7 +34,7 @@ const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
   formContainer: {
     flexGrow: 1,

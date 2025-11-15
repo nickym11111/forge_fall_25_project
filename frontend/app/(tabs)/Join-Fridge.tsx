@@ -15,7 +15,7 @@ const styles = StyleSheet.create({
   container: 
   {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
 
   joinContainer: 
