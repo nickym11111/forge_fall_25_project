@@ -43,7 +43,7 @@ app.add_middleware(
 
 # Data Transfer Objects
 class RequestJoinDTO(BaseModel):
-    invite_code: str
+    fridgeCode: str
 
 class FridgeItemCreate(BaseModel):
     title: str
@@ -77,7 +77,7 @@ async def create_fridge_item(
         today = date.today()
         days_till_expiration = (expiry - today).days
 
-        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+        fridge_id = current_user["fridge_id"] if isinstance(current_user, dict) else None
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
@@ -87,7 +87,7 @@ async def create_fridge_item(
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": current_user.get("id"),
+            "added_by": current_user["id"],
             "shared_by": item.shared_by,
             "price": item.price
         }).execute()
@@ -210,20 +210,20 @@ def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-@app.post('/request-join/')
+@join_router.post('/request-join')
 def request_join_fridge(request_join_dto: RequestJoinDTO, current_user = Depends(get_current_user)):
     try:
         # Check if fridge with code exists
-        fridge_data = supabase.table("fridges").select("*").eq("fridge_code", request_join_dto.invite_code).execute()
+        fridge_data = supabase.table("fridges").select("*").eq("fridge_code", request_join_dto.fridgeCode).execute()
         
         if not fridge_data.data:
-            raise HTTPException(status_code=404, detail="Fridge with code" + request_join_dto.invite_code + "not found")
+            raise HTTPException(status_code=404, detail="Fridge with code" + request_join_dto.fridgeCode + "not found")
         
         # Create request record in fridge_requests table
         request_data = supabase.table("fridge_requests").insert({
             "fridge_id": fridge_data.data[0]["id"],
-            "requested_by": current_user.id,
-            "acceptance_status": "pending"
+            "requested_by": current_user["id"],
+            "acceptance_status": "PENDING"
         }).execute()
         
         return {
