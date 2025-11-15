@@ -10,15 +10,12 @@ import {
 import { type SetStateAction, type Dispatch } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
-import EditScreenInfo from "@/components/EditScreenInfo";
-import { Text, View } from "@/components/Themed";
+import { Text } from "@/components/Themed";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
-import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -321,10 +318,10 @@ export default function TabOneScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }; */
 
   // Manual refresh handler
-  const onRefresh = () => {
+  /* const onRefresh = () => {
     setRefreshing(true);
     fetchFridgeItems();
   };
@@ -721,4 +718,3 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 });
-

@@ -1,20 +1,26 @@
 import React, { useEffect } from 'react';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs, router, useSegments} from 'expo-router';
-import { Pressable, ActivityIndicator, View} from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Tabs, router, useSegments } from 'expo-router';
+import { Platform, ActivityIndicator, View } from 'react-native';
 
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
-import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-import { useAuth } from '../context/authContext'; 
+import { useAuth } from '../context/authContext';
 
 
 /*// You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+  name: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
   color: string;
+  focused: boolean;
 }) {
-  return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
+  return (
+    <MaterialCommunityIcons
+      size={26}
+      style={{ marginBottom: -2 }}
+      {...props}
+    />
+  );
 }
 
 export default function TabLayout() {
@@ -47,8 +53,8 @@ export default function TabLayout() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FF' }}>
-        <ActivityIndicator size="large" color="purple" />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFBFC' }}>
+        <ActivityIndicator size="large" color="#14b8a6" />
       </View>
     );
   }
@@ -56,42 +62,41 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-        // Disable the static render of the header on web
-        // to prevent a hydration error in React Navigation v6.
+        tabBarActiveTintColor: '#14b8a6',
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarShowLabel: false,
         headerShown: false,
-        tabBarStyle: user ? undefined : { display: 'none' },
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: '#e2e8f0',
+          height: Platform.OS === 'ios' ? 88 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
+          paddingTop: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 8,
+        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Login Page',
-          tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
-          tabBarButton: () => null,
-          headerRight: () => (
-            <Link href="/modal" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <FontAwesome
-                    name="info-circle"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>   
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} focused={focused} />
           ),
+          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
         name="two"
         options={{
-          title: 'Fridge Page',
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'fridge' : 'fridge-outline'} color={color} focused={focused} />
+          ),
         }}
       />
-
       <Tabs.Screen
         name="shop"
         options={{
@@ -158,7 +163,7 @@ export default function TabLayout() {
         tabBarStyle: user ? undefined : { display: 'none' },
       }}>
       <Tabs.Screen
-        name="index"
+        name="parse_receipt"
         options={{
           title: 'Login Page',
           tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
@@ -180,26 +185,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="add-item"
         options={{
-          title: 'Fridge Page',
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+          tabBarIcon: ({ color, focused }) => (
+            <TabBarIcon name={focused ? 'plus-circle' : 'plus-circle-outline'} color={color} focused={focused} />
+          ),
         }}
       />
-
-      <Tabs.Screen
-        name="shop"
-        options={{
-          title: "Shared List",
-          tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
-        }}
-      />
-      
       <Tabs.Screen
         name="create_fridge"
         options={{
-          title: "Create Fridge",
-          tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
+          href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="Join-Fridge"
+        options={{
+          href: null,
         }}
       />
     </Tabs>
