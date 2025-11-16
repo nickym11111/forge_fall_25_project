@@ -41,6 +41,16 @@ export default function TabLayout() {
       </View>
     );
   }
+
+  // new
+  const hasFridge = user?.fridge_id !== null;
+
+  /*console.log("Layout:");
+  console.log("  - user exists?", !!user);
+  console.log("  - user.fridge_id:", user?.fridge_id);
+  console.log("  - hasFridge:", hasFridge);
+  console.log("  - Should show tabs?", user && hasFridge); */
+
   return (
     <Tabs
       screenOptions={{
@@ -48,7 +58,8 @@ export default function TabLayout() {
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: false,
-        tabBarStyle: user ? undefined : { display: 'none' },
+        //tabBarStyle: user ? undefined : { display: 'none' },
+        tabBarStyle: (user && hasFridge) ? undefined : { display: 'none' }, //new
       }}>
       <Tabs.Screen
         name="index"

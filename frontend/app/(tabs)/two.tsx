@@ -36,7 +36,7 @@ interface FridgeMate {
 // Updated to match backend response
 interface FoodItem {
   id: number;
-  title: string;
+  name: string;
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -46,7 +46,7 @@ interface FoodItem {
 
 // Defines props type for the Item component
 interface ItemProps {
-  title: string;
+  name: string;
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -55,7 +55,7 @@ interface ItemProps {
 
 // Individual item component
 const Item = ({
-  title,
+  name,
   added_by,
   shared_by,
   quantity,
@@ -89,7 +89,7 @@ const Item = ({
   return (
     <View style={styles.item}>
       <Text style={[styles.itemText]}>
-        <Text style={{ fontWeight: "bold" }}>{title}</Text>
+        <Text style={{ fontWeight: "bold" }}>{name}</Text>
       </Text>
       <Text style={[styles.itemText, { fontSize: 10 }]}>
         <Text style={{ fontWeight: "bold" }}>Quantity:</Text> {quantity || 0} |
@@ -251,7 +251,7 @@ export default function TabOneScreen() {
   // Apply the search filter
   const finalListData = filtered_data.filter((item) => {
     if (!searchValue) return true;
-    const itemData = item.title.toUpperCase();
+    const itemData = item.name.toUpperCase();
     const textData = searchValue.toUpperCase();
     return itemData.includes(textData);
   });
@@ -359,7 +359,7 @@ export default function TabOneScreen() {
         data={finalListData}
         renderItem={({ item }) => (
           <Item
-            title={item.title}
+            name={item.name}
             added_by={item.added_by}
             shared_by={item.shared_by}
             quantity={item.quantity}

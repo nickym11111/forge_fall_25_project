@@ -83,7 +83,7 @@ async def create_fridge_item(
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
         response = supabase.table("fridge_items").insert({
-            "title": item.title,
+            "name": item.title,
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
