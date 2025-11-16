@@ -5,6 +5,9 @@ import {
   ScrollView,
   StatusBar,
   ActivityIndicator,
+  TouchableOpacity,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
@@ -13,44 +16,135 @@ import { useUser } from "../hooks/useUser";
 
 interface FridgeRequest {
   id: string;
-  user_id: string;
   fridge_id: string;
-  status: "PENDING" | "ACCEPTED" | "REJECTED";
+  requested_by: string;
+  acceptance_status: "PENDING" | "ACCEPTED" | "REJECTED";
   created_at: string;
-  user: {
+  users: {
     id: string;
     email: string;
     first_name: string;
     last_name: string;
   };
-  fridge: {
+  fridges: {
     id: string;
+    name: string;
+  };
+  // Add these fields to match your UI expectations
+  user?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+  };
+  fridge?: {
     name: string;
   };
 }
 
-const RequestCard = ({ request }: { request: FridgeRequest }) => (
-  <View style={styles.card}>
-    <Text style={styles.cardTitle}>Join Request</Text>
-    <Text style={styles.cardText}>
-      <Text style={styles.label}>User:</Text> {request.userName}
-    </Text>
-    <Text style={styles.cardText}>
-      <Text style={styles.label}>Fridge:</Text> {request.fridgeName}
-    </Text>
-    <Text style={styles.cardText}>
-      <Text style={styles.label}>Requested on:</Text> {request.requestDate}
-    </Text>
-    <View style={styles.buttonContainer}>
-      <View style={[styles.button, styles.acceptButton]}>
-        <Text style={styles.buttonText}>Accept</Text>
-      </View>
-      <View style={[styles.button, styles.declineButton]}>
-        <Text style={styles.buttonText}>Decline</Text>
+const RequestCard = ({
+  request,
+  onStatusChange,
+}: {
+  request: FridgeRequest;
+  onStatusChange: () => void;
+}) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleResponse = async (status: "ACCEPTED" | "REJECTED") => {
+    try {
+      setIsProcessing(true);
+
+      const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
+
+      const endpoint =
+        status === "ACCEPTED" ? "/fridge/accept-request/" : "/decline-request/";
+
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${
+            (
+              await supabase.auth.getSession()
+            ).data.session?.access_token
+          }`,
+        },
+        body: JSON.stringify({
+          request_id: request.id,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to process request");
+      }
+
+      const result = await response.json();
+
+      // Show success message
+      Alert.alert("Success", result.message);
+
+      // Refresh the requests list
+      onStatusChange();
+    } catch (error) {
+      console.error(
+        `Error ${status === "ACCEPTED" ? "accepting" : "declining"} request:`,
+        error
+      );
+      Alert.alert(
+        "Error",
+        error.message ||
+          `Failed to ${
+            status === "ACCEPTED" ? "accept" : "decline"
+          } request. Please try again.`
+      );
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardTitle}>Join Request</Text>
+      <Text style={styles.cardText}>
+        <Text style={styles.label}>User:</Text>{" "}
+        {request.user?.first_name || "Unknown User"}
+      </Text>
+      <Text style={styles.cardText}>
+        <Text style={styles.label}>Fridge:</Text>{" "}
+        {request.fridge?.name || "Unknown Fridge"}
+      </Text>
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.acceptButton,
+            isProcessing && styles.disabledButton,
+          ]}
+          onPress={() => handleResponse("ACCEPTED")}
+          disabled={isProcessing}
+        >
+          <Text style={styles.buttonText}>
+            {isProcessing ? "Processing..." : "Accept"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            styles.declineButton,
+            isProcessing && styles.disabledButton,
+          ]}
+          onPress={() => handleResponse("REJECTED")}
+          disabled={isProcessing}
+        >
+          <Text style={styles.buttonText}>
+            {isProcessing ? "Processing..." : "Decline"}
+          </Text>
+        </TouchableOpacity>
       </View>
     </View>
-  </View>
-);
+  );
+};
 
 export default function RequestsScreen() {
   const { user } = useUser();
@@ -69,13 +163,14 @@ export default function RequestsScreen() {
         setLoading(true);
         console.log("Searching for requests...");
         console.log("User fridge ID:", user.fridge_id);
+
         const { data, error: fetchError } = await supabase
           .from("fridge_requests")
           .select(
             `
             *,
-            users (id, email, first_name, last_name),
-            fridges (name)
+            users:users!fridge_requests_requested_by_fkey(id, email, first_name, last_name),
+            fridges:fridge_id!inner(id, name)
           `
           )
           .eq("fridge_id", user.fridge_id)
@@ -84,8 +179,18 @@ export default function RequestsScreen() {
         console.log("Full response:", data);
 
         if (fetchError) throw fetchError;
-        console.log("Requests fetched successfully:", data);
-        setRequests(data || []);
+
+        // Transform the data to match our UI expectations
+        const formattedData = (data || []).map((request) => ({
+          ...request,
+          // Map users to user for backward compatibility
+          user: request.users,
+          // Map fridges to fridge for backward compatibility
+          fridge: request.fridges,
+        }));
+
+        console.log("Formatted requests:", formattedData);
+        setRequests(formattedData);
       } catch (err) {
         console.error("Error fetching requests:", err);
         setError("Failed to load requests. Please try again.");
@@ -113,13 +218,13 @@ export default function RequestsScreen() {
     );
   }
 
-  if (!user?.fridge_id) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text>You are not a member of any fridge.</Text>
-      </View>
-    );
-  }
+  useEffect(() => {
+    fetchRequests();
+  }, [user?.fridge_id]);
+
+  const handleStatusChange = () => {
+    fetchRequests();
+  };
 
   return (
     <View style={styles.container}>
@@ -137,7 +242,17 @@ export default function RequestsScreen() {
         }}
       />
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={fetchRequests}
+            colors={["#f4511e"]}
+            tintColor="#f4511e"
+          />
+        }
+      >
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Pending Join Requests</Text>
           <Text style={styles.headerSubtitle}>
@@ -145,13 +260,21 @@ export default function RequestsScreen() {
           </Text>
         </View>
 
-        {requests.length === 0 ? (
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#f4511e" />
+          </View>
+        ) : requests.length === 0 ? (
           <View style={styles.emptyState}>
             <Text>No pending requests found.</Text>
           </View>
         ) : (
           requests.map((request) => (
-            <RequestCard key={request.id} request={request} />
+            <RequestCard
+              key={request.id}
+              request={request}
+              onStatusChange={handleStatusChange}
+            />
           ))
         )}
       </ScrollView>
@@ -205,46 +328,41 @@ const styles = StyleSheet.create({
     color: "#555",
     marginBottom: 8,
   },
-  label: {
-    fontWeight: "600",
-    color: "#333",
-  },
   buttonContainer: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
     marginTop: 16,
+    gap: 12,
   },
   button: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    marginLeft: 8,
-    minWidth: 100,
+    flex: 1,
+    padding: 12,
+    borderRadius: 8,
     alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
   },
-  acceptButton: {
-    backgroundColor: "#4CAF50",
+  errorText: {
+    color: "#f44336",
+    textAlign: "center",
   },
-  declineButton: {
-    backgroundColor: "#f44336",
+  disabledButton: {
+    opacity: 0.6,
   },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "500",
+  loadingContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  errorText: {
-    color: "#f44336",
-    textAlign: "center",
-    padding: 20,
+  disabledButton: {
+    opacity: 0.6,
   },
-  emptyState: {
+  loadingContainer: {
     padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
   },
 });
