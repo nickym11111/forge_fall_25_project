@@ -28,7 +28,6 @@ interface ApiResponse {
 
 //Backend API endpoint
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridges`;
-const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
 
 //Styles
 const styles = StyleSheet.create({
@@ -159,9 +158,13 @@ export default function CreateFridgeScreen() {
       const fridgeData: ApiResponse = await createFridgeResponse.json();
       console.log("Fridge creation response:", fridgeData);
 
+      console.log("✅ Step 1: Fridge created successfully"); 
+
       if (!createFridgeResponse.ok || fridgeData.status !== "success") {
         throw new Error(fridgeData.message || "Failed to create fridge");
       }
+
+      console.log("✅ Step 2: Response validation passed");
 
       const fridgeId = fridgeData.fridge_id;
       if (!fridgeId) {
@@ -310,3 +313,4 @@ export default function CreateFridgeScreen() {
     </View>
   );
 }
+
