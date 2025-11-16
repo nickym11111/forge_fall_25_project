@@ -28,6 +28,7 @@ interface ApiResponse {
 
 //Backend API endpoint
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridges`;
+const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
 
 //Styles
 const styles = StyleSheet.create({
@@ -149,9 +150,8 @@ export default function CreateFridgeScreen() {
       // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
+        headers: { "Content-Type": "application/json",
+                   "Authorization": `Bearer ${session.access_token}`
         },
         body: JSON.stringify({ name: fridgeName }),
       });
@@ -159,54 +159,66 @@ export default function CreateFridgeScreen() {
       const fridgeData: ApiResponse = await createFridgeResponse.json();
       console.log("Fridge creation response:", fridgeData);
 
-      console.log("✅ Step 1: Fridge created successfully"); 
-
       if (!createFridgeResponse.ok || fridgeData.status !== "success") {
         throw new Error(fridgeData.message || "Failed to create fridge");
       }
-
-      console.log("✅ Step 2: Response validation passed");
 
       const fridgeId = fridgeData.fridge_id;
       if (!fridgeId) {
         throw new Error("No fridge ID returned from server");
       }
 
-      console.log("✅ Step 3: Got fridge ID:", fridgeId);
+      // Invite code 
+      /*
+      // 2. Then, send invites to all provided emails
+      const invitePromises = validEmails.map(async (email) => {
+        const inviteResponse = await fetch(SEND_INVITE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json",
+                     "Authorization": `Bearer ${session.access_token}`},
+          body: JSON.stringify({
+            fridge_id: fridgeId.toString(),
+            emails: validEmails,
+            invited_by: user?.email,
+          }),
+        });
+        return inviteResponse.json();
+      });
 
-      console.log("🟠 About to call refreshUser");
-      await refreshUser();
-      console.log("🔵 After refreshUser");
+      const inviteResults = await Promise.allSettled(invitePromises);
 
-      const { data: { session: freshSession }, error: sessionError } = await supabase.auth.getSession();
+      // Check for any failed invites
+      const failedInvites = inviteResults
+        .map((result, index) =>
+          result.status === "rejected" || result.value.status !== "success"
+            ? validEmails[index]
+            : null
+        )
+        .filter(Boolean);
 
-      if (!freshSession || sessionError) {
-        console.error("❌ No fresh session after refresh");
+      if (failedInvites.length > 0) {
+        Alert.alert(
+          "Partial Success",
+          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
+            ", "
+          )}`
+        );
       } else {
-        console.log("🟡 Fresh session exists");
-        
-        try {
-          const userResponse = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
-            headers: {
-              "Authorization": `Bearer ${freshSession.access_token}`
-            }
-          });
-          const freshUserData = await userResponse.json();
-          console.log("🟢 Fresh user data:", freshUserData);
-          console.log("🟢 Has fridge_id?", !!freshUserData.fridge_id);
-        } catch (err) {
-          console.error("❌ Error fetching fresh user:", err);
-        }
+        Alert.alert(
+          "Success!",
+          "Fridge created and invites sent successfully!"
+        );
       }
+      */
 
-      // Reset state first
+      await refreshUser();
+
+      // Reset state
       setIsLoading(false);
       setFridgeName("");
       setEmails([""]);
 
       router.replace("/(tabs)/two");
-
-      console.log("🔴 Navigation called");
 
       Alert.alert(
         "Success!",
@@ -228,8 +240,8 @@ export default function CreateFridgeScreen() {
     <View style={styles.container}>
       {/*Page Header*/}
       <CustomHeader 
-        title="Create Fridge  "
-        logo={require('../../assets/images/FridgeIcon.png')}
+      title="Create Fridge  "
+      logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.formContainer}>
@@ -298,4 +310,3 @@ export default function CreateFridgeScreen() {
     </View>
   );
 }
-
