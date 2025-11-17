@@ -1,13 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { Link, Tabs } from 'expo-router';
-import { Pressable } from 'react-native';
-
+import { Link, Tabs, router, useSegments} from 'expo-router';
+import { Pressable, ActivityIndicator, View} from 'react-native';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
-import { FridgeProvider } from '../context/FridgeContext'; // ✅ add this import
-
+import { useAuth } from '../context/authContext';
+import { FridgeProvider } from '../context/FridgeContext';
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
@@ -15,23 +14,53 @@ function TabBarIcon(props: {
 }) {
   return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
 }
-
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const segments = useSegments();
+  const { user, loading } = useAuth();
+  useEffect(() => {
+    // Wait for auth to finish loading before redirecting
+    if (loading) return;
+    const inTabs = segments[0] === '(tabs)';
+    const onLoginPage = segments[1] === undefined;
+    if (user && inTabs && onLoginPage) {
+      const hasFridge = user.fridge_id !== null;
+      if (hasFridge) {
+        router.replace('/(tabs)/fridge_page');
+      } else {
+        router.replace('/(tabs)/create_fridge');
+      }
+    }
+    // If user is not logged in, always go to login page
+    if (!user && !loading) {
+      router.replace('/(tabs)/login');
+      return;
+    }
 
+  }, [user, loading, segments]);
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FF' }}>
+        <ActivityIndicator size="large" color="purple" />
+      </View>
+    );
+  }
   return (
     <FridgeProvider>
       <Tabs
         screenOptions={{
           tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+          // Disable the static render of the header on web
+          // to prevent a hydration error in React Navigation v6.
           headerShown: false,
-        }}
-      >
+          tabBarStyle: user ? undefined : { display: 'none' },
+        }}>
         <Tabs.Screen
-          name="index"
+          name="login"
           options={{
             title: 'Login Page',
             tabBarIcon: ({ color }) => <TabBarIcon name="code" color={color} />,
+            tabBarButton: () => null,
             headerRight: () => (
               <Link href="/modal" asChild>
                 <Pressable>
@@ -49,17 +78,24 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="two"
+          name="fridge_page"
           options={{
             title: 'Fridge Page',
             tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
           }}
         />
         <Tabs.Screen
-          name="shop"
+          name="shopping_list"
           options={{
-            title: "Shared List",
+            title: "Shopping List",
             tabBarIcon: ({ color }) => <TabBarIcon name="list" color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="create_fridge"
+          options={{
+            title: "Create Fridge",
+            tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
           }}
         />
       </Tabs>

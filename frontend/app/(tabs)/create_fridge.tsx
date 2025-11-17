@@ -1,299 +1,526 @@
 import {
   StyleSheet,
-  TextInput,
-  View,
-  Text,
-  Alert,
-  ScrollView,
+  Button,
   TouchableOpacity,
+  FlatList,
+  TextInput,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import { useState, useCallback } from "react";
-import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from '@react-navigation/native';
+import { type SetStateAction, type Dispatch } from "react";
+import { router } from 'expo-router';
+
+import EditScreenInfo from "@/components/EditScreenInfo";
+import { Text, View } from "@/components/Themed";
+import React, { useState, useRef, useEffect, useCallback } from "react";
+import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
-
-//Custom components
-import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
-import { navigate } from "expo-router/build/global-state/routing";
+import ProfileIcon from "../../components/ProfileIcon";
+import { useFocusEffect } from "@react-navigation/native";
 
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
-//Type for API response
-interface ApiResponse {
-  status: "success" | "error";
-  message: string;
-  fridge_id?: number;
+// just to note, we should prob figure out what to do when the food goes past the expiration date
+
+// --- Type Definitions ---
+
+interface FridgeMate {
+  first_name?: string;
+  last_name?: string;
+  name?: string;
+  email?: string;
 }
 
-//Backend API endpoint
-const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridges`;
-const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
+// Updated to match backend response
+interface FoodItem {
+  id: number;
+  title: string;
+  added_by?: FridgeMate | null;
+  shared_by?: FridgeMate[] | null;
+  quantity?: number;
+  days_till_expiration?: number;
+  created_at?: string;
+}
 
-//Styles
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FF",
-  },
-  formContainer: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingBottom: 100,
-  },
-  form: {
-    width: 300,
-  },
-  label: {
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 5,
-    marginTop: 10,
-  },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 5,
-  },
-  input: {
-    flex: 1,
-    marginVertical: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    fontSize: 15,
-    backgroundColor: "#fff",
-  },
-  removeButton: {
-    marginLeft: 6,
-  },
-  addEmailText: {
-    color: "#007bff",
-    fontSize: 14,
-    marginTop: 5,
-    fontWeight: "600",
-    textAlign: "left",
-  },
-  createButton: {
-    width: 217,
-    marginTop: 15,
-    alignSelf: "center",
-  },
-  joinFridgeText: {
-    marginTop: 10,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
-  },
-});
+// Defines props type for the Item component
+interface ItemProps {
+  title: string;
+  added_by?: FridgeMate | null;
+  shared_by?: FridgeMate[] | null;
+  quantity?: number;
+  days_until_expiration?: number;
+}
 
-//Main
-export default function CreateFridgeScreen() {
-  // State variables
-  const [fridgeName, setFridgeName] = useState(""); // name of the fridge
-  const [emails, setEmails] = useState<string[]>([""]); // invited emails
-  const [isLoading, setIsLoading] = useState<boolean>(false); // loading indicator
-
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
-
-  const { user, refreshUser } = useAuth();
-
-  //Update a specific email input
-  const enterEmail = (text: string, index: number) => {
-    const updated = [...emails];
-    updated[index] = text;
-    setEmails(updated);
+// Individual item component
+const Item = ({
+  title,
+  added_by,
+  shared_by,
+  quantity,
+  days_until_expiration,
+}: ItemProps) => {
+  // Handle different name formats from backend
+  const getDisplayName = (mate: FridgeMate) => {
+    if (mate.first_name && mate.last_name) {
+      return `${mate.first_name} ${mate.last_name}`;
+    }
+    if (mate.first_name) return mate.first_name;
+    if (mate.last_name) return mate.last_name;
+    if (mate.name) return mate.name;
+    if (mate.email) {
+      // Use email prefix as fallback
+      return mate.email.split('@')[0];
+    }
+    return "Unknown";
   };
 
-  //Add a new empty email field
-  const addEmailField = () => setEmails([...emails, ""]);
+  const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
 
-  //Remove a specific email input
-  const removeEmail = (index: number) => {
-    const updated = emails.filter((_, i) => i !== index);
-    setEmails(updated);
-  };
+  const sharedByString: string =
+    shared_by && shared_by.length > 0
+      ? shared_by.map((mate) => getDisplayName(mate)).join(", ")
+      : "No one";
 
-  //Handle fridge creation and sending invites
-  const handleCreateFridge = async () => {
-    if (!fridgeName.trim()) {
-      Alert.alert("Error", "Please enter a fridge name.");
-      return;
-    }
+  // Determine if item is expiring soon
+  const isExpiringSoon = (days_until_expiration || 0) <= 7;
 
+  return (
+    <View style={styles.item}>
+      <Text style={[styles.itemText]}>
+        <Text style={{ fontWeight: "bold" }}>{title}</Text>
+      </Text>
+      <Text style={[styles.itemText, { fontSize: 10 }]}>
+        <Text style={{ fontWeight: "bold" }}>Quantity:</Text> {quantity || 0} |
+        <Text
+          style={[{ fontWeight: "bold" }, isExpiringSoon && styles.redText]}
+        >
+          {" "}
+          Expires in
+        </Text>
+        <Text style={isExpiringSoon && styles.redText}>
+          {" "}
+          {days_until_expiration || 0} days
+        </Text>{" "}
+        |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
+      </Text>
+      <Text style={[styles.itemText, { fontSize: 10 }]}>
+        <Text style={{ fontWeight: "bold" }}>Shared by:</Text> {sharedByString}
+      </Text>
+    </View>
+  );
+};
 
-    // Filter out empty emails
-    const validEmails = emails.filter((email) => email.trim() !== "");
-    if (validEmails.length === 0) {
-      Alert.alert("Error", "Please enter at least one email address.");
-      return;
-    }
+export default function TabOneScreen() {
+  const{ user } = useAuth();
+  const [data, setData] = useState<FoodItem[]>([]);
+  const [searchValue, setSearchValue] = useState<string>("");
+  const originalHolder = useRef<FoodItem[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([
+    "All Items",
+  ]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
-    setIsLoading(true);
+  // Auto-refresh when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchFridgeItems();
+    }, [])
+  );
 
+  const fetchFridgeItems = async () => {
     try {
-      console.log("Getting a new session:");
+      setLoading(true);
+      console.log("Fetching data from:", `${API_URL}/fridge_items`);
+
       const { data: { session }, error } = await supabase.auth.getSession();
-    
-      console.log("Session exists?", !!session);
-      console.log("Session error:", error);
 
       if (error || !session) {
-        throw new Error("No active session. Please log in again.");
+        setData([]);
+        originalHolder.current = [];
+        setError("");
+        throw new Error("You must be logged in to view fridge items");
       }
 
-      console.log("User ID from session:", user?.id);
-      console.log("User email from session:", user?.email);
+      console.log("User ID:", user?.id);
 
-      // Create the fridge
-      const createFridgeResponse = await fetch(API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json",
-                   "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ name: fridgeName }),
+      const response = await fetch(`${API_URL}/fridge_items`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        }
       });
 
-      const fridgeData: ApiResponse = await createFridgeResponse.json();
-      console.log("Fridge creation response:", fridgeData);
-
-      if (!createFridgeResponse.ok || fridgeData.status !== "success") {
-        throw new Error(fridgeData.message || "Failed to create fridge");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const fridgeId = fridgeData.fridge_id;
-      if (!fridgeId) {
-        throw new Error("No fridge ID returned from server");
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      if (result.message === "User has no fridge assigned") {
+        setData([]);
+        originalHolder.current = [];
+        setError("NO_FRIDGE");
+        return;
       }
 
-      // 2. Then, send invites to all provided emails
-      const invitePromises = validEmails.map(async (email) => {
-        const inviteResponse = await fetch(SEND_INVITE_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json",
-                     "Authorization": `Bearer ${session.access_token}`},
-          body: JSON.stringify({
-            fridge_id: fridgeId.toString(),
-            emails: emails,
-            invited_by: currentUserEmail,
-          }),
+      // Transform backend data to match frontend format
+      const transformedData = result.data
+        .map((item: any) => ({
+          ...item,
+          days_until_expiration: item.days_till_expiration, // Map backend field name
+        }))
+        .sort((a: FoodItem, b: FoodItem) => {
+          // Sort by days_till_expiration ascending (soonest first)
+          const aDays = a.days_till_expiration || 999;
+          const bDays = b.days_till_expiration || 999;
+          return aDays - bDays;
         });
-        return inviteResponse.json();
-      });
 
-      const inviteResults = await Promise.allSettled(invitePromises);
-
-      // Check for any failed invites
-      const failedInvites = inviteResults
-        .map((result, index) =>
-          result.status === "rejected" || result.value.status !== "success"
-            ? validEmails[index]
-            : null
-        )
-        .filter(Boolean);
-
-      if (failedInvites.length > 0) {
-        Alert.alert(
-          "Partial Success",
-          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
-            ", "
-          )}`
-        );
-      } else {
-        Alert.alert(
-          "Success!",
-          "Fridge created and invites sent successfully!"
-        );
-      }
-
-      await refreshUser();
-      
-    } catch (error) {
-      console.error("Error:", error);
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "An unexpected error occurred"
-      );
+      setData(transformedData);
+      originalHolder.current = transformedData;
+      setError("");
+    } catch (err) {
+      console.error("Error fetching items:", err);
+      setError(`${err}`);
+      setData([]);
+      originalHolder.current = [];
     } finally {
-      setIsLoading(false);
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  //Page Setup
-  return (
-    <View style={styles.container}>
-      {/*Page Header*/}
-      <CustomHeader 
-      title="Create Fridge  "
-      logo={require('../../assets/images/FridgeIcon.png')}
-      />
+  // Manual refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFridgeItems();
+  };
 
-      <ScrollView contentContainerStyle={styles.formContainer}>
-        <View style={styles.form}>
-          {/*Enter Fridge Name*/}
-          <Text style={styles.label}>Fridge Name:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="example"
-            placeholderTextColor="gray"
-            value={fridgeName}
-            onChangeText={setFridgeName}
-            editable={!isLoading}
-          />
+  const filterData = (data: FoodItem[], selectedFilters: string[]) => {
+    // Current user
 
-          {/*Invite Fridgemates*/}
-          <Text style={styles.label}>Invite Fridgemates (Email):</Text>
+    const username = "John Doe";
+    let temp_data = data;
 
-          {/*Email fields*/}
-          {emails.map((email, index) => (
-            <View key={index} style={styles.inputRow}>
-              <TextInput
-                style={styles.input}
-                placeholder="friend@example.com"
-                placeholderTextColor="gray"
-                value={email}
-                onChangeText={(text) => enterEmail(text, index)}
-                editable={!isLoading}
-              />
-              {/*Remove email button*/}
-              {emails.length > 1 && (
-                <TouchableOpacity
-                  onPress={() => removeEmail(index)}
-                  style={styles.removeButton}
-                  disabled={isLoading}
-                >
-                  <Ionicons name="remove-circle" size={24} color="#e63946" />
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
+    // If user presses 'expiring soon'
+    if (selectedFilters.includes("Expiring Soon")) {
+      temp_data = temp_data.filter(
+        (item) => (item.days_till_expiration || 0) <= 7
+      );
+    }
 
-          {/*Add more email fields*/}
-          <Text style={styles.addEmailText} onPress={addEmailField}>
-            + Add Another Email
+    // If user presses 'my items'
+    if (selectedFilters.includes("My Items")) {
+      temp_data = temp_data.filter((item) => {
+        if (!item.shared_by || item.shared_by.length !== 1) return false;
+        const mate = item.shared_by[0];
+        const fullName =
+          mate.first_name && mate.last_name
+            ? `${mate.first_name} ${mate.last_name}`
+            : mate.name || "";
+        return fullName === username;
+      });
+    }
+
+    // If user presses 'shared'
+    if (selectedFilters.includes("Shared")) {
+      temp_data = temp_data.filter((item) => {
+        if (!item.shared_by || item.shared_by.length <= 1) return false;
+        return item.shared_by.some((mate) => {
+          const fullName =
+            mate.first_name && mate.last_name
+              ? `${mate.first_name} ${mate.last_name}`
+              : mate.name || "";
+          return fullName === username;
+        });
+      });
+    }
+
+    return temp_data;
+  };
+
+  // Get the data array based on the selected filter
+  const filtered_data = filterData(originalHolder.current, selectedFilters);
+
+  // Apply the search filter
+  const finalListData = filtered_data.filter((item) => {
+    if (!searchValue) return true;
+    const itemData = item.title.toUpperCase();
+    const textData = searchValue.toUpperCase();
+    return itemData.includes(textData);
+  });
+
+  const searchFunction = (text: string) => {
+    setSearchValue(text);
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color="purple" />
+        <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
+      </View>
+    );
+  }
+
+  if (error === "NO_FRIDGE") {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            You haven't joined a fridge yet!
           </Text>
-
-          {/*Create button*/}
-          <CustomButton
-            title={isLoading ? "Creating..." : "Create Fridge"}
-            onPress={handleCreateFridge}
-            style={styles.createButton}
-            disabled={isLoading}
-            className={""}
-          />
-
-          {/*Navigate to Join Fridge page*/}
-          <Text
-            style={styles.joinFridgeText}
-            onPress={() => !isLoading && navigate("/(tabs)/Join-Fridge")}
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Create or join a fridge to start tracking your food items.
+          </Text>
+          <TouchableOpacity
+            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
+            onPress={() => {
+              router.push("/create_fridge");
+            }}
           >
-            Join a fridge instead
+            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
+          {error}
+        </Text>
+        <TouchableOpacity
+          style={styles.filter_button}
+          onPress={fetchFridgeItems}
+        >
+          <Text style={styles.buttonLabel}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            Your fridge is empty!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Add some items to get started.
           </Text>
         </View>
-      </ScrollView>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{
+      width: '100%', height: '100%',
+    }}>
+      <CustomHeader title="What's In Our Fridge?" />
+      <ProfileIcon className="profileIcon" />
+    <View style={styles.container}>
+      
+      <View
+        style={styles.separator}
+        lightColor="#eee"
+        darkColor="rgba(255,255,255,0.1)"
+      />
+      <View>
+        <TextInput
+          style={styles.search_bar}
+          onChangeText={searchFunction}
+          value={searchValue}
+          placeholder="Food item..."
+        />
+      </View>
+      <PreviewLayout
+        values={["All Items", "Expiring Soon", "My Items", "Shared"]}
+        selectedValue={selectedFilters}
+        setSelectedValue={setSelectedFilters}
+      ></PreviewLayout>
+      <FlatList
+        data={finalListData}
+        renderItem={({ item }) => (
+          <Item
+            title={item.title}
+            added_by={item.added_by}
+            shared_by={item.shared_by}
+            quantity={item.quantity}
+            days_until_expiration={item.days_till_expiration}
+          />
+        )}
+        keyExtractor={(item) => item.id.toString()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["purple"]}
+            tintColor="purple"
+          />
+        }
+      />
+    </View>
     </View>
   );
 }
+
+type PreviewLayoutProps = PropsWithChildren<{
+  values: string[];
+  selectedValue: string[];
+  setSelectedValue: Dispatch<SetStateAction<string[]>>;
+}>;
+
+const PreviewLayout = ({
+  values,
+  selectedValue,
+  setSelectedValue,
+}: PreviewLayoutProps) => (
+  <View style={{ padding: 10 }}>
+    <View style={styles.row}>
+      {values.map((value) => (
+        <TouchableOpacity
+          key={value}
+          onPress={() => {
+            setSelectedValue((prevFilters: any[]) => {
+              if (value === "All Items") {
+                return ["All Items"];
+              }
+              let cleanedFilters = prevFilters.filter(
+                (f: string) => f !== "All Items"
+              );
+              if (cleanedFilters.includes(value)) {
+                const newFilters = cleanedFilters.filter(
+                  (f: string) => f !== value
+                );
+                return newFilters.length === 0 ? ["All Items"] : newFilters;
+              } else {
+                if (cleanedFilters.includes("My Items") && value === "Shared") {
+                  cleanedFilters = cleanedFilters.filter(
+                    (f: string) => f !== "My Items"
+                  );
+                } else if (
+                  cleanedFilters.includes("Shared") &&
+                  value === "My Items"
+                ) {
+                  cleanedFilters = cleanedFilters.filter(
+                    (f: string) => f !== "Shared"
+                  );
+                }
+                return [...cleanedFilters, value];
+              }
+            });
+          }}
+          style={[
+            styles.filter_button,
+            selectedValue.includes(value) && styles.selected_filter_button,
+          ]}
+        >
+          <Text
+            style={[
+              styles.buttonLabel,
+              selectedValue.includes(value) &&
+                styles.selected_filter_button &&
+                styles.selectedLabel,
+            ]}
+          >
+            {value}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  </View>
+);
+
+const styles = StyleSheet.create({
+  box: {
+    width: 50,
+    height: 50,
+  },
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  filter_button: {
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
+    backgroundColor: "purple",
+    alignSelf: "flex-start",
+    marginHorizontal: "1%",
+    marginBottom: 6,
+    minWidth: "48%",
+    textAlign: "center",
+  },
+  selected_filter_button: {
+    backgroundColor: "grey",
+    borderWidth: 0,
+  },
+  buttonLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "white",
+  },
+  selectedLabel: {
+    color: "white",
+  },
+  label: {
+    textAlign: "center",
+    marginBottom: 10,
+    fontSize: 24,
+  },
+  container: {
+    flex: 1,
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    padding: 20,
+  },
+  separator: {
+    marginVertical: 3,
+    height: 1,
+    width: "80%",
+    backgroundColor: "#F8F9FF",
+  },
+  item: {
+    backgroundColor: "#f0f0f0",
+    padding: 15,
+    marginVertical: 5,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    width: 350,
+  },
+  itemText: {
+    fontSize: 18,
+    color: "#333",
+  },
+  search_bar: {
+    height: 40,
+    margin: 12,
+    borderWidth: 1,
+    padding: 10,
+    width: 350,
+  },
+  redText: {
+    color: "#d32f2f",
+    fontWeight: "bold",
+  },
+});

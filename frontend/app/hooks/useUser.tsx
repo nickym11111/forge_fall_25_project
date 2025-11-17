@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '../utils/client';
+import { useState, useEffect } from "react";
+import { supabase } from "../utils/client";
+import { fetchUserDetails } from "../api/UserDetails";
 
 interface fridgeMate {
-    id: string;
-    email: string;
-    first_name?: string;
-    last_name?: string;
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 interface UserData {
@@ -17,9 +18,9 @@ interface UserData {
   fridge?: {
     id: string;
     name: string;
-    emails?: string[]
+    emails?: string[];
   } | null;
-  fridgeMates?: fridgeMate[]
+  fridgeMates?: fridgeMate[];
 }
 
 let cachedUser: UserData | null = null;
@@ -27,7 +28,7 @@ let listeners: Set<(user: UserData | null) => void> = new Set();
 
 // Notify all listeners when user changes
 const notifyListeners = () => {
-  listeners.forEach(listener => listener(cachedUser));
+  listeners.forEach((listener) => listener(cachedUser));
 };
 
 export const useUser = () => {
@@ -47,32 +48,13 @@ export const useUser = () => {
 
     // Otherwise fetch it
     const fetchUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          setLoading(false);
-          return;
-        }
-
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/userInfo`, {
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
-
-
-        if (response.ok) {
-          const userData = await response.json();
-          cachedUser = userData;
-          setUser(cachedUser);
-          notifyListeners(); // Notify all components
-        }
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setLoading(false);
+      const userData = await fetchUserDetails();
+      if (userData) {
+        cachedUser = userData;
+        setUser(cachedUser);
+        notifyListeners(); // Notify all components
       }
+      setLoading(false);
     };
 
     fetchUser();
@@ -93,19 +75,24 @@ export const clearUserCache = () => {
 
 export const refreshUserCache = async () => {
   try {
-    const { data: { session } } = await supabase.auth.getSession();
-    
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
     if (!session) {
       cachedUser = null;
       notifyListeners();
       return null;
     }
 
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/userInfo`, {
-    headers: {
-      'Authorization': `Bearer ${session.access_token}`
-    }
-  });
+    const response = await fetch(
+      `${process.env.EXPO_PUBLIC_API_URL}/users/userInfo`,
+      {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      }
+    );
 
     if (response.ok) {
       const userData = await response.json();
@@ -119,7 +106,7 @@ export const refreshUserCache = async () => {
       return cachedUser;
     }
   } catch (error) {
-    console.error('Error refreshing user:', error);
+    console.error("Error refreshing user:", error);
   }
   return null;
 };
