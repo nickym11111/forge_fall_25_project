@@ -50,6 +50,7 @@ class FridgeItemCreate(BaseModel):
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
+    price: Optional[int]
 
 class AcceptFridgeRequestDTO(BaseModel):
     request_id: str
@@ -89,14 +90,22 @@ async def create_fridge_item(
             "fridge_id": fridge_id,
             "added_by": current_user["id"],
             "shared_by": item.shared_by,
-            "price": item.price
+            "price": item.price  #come back to this
         }).execute()
+
+        #Remove matching item from shopping list
+        supabase.table("shopping_list") \
+            .delete() \
+            .eq("name", item.name.lower()) \
+            .eq("fridge_id", fridge_id) \
+            .execute()
         
         return {
             "status": "success",
-            "message": "Fridge item added successfully",
-            "data": response.data
+            "message": "Fridge item added and removed from shopping list",
+            "data": response.data,
         }
+
     except Exception as e:
         print(f"Error creating fridge item: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
@@ -330,6 +339,7 @@ app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
 app.include_router(ai_expiration_router, prefix="/expiry")
 app.include_router(cost_splitting_router, prefix="/cost-splitting")
+app.include_router(shopping_router, prefix="/shopping")
        
 
 # Login Page

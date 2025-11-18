@@ -20,7 +20,7 @@ export default function CreateAccount() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Fridge Flow 🏠" />
+      <CustomHeader title="KitchenCloud ☁️" />
       <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.createAccountContainer}>
         <View style={styles.createAccountForm}>
