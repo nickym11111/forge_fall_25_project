@@ -2,7 +2,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function AddItemToFridge(
   access_token: string,
-  title: string,
+  name: string,
   quantity: string,
   expiryDate: Date,
   sharedByUserIds: string[],
@@ -15,7 +15,7 @@ export async function AddItemToFridge(
       Authorization: `Bearer ${access_token}`,
     },
     body: JSON.stringify({
-      title: title.trim(),
+      name: name.trim(),
       quantity: quantity ? Number(quantity) : 1,
       expiry_date: expiryDate.toISOString().split("T")[0],
       shared_by: sharedByUserIds.length > 0 ? sharedByUserIds : null,
