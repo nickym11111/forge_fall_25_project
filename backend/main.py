@@ -46,7 +46,7 @@ class RequestJoinDTO(BaseModel):
     fridgeCode: str
 
 class FridgeItemCreate(BaseModel):
-    title: str
+    name: str
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
@@ -83,7 +83,7 @@ async def create_fridge_item(
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
         response = supabase.table("fridge_items").insert({
-            "title": item.title,
+            "name": item.name,
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
@@ -165,7 +165,7 @@ def get_fridge_items(current_user = Depends(get_current_user)):
             
             transformed_items.append({
                 "id": item["id"],
-                "title": item["title"],
+                "name": item["name"],
                 "quantity": item.get("quantity"),
                 "days_till_expiration": item.get("days_till_expiration"),
                 "price": item.get("price", 0.0),
@@ -393,7 +393,7 @@ def get_fridges():
     try:
         response = supabase.table("fridges").select("*").execute()
         
-        if response.error:
+        if response.get("error"):
             raise HTTPException(status_code=500, detail=response.error.message)
             
         return {
