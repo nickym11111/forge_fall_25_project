@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
+  SafeAreaView,
 } from "react-native";
 import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
@@ -150,59 +151,60 @@ export default function RequestsScreen() {
   const { user } = useUser();
   const [requests, setRequests] = useState<FridgeRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchRequests = async () => {
-      if (!user?.fridge_id) {
-        setLoading(false);
-        return;
-      }
+  const fetchRequests = async () => {
+    if (!user?.fridge_id) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        setLoading(true);
-        console.log("Searching for requests...");
-        console.log("User fridge ID:", user.fridge_id);
+    try {
+      setRefreshing(true);
+      if (!refreshing) setLoading(true);
 
-        const { data, error: fetchError } = await supabase
-          .from("fridge_requests")
-          .select(
-            `
-            *,
-            users:users!fridge_requests_requested_by_fkey(id, email, first_name, last_name),
-            fridges:fridge_id!inner(id, name)
+      console.log("Searching for requests...");
+      console.log("User fridge ID:", user.fridge_id);
+
+      const { data, error: fetchError } = await supabase
+        .from("fridge_requests")
+        .select(
           `
-          )
-          .eq("fridge_id", user.fridge_id)
-          .eq("acceptance_status", "PENDING");
+          *,
+          users:users!fridge_requests_requested_by_fkey(id, email, first_name, last_name),
+          fridges:fridge_id!inner(id, name)
+        `
+        )
+        .eq("fridge_id", user.fridge_id)
+        .eq("acceptance_status", "PENDING");
 
-        console.log("Full response:", data);
+      if (fetchError) throw fetchError;
 
-        if (fetchError) throw fetchError;
+      // Transform the data to match our UI expectations
+      const formattedData = (data || []).map((request) => ({
+        ...request,
+        // Map users to user for backward compatibility
+        user: request.users,
+        // Map fridges to fridge for backward compatibility
+        fridge: request.fridges,
+      }));
+      setRequests(formattedData);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+      setError("Failed to load requests. Please try again.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
-        // Transform the data to match our UI expectations
-        const formattedData = (data || []).map((request) => ({
-          ...request,
-          // Map users to user for backward compatibility
-          user: request.users,
-          // Map fridges to fridge for backward compatibility
-          fridge: request.fridges,
-        }));
-
-        console.log("Formatted requests:", formattedData);
-        setRequests(formattedData);
-      } catch (err) {
-        console.error("Error fetching requests:", err);
-        setError("Failed to load requests. Please try again.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchRequests();
   }, [user?.fridge_id]);
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={[styles.container, styles.center]}>
         <ActivityIndicator size="large" color="#f4511e" />
@@ -218,16 +220,12 @@ export default function RequestsScreen() {
     );
   }
 
-  useEffect(() => {
-    fetchRequests();
-  }, [user?.fridge_id]);
-
   const handleStatusChange = () => {
     fetchRequests();
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor="#f4511e" />
       <Stack.Screen
         options={{
@@ -278,11 +276,15 @@ export default function RequestsScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backGroundColor: "#fff",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
@@ -341,6 +343,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     minHeight: 44,
+  },
+  acceptButton: {
+    backgroundColor: "#4CAF50",
+  },
+  declineButton: {
+    backgroundColor: "#f44336",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
   errorText: {
     color: "#f44336",
