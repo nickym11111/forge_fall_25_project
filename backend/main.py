@@ -42,21 +42,21 @@ app.add_middleware(
 )
 
 # Data Transfer Objects
-class FridgeInviteDTO(BaseModel):
-    fridge_id: str
-    emails: List[str]
-    invited_by: Optional[str] = None
-    invite_code: Optional[str] = None
-
-class RedeemFridgeInviteDTO(BaseModel):
-    invite_code: str
+class RequestJoinDTO(BaseModel):
+    fridgeCode: str
 
 class FridgeItemCreate(BaseModel):
     name: str
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
-    price: Optional[float] = 0.0
+
+class AcceptFridgeRequestDTO(BaseModel):
+    request_id: str
+
+class DeclineFridgeRequestDTO(BaseModel):
+    request_id: str
+
 
 # Root endpoint
 @app.get("/")
@@ -77,7 +77,7 @@ async def create_fridge_item(
         today = date.today()
         days_till_expiration = (expiry - today).days
 
-        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+        fridge_id = current_user["fridge_id"] if isinstance(current_user, dict) else None
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
@@ -87,7 +87,7 @@ async def create_fridge_item(
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
-            "added_by": current_user.get("id"),
+            "added_by": current_user["id"],
             "shared_by": item.shared_by,
             "price": item.price
         }).execute()
@@ -210,116 +210,112 @@ def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
     return {"data": response.data}
 
-@join_router.post("/send-invite/")
-async def send_fridge_invite(fridge_invite_dto: FridgeInviteDTO):
-    # Check if fridge exists
-    fridge_data = supabase.table("fridges").select("*").eq("id", fridge_invite_dto.fridge_id).execute()
-    
-    if not fridge_data.data:
-        raise HTTPException(status_code=404, detail="Fridge not found")
-    
-    # Get owner name for email (use a default name if not available)
-    owner_name = "a friend"
-    if fridge_data.data[0].get("created_by"):
-        owner_data = supabase.table("users").select("first_name").eq("id", fridge_data.data[0]["created_by"]).execute()
-        if owner_data.data and owner_data.data[0].get("first_name"):
-            owner_name = owner_data.data[0]["first_name"]
-    
-    results = []
-    
-    for email in fridge_invite_dto.emails:
-        # Generate unique invite code for each email
-        invite_code = generate_invite_code()
+@join_router.post('/request-join')
+def request_join_fridge(request_join_dto: RequestJoinDTO, current_user = Depends(get_current_user)):
+    try:
+        # Check if fridge with code exists
+        fridge_data = supabase.table("fridges").select("*").eq("fridge_code", request_join_dto.fridgeCode).execute()
         
-        invitation_data = {
-            "fridge_id": fridge_invite_dto.fridge_id,
-            "email_to": email,
-            "invite_code": invite_code
+        if not fridge_data.data:
+            raise HTTPException(status_code=404, detail="Fridge with code" + request_join_dto.fridgeCode + "not found")
+        
+        # Create request record in fridge_requests table
+        request_data = supabase.table("fridge_requests").insert({
+            "fridge_id": fridge_data.data[0]["id"],
+            "requested_by": current_user["id"],
+            "acceptance_status": "PENDING"
+        }).execute()
+        
+        return {
+            "status": "success",
+            "message": "Fridge request added successfully",
+            "data": request_data.data
         }
         
-        # Insert invitation data into table
-        response = supabase.table("fridge_invitations").insert(invitation_data).execute()
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error requesting to join fridge: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to request to join fridge: {str(e)}")
         
-        if not response.data:
-            results.append({"email": email, "status": "failed", "error": "Failed to create invitation"})
-            continue
-        
-        try:
-            # Send email to each recipient
-            email_response = supabase.functions.invoke("send-fridge-invite", { "body": {
-                "inviteCode": invite_code,
-                "recipientEmail": email,
-                "senderName": owner_name
-            }})
-            
-            if not email_response:
-                results.append({"email": email, "status": "partial", "message": "Invite created but email may not have been sent"})
-            else:
-                results.append({"email": email, "status": "success", "invite_code": invite_code})
-                
-        except Exception as email_error:
-            print(f"Email error for {email}: {str(email_error)}")
-            results.append({"email": email, "status": "partial", "message": f"Error sending email: {str(email_error)}"})
-    
-    # Check if all invites failed
-    if all(result.get("status") == "failed" for result in results):
-        raise HTTPException(status_code=500, detail="Failed to send all invitations")
-    
-    return {
-        "status": "success",
-        "message": "Invitation processing completed",
-        "results": results
-    }
-
-# Accept fridge invite
-@join_router.post("/accept-invite/")
-async def accept_fridge_invite(
-    redeem_dto: RedeemFridgeInviteDTO,
-    current_user = Depends(get_current_user),
+# Accept fridge request
+@join_router.post("/accept-request/")
+async def accept_fridge_request(
+    accept_dto: AcceptFridgeRequestDTO,
     authorization: str = Header(None)
 ):
     try:
-        # Get user data from dict
-        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
-        user_email = current_user.get("email") if isinstance(current_user, dict) else current_user.email
-        
-        # Check if invite exists and is valid
-        invite_response = supabase.table("fridge_invitations").select(
+        # Check if fridge request exists and is valid
+        request_response = supabase.table("fridge_requests").select(
             "*, fridges(name)"
         ).eq(
-            "invite_code", redeem_dto.invite_code.upper()
+            "id", accept_dto.request_id
         ).eq(
-            "invited_email", user_email.lower()
-        ).eq(
-            "used", False
+            "acceptance_status", "PENDING"
         ).execute()
 
-        if not invite_response.data:
+        if not request_response.data:
             raise HTTPException(status_code=404, detail="Invalid code, expired, or not sent to your email")
 
-        invitation = invite_response.data[0]
+        fridge_request = request_response.data[0]
 
         # Update user profile with fridge_id
         profile_response = supabase.table("users").update({
-            "fridge_id": invitation["fridge_id"]
-        }).eq("id", user_id).execute()
+            "fridge_id": fridge_request["fridge_id"]
+        }).eq("id", accept_dto.request_id).execute()
 
         if not profile_response.data:
             raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
 
-        # Mark invitation as used
-        supabase.table("fridge_invitations").update({
-            "used": True,
-            "used_at": datetime.utcnow().isoformat(),
-        }).eq("id", invitation["id"]).execute()
+        # Mark request as accepted
+        supabase.table("fridge_requests").update({
+            "acceptance_status": "ACCEPTED",
+        }).eq("id", fridge_request["id"]).execute()
 
         return {
             "status": "success",
-            "message": f"Successfully joined {invitation['fridges']['name']}!",
+            "message": f"Successfully joined {fridge_request['fridges']['name']}!",
             "data": {
-                "fridge_id": invitation["fridge_id"],
-                "fridge_name": invitation["fridges"]["name"]
+                "fridge_id": fridge_request["fridge_id"],
+                "fridge_name": fridge_request["fridges"]["name"]
             }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.post("/decline-request/")
+async def decline_fridge_request(
+    decline_dto: DeclineFridgeRequestDTO,
+    authorization: str = Header(None)
+):
+    try:
+        # Check if fridge request exists and is valid
+        request_response = supabase.table("fridge_requests").select(
+            "*, fridges(name)"
+        ).eq(
+            "id", decline_dto.request_id
+        ).eq(
+            "acceptance_status", "PENDING"
+        ).execute()
+
+        if not request_response.data:
+            raise HTTPException(status_code=404, detail="Invalid code, expired, or not sent to your email")
+
+        fridge_request = request_response.data[0]
+
+        # Mark request as declined
+        supabase.table("fridge_requests").update({
+            "acceptance_status": "DECLINED",
+        }).eq("id", fridge_request["id"]).execute()
+
+        return {
+            "status": "success",
+            "message": f"Successfully declined request to join {fridge_request['fridges']['name']}!"
         }
 
     except HTTPException:
@@ -354,8 +350,9 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         # Insert the fridge and get the response
         createFridge_response = supabase.table("fridges").insert({
             "name": fridge.name,
-            "created_by": user_id,
-            "created_at": "now()"
+            "created_by": current_user["id"],
+            "created_at": "now()",
+            "fridge_code": generate_invite_code()
         }).execute()
 
         # Check if the response contains data

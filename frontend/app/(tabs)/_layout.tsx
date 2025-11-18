@@ -8,7 +8,7 @@ import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import { useAuth } from '../context/authContext';
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
-  name: React.ComponentProps<typeof FontAwesome>['name'];
+  name: React.ComponentProps<typeof FontAwesome>["name"];
   color: string;
 }) {
   return <FontAwesome size={28} style={{ marginBottom: -3 }} {...props} />;
@@ -25,18 +25,24 @@ export default function TabLayout() {
     if (user && inTabs && onLoginPage) {
       const hasFridge = user.fridge_id !== null;
       if (hasFridge) {
-        router.replace('/(tabs)/two');
+        router.replace("/(tabs)/two");
       } else {
-        router.replace('/(tabs)/create_fridge');
+        router.replace("/(tabs)/create_fridge");
       }
-    }
-    else if (!user && inTabs && !onLoginPage) {
-      router.replace('/(tabs)');
+    } else if (!user && inTabs && !onLoginPage) {
+      router.replace("/(tabs)");
     }
   }, [user, loading, segments]);
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8F9FF' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: "#F8F9FF",
+        }}
+      >
         <ActivityIndicator size="large" color="purple" />
       </View>
     );
@@ -98,10 +104,10 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="create_fridge"
+        name="settle-up"
         options={{
-          title: "Create Fridge",
-          tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
+          title: "Settle Up",
+          tabBarIcon: ({ color }) => <TabBarIcon name="dollar" color={color} />,
         }}
       />
     </Tabs>
