@@ -23,7 +23,7 @@ def getChatGPTResponse():
         print(f"=== Database error: {e} ===")
         raise
     
-    ingredients_list = [item['title'] for item in existing_ingredients.data] if existing_ingredients.data else []
+    ingredients_list = [item['name'] for item in existing_ingredients.data] if existing_ingredients.data else []
     print(f"=== Ingredients list: {ingredients_list} ===")
 
     if not ingredients_list:
@@ -41,32 +41,49 @@ If you cannot make at least one enjoyable meal with these ingredients, return a 
 contains the string "Need more ingredients for sufficient meals.".
 """
 
-    response = client.chat.completions.create(
-            model="gpt-4.1-turbo",
+    try:
+        print("=== Creating OpenAI client ===")
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        
+        print("=== Calling OpenAI API ===")
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": "You are a helpful recipe assistant that only responds with valid JSON."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7
-    )
-    recipe_json = json.loads(response.choices[0].message.content)
+            temperature=0.7,
+            timeout=30  # Add 30 second timeout
+        )
+        print("=== OpenAI API call successful ===")
         
-    return {
-        "status": "success",
-        "recipes": recipe_json
-    }
-
+        content = response.choices[0].message.content
+        print(f"=== OpenAI response: {content[:200]}... ===")
+        
+        recipe_json = json.loads(content)
+        
+        return {
+            "status": "success",
+            "recipes": recipe_json
+        }
+    except Exception as e:
+        print(f"=== OpenAI Error: {type(e).__name__}: {e} ===")
+        import traceback
+        traceback.print_exc()
+        raise
 
 @app.get("/generate-recipes/")
 def generate_recipes2():
-
+    print("=== generate_recipes2 endpoint called ===")
     try:
         result = getChatGPTResponse()
+        print(f"=== Returning result: {result} ===")
         return result
     
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Error parsing recipes from OpenAI.")
+    except json.JSONDecodeError as e:
+        print(f"=== JSON decode error: {e} ===")
+        raise HTTPException(status_code=500, detail=f"Error parsing recipes from OpenAI: {str(e)}")
     except Exception as e:
         error_msg = f"An error occurred: {str(e)}"
-        print(error_msg)
+        print(f"=== Exception: {error_msg} ===")
         raise HTTPException(status_code=500, detail=error_msg)
