@@ -6,7 +6,7 @@ export async function fetchUserDetails() {
         if (!session) {
           return null;
         }
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users/userInfo/`, {
           headers: {
             'Authorization': `Bearer ${session.access_token}`
           }
