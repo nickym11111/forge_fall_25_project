@@ -28,6 +28,7 @@ interface ApiResponse {
 
 //Backend API endpoint
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridges`;
+const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
 
 //Styles
 const styles = StyleSheet.create({
