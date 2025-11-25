@@ -1,10 +1,14 @@
-import { StyleSheet, View, Text, Image, TouchableOpacity } from "react-native";
+import { StyleSheet, View, Text, Image, TouchableOpacity, Platform, ActivityIndicator } from "react-native";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import { useAuth } from "@/app/context/authContext";
 import { navigate } from "expo-router/build/global-state/routing";
 import { useEffect, useState } from "react";
 import { fetchUserDetails, leaveFridge } from "@/app/api/UserDetails";
+import * as ImagePicker from "expo-image-picker";
+import { File } from "expo-file-system";
+import { AddProfilePhoto } from "@/app/api/AddProfilePhoto";
+import { supabase } from "@/app/utils/client";
 
 export default function ManageAccount() {
   type Fridge = {
@@ -25,16 +29,75 @@ export default function ManageAccount() {
   const [fridgeMates, setFridgeMates] = useState<FridgeMate[]>([]);
   const [reload, setReload] = useState<boolean>(false);
   const [showManageFridges, setShowManageFridges] = useState<boolean>(false);
+  const [base64Profile, setBase64Profile] = useState<string>("");
+  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const [isPhotoloading, setisPhotoloading] = useState<boolean>(false);
 
   const { logout } = useAuth();
 
+  const pickProfileImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      quality: 1,
+      aspect: [1, 1],
+    });
+
+    if (!result.canceled) {
+      setisPhotoloading(true);
+      
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        console.log("Error fetching session:", error);
+        setisPhotoloading(false);
+        return;
+      }
+
+      const imageUri = result.assets[0].uri;
+
+      try {
+        let base64Image: string;
+
+        if (Platform.OS === "web") {
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          base64Image = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () =>
+              resolve((reader.result as string).split(",")[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+        } else {
+          const file = new File(imageUri);
+          base64Image = file.base64Sync();
+        }
+
+        await AddProfilePhoto(base64Image, session.access_token);
+        console.log("Profile image selected and converted to base64");
+        setProfileImageUri(imageUri);
+        setReload(!reload);
+      } catch (error) {
+        console.error("Error converting image to base64:", error);
+      } finally {
+        setisPhotoloading(false);
+      }
+    }
+  };
+
   useEffect(() => {
+    setisPhotoloading(true);
     fetchUserDetails().then((userData) => {
       if (userData) {
         console.log("Fetched user data:", userData);
         setUserFirstName(userData.first_name);
         setUserLastName(userData.last_name);
         setUserEmail(userData.email);
+        setBase64Profile(userData.profile_photo || "");
         const fridgeData = userData.fridge;
         setFridges(
           Array.isArray(fridgeData)
@@ -43,6 +106,7 @@ export default function ManageAccount() {
             ? [fridgeData]
             : []
         );
+        setisPhotoloading(false);
         const mates = userData.fridgeMates;
         setFridgeMates(Array.isArray(mates) ? mates : mates ? [mates] : []);
       } else {
@@ -62,12 +126,31 @@ export default function ManageAccount() {
       <View style={styles.content}>
         {/* Profile Section */}
         <View style={styles.profileSection}>
-          <View style={styles.profilePhotoContainer}>
-            <Image
-              source={require("../../../assets/images/profile-icon.png")}
-              style={styles.profilePhoto}
-            />
-          </View>
+          <TouchableOpacity 
+            style={styles.profilePhotoContainer}
+            onPress={pickProfileImage}
+            disabled={isPhotoloading}
+          >
+            {isPhotoloading ? (
+              <ActivityIndicator size="large" color="#5D5FEF" />
+            ) : base64Profile ? (
+              <Image
+                source={{
+                  uri: `data:image/jpeg;base64,${base64Profile}`,
+                }}
+                style={styles.profilePhoto}
+              />
+            ) : (
+              <Image
+                source={
+                  profileImageUri
+                    ? { uri: profileImageUri }
+                    : require("../../../assets/images/profile-icon.png")
+                }
+                style={styles.profilePhoto}
+              />
+            )}
+          </TouchableOpacity>
           
           <Text style={styles.nameText}>
             {userFirstName} {userLastName}
@@ -181,8 +264,9 @@ const styles = StyleSheet.create({
     borderColor: "#5D5FEF",
   },
   profilePhoto: {
-    width: 60,
-    height: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   nameText: {
     fontSize: 24,

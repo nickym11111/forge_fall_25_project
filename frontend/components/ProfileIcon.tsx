@@ -13,6 +13,7 @@ import {
   Modal,
   Button,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
@@ -45,6 +46,8 @@ const ProfileIcon = (props: {
   const [reload, setReload] = useState<boolean>(false);
   const [userInfoVisible, setUserInfoVisible] = useState<boolean>(true);
   const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const [isPhotoLoading, setIsPhotoLoading] = useState<boolean>(false);
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(false);
 
   const { logout } = useAuth();
 
@@ -57,6 +60,8 @@ const ProfileIcon = (props: {
     });
 
     if (!result.canceled) {
+      setIsPhotoLoading(true);
+      
       const {
         data: { session },
         error,
@@ -64,11 +69,11 @@ const ProfileIcon = (props: {
 
       if (error || !session) {
         console.log("Error fetching session:", error);
+        setIsPhotoLoading(false);
         return;
       }
 
       const imageUri = result.assets[0].uri;
-      setProfileImageUri(imageUri);
 
       try {
         let base64Image: string;
@@ -88,15 +93,20 @@ const ProfileIcon = (props: {
           base64Image = file.base64Sync();
         }
 
-        AddProfilePhoto(base64Image, session.access_token);
+        await AddProfilePhoto(base64Image, session.access_token);
         console.log("Profile image selected and converted to base64");
+        setProfileImageUri(imageUri);
+        setReload(!reload);
       } catch (error) {
         console.error("Error converting image to base64:", error);
+      } finally {
+        setIsPhotoLoading(false);
       }
     }
   };
   useEffect(() => {
     if (isModalVisible) {
+      setIsDataLoading(true);
       fetchUserDetails().then((userData) => {
         if (userData) {
           console.log("Fetched user data:", userData);
@@ -121,6 +131,7 @@ const ProfileIcon = (props: {
           setFridges([]);
           setFridgeMates([]);
         }
+        setIsDataLoading(false);
       });
     }
   }, [isModalVisible, reload]);
@@ -179,10 +190,19 @@ const ProfileIcon = (props: {
                 gap: 10,
               }}
             >
-              {userInfoVisible ? (
+              {isDataLoading ? (
+                <ActivityIndicator size="large" color="#5D5FEF" />
+              ) : userInfoVisible ? (
                 <>
-                  <TouchableOpacity onPress={pickProfileImage}>
-                    {base64Profile ? (
+                  <TouchableOpacity 
+                    onPress={pickProfileImage}
+                    disabled={isPhotoLoading}
+                  >
+                    {isPhotoLoading ? (
+                      <View style={styles.profilePhoto}>
+                        <ActivityIndicator size="large" color="#5D5FEF" />
+                      </View>
+                    ) : base64Profile ? (
                       <Image
                         source={{
                           uri: `data:image/jpeg;base64,${base64Profile}`,
@@ -324,6 +344,8 @@ const styles = StyleSheet.create({
   profilePhoto: {
     width: 60,
     height: 60,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
