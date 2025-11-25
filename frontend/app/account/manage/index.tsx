@@ -6,8 +6,7 @@ import { navigate } from "expo-router/build/global-state/routing";
 import { useEffect, useState } from "react";
 import { fetchUserDetails, leaveFridge } from "@/app/api/UserDetails";
 import * as ImagePicker from "expo-image-picker";
-import { File } from "expo-file-system";
-import { AddProfilePhoto } from "@/app/api/AddProfilePhoto";
+import { uploadProfilePhotoDirectly } from "@/app/api/AddProfilePhotoDirectly";
 import { supabase } from "@/app/utils/client";
 
 export default function ManageAccount() {
@@ -29,8 +28,7 @@ export default function ManageAccount() {
   const [fridgeMates, setFridgeMates] = useState<FridgeMate[]>([]);
   const [reload, setReload] = useState<boolean>(false);
   const [showManageFridges, setShowManageFridges] = useState<boolean>(false);
-  const [base64Profile, setBase64Profile] = useState<string>("");
-  const [profileImageUri, setProfileImageUri] = useState<string | null>(null);
+  const [profileImageUri, setProfileImageUri] = useState<string>("");
   const [isPhotoloading, setisPhotoloading] = useState<boolean>(false);
 
   const { logout } = useAuth();
@@ -60,44 +58,15 @@ export default function ManageAccount() {
       const imageUri = result.assets[0].uri;
 
       try {
-        let base64Image: string;
-        let fileSize: number;
-
-        if (Platform.OS === "web") {
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-          fileSize = blob.size;
-          
-          if (fileSize > 5 * 1024 * 1024) {
-            alert(`Image size (${(fileSize / (1024 * 1024)).toFixed(2)}MB) exceeds 5MB limit. Please select a smaller image.`);
-            setisPhotoloading(false);
-            return;
-          }
-          
-          base64Image = await new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () =>
-              resolve((reader.result as string).split(",")[1]);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
+        // Upload directly to Supabase Storage (no base64 conversion!)
+        const result = await uploadProfilePhotoDirectly(imageUri, session.user.id);
+        
+        if (result.success) {
+          console.log("Profile photo uploaded successfully:", result.url);
+          setReload(!reload);
         } else {
-          const file = new File(imageUri);
-          fileSize = file.size;
-          
-          if (fileSize > 5 * 1024 * 1024) {
-            alert(`Image size (${(fileSize / (1024 * 1024)).toFixed(2)}MB) exceeds 5MB limit. Please select a smaller image.`);
-            setisPhotoloading(false);
-            return;
-          }
-          
-          base64Image = file.base64Sync();
+          alert(`Upload failed: ${result.error}`);
         }
-
-        await AddProfilePhoto(base64Image, session.access_token);
-        console.log("Profile image selected and converted to base64");
-        setProfileImageUri(imageUri);
-        setReload(!reload);
       } catch (error) {
         console.error("Error converting image to base64:", error);
       } finally {
@@ -114,7 +83,7 @@ export default function ManageAccount() {
         setUserFirstName(userData.first_name);
         setUserLastName(userData.last_name);
         setUserEmail(userData.email);
-        setBase64Profile(userData.profile_photo || "");
+        setProfileImageUri(userData.profile_photo || "");
         const fridgeData = userData.fridge;
         setFridges(
           Array.isArray(fridgeData)
@@ -150,9 +119,9 @@ export default function ManageAccount() {
           >
             {isPhotoloading ? (
               <ActivityIndicator size="large" color="#5D5FEF" />
-            ) : base64Profile ? (
+            ) : profileImageUri ? (
               <Image
-                source={{ uri: base64Profile }}
+                source={{ uri: profileImageUri }}
                 style={styles.profilePhoto}
               />
             ) : (
