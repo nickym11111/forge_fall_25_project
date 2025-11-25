@@ -77,10 +77,19 @@ const ProfileIcon = (props: {
 
       try {
         let base64Image: string;
+        let fileSize: number;
 
         if (Platform.OS === "web") {
           const response = await fetch(imageUri);
           const blob = await response.blob();
+          fileSize = blob.size;
+          
+          if (fileSize > 5 * 1024 * 1024) {
+            alert(`Image size (${(fileSize / (1024 * 1024)).toFixed(2)}MB) exceeds 5MB limit. Please select a smaller image.`);
+            setIsPhotoLoading(false);
+            return;
+          }
+          
           base64Image = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () =>
@@ -90,6 +99,14 @@ const ProfileIcon = (props: {
           });
         } else {
           const file = new File(imageUri);
+          fileSize = file.size;
+          
+          if (fileSize > 5 * 1024 * 1024) {
+            alert(`Image size (${(fileSize / (1024 * 1024)).toFixed(2)}MB) exceeds 5MB limit. Please select a smaller image.`);
+            setIsPhotoLoading(false);
+            return;
+          }
+          
           base64Image = file.base64Sync();
         }
 
@@ -204,18 +221,12 @@ const ProfileIcon = (props: {
                       </View>
                     ) : base64Profile ? (
                       <Image
-                        source={{
-                          uri: `data:image/jpeg;base64,${base64Profile}`,
-                        }}
+                        source={{ uri: base64Profile }}
                         style={styles.profilePhoto}
                       />
                     ) : (
                       <Image
-                        source={
-                          profileImageUri
-                            ? { uri: profileImageUri }
-                            : require("../assets/images/profile-icon.png")
-                        }
+                        source={require("../assets/images/profile-icon.png")}
                         style={styles.profilePhoto}
                       />
                     )}

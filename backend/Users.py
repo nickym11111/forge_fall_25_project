@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 from service import get_current_user, generate_invite_code, get_current_user_with_fridgeMates
 import ast
+import base64
+import uuid
 
 app = APIRouter()
 #TEMPLATE to get started :)
@@ -92,13 +94,62 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
 @app.post("/profile_photo")
 async def add_profile_photo(photo_data: ProfilePhotoUpdate, current_user = Depends(get_current_user)):
     try:
+        MAX_SIZE_BYTES = 5 * 1024 * 1024  # 5MB in bytes
+        base64_size = len(photo_data.profile_photo)
+        approximate_original_size = (base64_size * 3) / 4
+        
+        if approximate_original_size > MAX_SIZE_BYTES:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Image size exceeds 5MB limit. Approximate size: {approximate_original_size / (1024 * 1024):.2f}MB"
+            )
+        
         user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
         
+        # Decode base64 image
+        image_data = base64.b64decode(photo_data.profile_photo)
+        
+        # Generate unique filename
+        file_name = f"{user_id}/{uuid.uuid4()}.jpg"
+        
+        # Delete old profile photo if exists
+        try:
+            user_response = supabase.table("users").select("profile_photo").eq("id", user_id).execute()
+            if user_response.data and user_response.data[0].get("profile_photo"):
+                old_photo_url = user_response.data[0]["profile_photo"]
+                # Extract file path from URL if it's a storage URL
+                if "profile-photos/" in old_photo_url:
+                    old_file_path = old_photo_url.split("profile-photos/")[1].split("?")[0]
+                    supabase.storage.from_("profile-photos").remove([old_file_path])
+        except Exception as e:
+            print(f"Error deleting old photo: {str(e)}")
+        
+        # Upload to Supabase Storage
+        print(f"Uploading image to storage: {file_name}")
+        try:
+            storage_response = supabase.storage.from_("profile-photos").upload(
+                file_name,
+                image_data,
+                file_options={"content-type": "image/jpeg"}
+            )
+            print(f"Storage response: {storage_response}")
+        except Exception as storage_error:
+            error_msg = f"Storage upload error: {str(storage_error)}"
+            print(error_msg)
+            raise HTTPException(status_code=500, detail=error_msg)
+        
+        # Get public URL (upload was successful if we reach here)
+        public_url = supabase.storage.from_("profile-photos").get_public_url(file_name)
+        print(f"Generated public URL: {public_url}")
+        
+        # Update user record with storage URL
         response = supabase.table("users").update({
-            "profile_photo": photo_data.profile_photo
+            "profile_photo": public_url
         }).eq("id", user_id).execute()
         
-        return {"data": response.data, "status": "Profile photo updated successfully"}
+        print(f"Database update response: {response.data}")
+        
+        return {"data": response.data, "status": "Profile photo updated successfully", "url": public_url}
     
     except HTTPException:
         raise

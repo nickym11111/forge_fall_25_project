@@ -61,10 +61,19 @@ export default function ManageAccount() {
 
       try {
         let base64Image: string;
+        let fileSize: number;
 
         if (Platform.OS === "web") {
           const response = await fetch(imageUri);
           const blob = await response.blob();
+          fileSize = blob.size;
+          
+          if (fileSize > 5 * 1024 * 1024) {
+            alert(`Image size (${(fileSize / (1024 * 1024)).toFixed(2)}MB) exceeds 5MB limit. Please select a smaller image.`);
+            setisPhotoloading(false);
+            return;
+          }
+          
           base64Image = await new Promise<string>((resolve, reject) => {
             const reader = new FileReader();
             reader.onloadend = () =>
@@ -74,6 +83,14 @@ export default function ManageAccount() {
           });
         } else {
           const file = new File(imageUri);
+          fileSize = file.size;
+          
+          if (fileSize > 5 * 1024 * 1024) {
+            alert(`Image size (${(fileSize / (1024 * 1024)).toFixed(2)}MB) exceeds 5MB limit. Please select a smaller image.`);
+            setisPhotoloading(false);
+            return;
+          }
+          
           base64Image = file.base64Sync();
         }
 
@@ -135,18 +152,12 @@ export default function ManageAccount() {
               <ActivityIndicator size="large" color="#5D5FEF" />
             ) : base64Profile ? (
               <Image
-                source={{
-                  uri: `data:image/jpeg;base64,${base64Profile}`,
-                }}
+                source={{ uri: base64Profile }}
                 style={styles.profilePhoto}
               />
             ) : (
               <Image
-                source={
-                  profileImageUri
-                    ? { uri: profileImageUri }
-                    : require("../../../assets/images/profile-icon.png")
-                }
+                source={require("../../../assets/images/profile-icon.png")}
                 style={styles.profilePhoto}
               />
             )}
