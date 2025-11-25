@@ -24,6 +24,9 @@ class UserCreate(BaseModel):
     firstName: Optional[str] = None
     lastName: Optional[str] = None
     dietaryRestrictions: Optional[List[str]] = None
+
+class ProfilePhotoUpdate(BaseModel):
+    profile_photo: str
     
     
 def findAccount(email: str):
@@ -64,7 +67,8 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
             "fridge_id": None,
             "first_name": None,
             "last_name": None,
-            "fridgeMates": []
+            "fridgeMates": [],
+            "profile_photo": None
         }
         
         if user_data.get("fridge_id"):
@@ -76,7 +80,6 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
                 user_data["fridge"] = None
         else:
             user_data["fridge"] = None
-        
         return user_data
         
     except HTTPException:
@@ -85,3 +88,21 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
         print(f"Error getting user info: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.post("/profile_photo")
+async def add_profile_photo(photo_data: ProfilePhotoUpdate, current_user = Depends(get_current_user)):
+    try:
+        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+        
+        response = supabase.table("users").update({
+            "profile_photo": photo_data.profile_photo
+        }).eq("id", user_id).execute()
+        
+        return {"data": response.data, "status": "Profile photo updated successfully"}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        error_msg = f"Error updating profile photo: {str(e)}"
+        print(error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)

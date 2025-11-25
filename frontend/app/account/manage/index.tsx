@@ -1,0 +1,264 @@
+import { StyleSheet, View, Text, Image, TouchableOpacity } from "react-native";
+import CustomHeader from "@/components/CustomHeader";
+import CustomButton from "@/components/CustomButton";
+import { useAuth } from "@/app/context/authContext";
+import { navigate } from "expo-router/build/global-state/routing";
+import { useEffect, useState } from "react";
+import { fetchUserDetails, leaveFridge } from "@/app/api/UserDetails";
+
+export default function ManageAccount() {
+  type Fridge = {
+    created_at: string;
+    created_by: string;
+    id: string;
+    name: string;
+  };
+
+  const [userFirstName, setUserFirstName] = useState<string>("");
+  const [userLastName, setUserLastName] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
+  const [fridges, setFridges] = useState<Fridge[]>([]);
+  type FridgeMate = {
+    first_name: string;
+    last_name: string;
+  };
+  const [fridgeMates, setFridgeMates] = useState<FridgeMate[]>([]);
+  const [reload, setReload] = useState<boolean>(false);
+  const [showManageFridges, setShowManageFridges] = useState<boolean>(false);
+
+  const { logout } = useAuth();
+
+  useEffect(() => {
+    fetchUserDetails().then((userData) => {
+      if (userData) {
+        console.log("Fetched user data:", userData);
+        setUserFirstName(userData.first_name);
+        setUserLastName(userData.last_name);
+        setUserEmail(userData.email);
+        const fridgeData = userData.fridge;
+        setFridges(
+          Array.isArray(fridgeData)
+            ? fridgeData
+            : fridgeData
+            ? [fridgeData]
+            : []
+        );
+        const mates = userData.fridgeMates;
+        setFridgeMates(Array.isArray(mates) ? mates : mates ? [mates] : []);
+      } else {
+        setUserFirstName("");
+        setUserLastName("");
+        setUserEmail("");
+        setFridges([]);
+        setFridgeMates([]);
+      }
+    });
+  }, [reload]);
+
+  return (
+    <View style={styles.container}>
+      <CustomHeader title="Manage Account 🧾" />
+      
+      <View style={styles.content}>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <View style={styles.profilePhotoContainer}>
+            <Image
+              source={require("../../../assets/images/profile-icon.png")}
+              style={styles.profilePhoto}
+            />
+          </View>
+          
+          <Text style={styles.nameText}>
+            {userFirstName} {userLastName}
+          </Text>
+          <Text style={styles.emailText}>{userEmail}</Text>
+          
+          {!showManageFridges && fridgeMates.length > 0 && (
+            <View style={styles.fridgeMatesContainer}>
+              <Text style={styles.fridgeMatesLabel}>Fridge Mates:</Text>
+              <Text style={styles.fridgeMatesText}>
+                {fridgeMates
+                  .map((f) => `${f.first_name} ${f.last_name}`)
+                  .join(", ")}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Manage Fridges Section */}
+        {showManageFridges && (
+          <View style={styles.fridgesSection}>
+            <Text style={styles.sectionTitle}>Your Fridges</Text>
+            {fridges.length > 0 ? (
+              fridges.map((fridge, index) => (
+                <View key={index} style={styles.fridgeCard}>
+                  <Text style={styles.fridgeName}>{fridge.name}</Text>
+                  <Text style={styles.fridgeId}>{fridge.id}</Text>
+                  <CustomButton
+                    className="Leave Fridge"
+                    onPress={() => {
+                      leaveFridge(fridge.id).then(() => {
+                        setReload(!reload);
+                      });
+                    }}
+                    title="Leave Fridge"
+                    style={styles.leaveFridgeButton}
+                  />
+                </View>
+              ))
+            ) : (
+              <Text style={styles.noFridgesText}>No fridges found</Text>
+            )}
+          </View>
+        )}
+
+        {/* Action Buttons */}
+        <View style={styles.buttonSection}>
+          <CustomButton
+            className="Reset Password"
+            onPress={() => {
+              navigate("/account/reset-password");
+            }}
+            title="Reset Password"
+            style={styles.actionButton}
+          />
+          
+          <CustomButton
+            className="Manage Fridges"
+            onPress={() => {
+              setShowManageFridges(!showManageFridges);
+            }}
+            title={showManageFridges ? "View Profile" : "Manage Fridges"}
+            style={styles.actionButton}
+          />
+          
+          <CustomButton
+            className="sign-out-button"
+            onPress={async () => {
+              logout();
+              setReload(!reload);
+            }}
+            title="Sign Out"
+            style={styles.signOutButton}
+          />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F8F9FF",
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  profileSection: {
+    alignItems: "center",
+    marginBottom: 30,
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  profilePhotoContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: "#E8EAFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 15,
+    borderWidth: 3,
+    borderColor: "#5D5FEF",
+  },
+  profilePhoto: {
+    width: 60,
+    height: 60,
+  },
+  nameText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 5,
+  },
+  emailText: {
+    fontSize: 16,
+    color: "#666",
+    marginBottom: 15,
+  },
+  fridgeMatesContainer: {
+    alignItems: "center",
+    marginTop: 10,
+  },
+  fridgeMatesLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#555",
+    marginBottom: 5,
+  },
+  fridgeMatesText: {
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center",
+  },
+  fridgesSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 15,
+  },
+  fridgeCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  fridgeName: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 5,
+  },
+  fridgeId: {
+    fontSize: 12,
+    color: "#999",
+    marginBottom: 10,
+  },
+  leaveFridgeButton: {
+    width: "100%",
+    marginTop: 5,
+  },
+  noFridgesText: {
+    fontSize: 16,
+    color: "#999",
+    textAlign: "center",
+    marginTop: 20,
+  },
+  buttonSection: {
+    gap: 15,
+  },
+  actionButton: {
+    width: "100%",
+  },
+  signOutButton: {
+    width: "100%",
+    marginTop: 10,
+  },
+});
