@@ -193,6 +193,10 @@ const ProfileIcon = (props: {
                       <Image
                         source={{ uri: base64Profile }}
                         style={styles.profilePhoto}
+                        onError={() => {
+                          console.log("Error loading profile photo, using default icon");
+                          setBase64Profile("");
+                        }}
                       />
                     ) : (
                       <Image

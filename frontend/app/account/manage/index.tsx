@@ -123,6 +123,10 @@ export default function ManageAccount() {
               <Image
                 source={{ uri: profileImageUri }}
                 style={styles.profilePhoto}
+                onError={() => {
+                  console.log("Error loading profile photo, using default icon");
+                  setProfileImageUri("");
+                }}
               />
             ) : (
               <Image

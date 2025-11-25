@@ -71,12 +71,18 @@ export async function uploadProfilePhotoDirectly(
 
     console.log('Upload successful:', uploadData);
 
-    // Get public URL
+    // Get public URL - ensure it has the correct format with /public/
     const { data: urlData } = supabase.storage
       .from('profile-photos')
       .getPublicUrl(fileName);
 
-    const publicUrl = urlData.publicUrl;
+    let publicUrl = urlData.publicUrl;
+    
+    // Fix URL if it doesn't have /public/ in the path
+    if (publicUrl && !publicUrl.includes('/public/')) {
+      publicUrl = publicUrl.replace('/object/', '/object/public/');
+    }
+    
     console.log('Public URL:', publicUrl);
 
     // Update user record with the new photo URL
