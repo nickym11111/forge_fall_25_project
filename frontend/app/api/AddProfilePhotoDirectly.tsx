@@ -84,6 +84,7 @@ export async function uploadProfilePhotoDirectly(
     }
     
     console.log('Public URL:', publicUrl);
+    console.log('Updating database for user ID:', userId);
 
     // Update user record with the new photo URL
     const { data: updateData, error: updateError } = await supabase
@@ -92,12 +93,19 @@ export async function uploadProfilePhotoDirectly(
       .eq('id', userId)
       .select();
 
+    console.log('Database update response:', { data: updateData, error: updateError });
+
     if (updateError) {
       console.error('Database update error:', updateError);
       return { success: false, error: updateError.message };
     }
 
-    console.log('Profile photo uploaded successfully');
+    if (!updateData || updateData.length === 0) {
+      console.error('No rows updated - user might not exist');
+      return { success: false, error: 'Failed to update user profile photo - user not found' };
+    }
+
+    console.log('Profile photo uploaded successfully, updated data:', updateData);
     return { success: true, url: publicUrl };
   } catch (error) {
     console.error('Error uploading profile photo:', error);
