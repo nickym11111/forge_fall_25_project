@@ -35,7 +35,7 @@ async def get_current_user(
         if not response or not response.user:
             raise HTTPException(status_code=401, detail="Invalid token")
         
-        user_response = supabase.table("users").select("id, email, fridge_id, first_name, last_name").eq("id", response.user.id).execute()
+        user_response = supabase.table("users").select("id, email, fridge_id, first_name, last_name, profile_photo").eq("id", response.user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:
             # If user not in database, return just the auth user
