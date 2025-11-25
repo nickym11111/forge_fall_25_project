@@ -12,6 +12,7 @@ from ShoppingList import app as shopping_router
 from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
 from recipes import app as recipes_router
+from favorite_recipes import app as favorite_recipes_router
 #from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
 
@@ -284,6 +285,7 @@ app.include_router(join_router, prefix="/fridge")
 app.include_router(users_router, prefix="/users")
 app.include_router(receipt_router, prefix="/receipt")
 app.include_router(recipes_router, prefix="/recipes")
+app.include_router(favorite_recipes_router, prefix="/favorite-recipes")
 app.include_router(ai_expiration_router, prefix="/expiry")
        
 
