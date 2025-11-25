@@ -13,17 +13,18 @@ import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
+import CustomHeader from "@/components/CustomHeader";
 
 // Defines props type for the Item component
 interface ItemProps {
   title: string;
 }
 
+// Recipe items component (potential issue)
 // Individual item component
 const Item = ({
   title
 }: ItemProps) => {
-
   return (
     <View style={styles.item}>
       <Text style={[styles.itemText]}>
@@ -33,10 +34,12 @@ const Item = ({
   );
 };
 
+
 export default function recipes() {
   const [inputValue, setInputValue] = useState<string>('');
   const [responseMessage, setResponseMessage] = useState<string[]>();
   const [selectedPrompt, setSelectedPrompt] = useState<string>('');
+  const [recipes, setRecipes] = useState<any[]>([]);
 
    const searchFunction = (text: string) => {
     setInputValue(text);
@@ -44,13 +47,17 @@ export default function recipes() {
 
   const handleSubmit = async () => {
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/recipes/find_ingredients`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/find_ingredients`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ recipe: inputValue }), // Send data as JSON
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch ingredients');
+      }
 
       const data = await response.json();
       console.log('Received response from backend:', data);
@@ -62,6 +69,7 @@ export default function recipes() {
         ingredients = parsed.ingredients;
       } catch (error) {
         console.error("Failed to parse JSON:", error);
+        ingredients = ['Error parsing response'];
       }
       setResponseMessage(ingredients);
     } catch (error) {
@@ -69,24 +77,88 @@ export default function recipes() {
       setResponseMessage(['Error sending data to backend.']);
     }
   };
-  
+
+  const handleFindRecipe = async () => {
+    try {
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/generate-recipes/`);
+        const data2 = await response.json();
+
+          // DEBUG: Log the entire response
+          console.log('=== FULL RESPONSE ===');
+          console.log(JSON.stringify(data2, null, 2));
+          console.log('=== END RESPONSE ===');
+          
+        if (!response.ok) {
+            throw new Error(data2.detail || "Failed to fetch recipes.");
+        }
+
+        // Handle different response types from backend
+        if (data2.status === "success") {
+          if (Array.isArray(data2.recipes)) {
+            setRecipes(data2.recipes);
+          } else if (data2.recipes && data2.recipes.message) {
+            // Handle "Need more ingredients" case
+            setRecipes([{ recipe_name: data2.recipes.message }]);
+          }
+        } else if (data2.status === "info") {
+          // Handle "No items in fridge" case
+          setRecipes([{ recipe_name: data2.message }]);
+        } else {
+          // Fallback
+          setRecipes([{ message: "No recipes found" }]);
+        }
+      
+      } catch (error) {
+        console.error('Error fetching recipes:', error);
+        setRecipes([{ message: 'Error sending data to backend.' }]);
+      }
+    };
+
+ // Updated Item component to handle both string and object
+  const RecipeItem = ({ item }: { item: any }) => {
+  // Handle recipe objects
+  if (item.recipe_name) {
+    return (
+      <View style={styles.item}>
+        <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
+        {item.description && (
+          <Text style={styles.recipeDescription}>{item.description}</Text>
+        )}
+        {item.ingredients_used && Array.isArray(item.ingredients_used) && (
+          <Text style={styles.recipeIngredients}>
+            Ingredients: {item.ingredients_used.join(', ')}
+          </Text>
+        )}
+      </View>
+    );
+  }
+  // Fallback for any other format
+  return (
+    <View style={styles.item}>
+      <Text style={styles.itemText}>{String(item)}</Text>
+    </View>
+  );
+};
+
   type PreviewLayoutProps = PropsWithChildren<{
-  values: string[];
-  selectedValue: string;
-  setSelectedValue: Dispatch<SetStateAction<string>>;
-}>;
+    values: string[];
+    selectedValue: string;
+    setSelectedValue: Dispatch<SetStateAction<string>>;
+    onPress: () => void; 
+  }>;
 
 const PreviewLayout = ({
   values,
   selectedValue,
   setSelectedValue,
+  onPress,
 }: PreviewLayoutProps) => (
   <View style={{ padding: 10 }}>
     <View style={styles.row}>
       {values.map((value) => (
         <TouchableOpacity
           key={value}
-          onPress={handleSubmit}
+          onPress={onPress}
           style={[
             styles.filter_button,
             selectedValue.includes(value) && styles.selected_filter_button,
@@ -110,52 +182,54 @@ const PreviewLayout = ({
 
 return (
     <View style={styles.container}>
-      <Text style={styles.title}>Share Recipes!</Text>
-      <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
+    <CustomHeader 
+      title="Share Recipes!  "
+      logo={require('../../assets/images/FridgeIcon.png')}
       />
-      <View>
-        <TextInput
-          style={styles.search_bar}
-          onChangeText={searchFunction}
-          value={inputValue}
-          placeholder="Recipe Item..."
-        />
+      <View style={styles.separator}>
+        <View style={styles.boxContainer}>
+          <View>
+            <TextInput
+              style={styles.search_bar}
+              onChangeText={searchFunction}
+              value={inputValue}
+              placeholder="Recipe Item..."
+            />
+          </View>
+
+          <PreviewLayout
+            values={["Find Ingredients"]}
+            selectedValue={selectedPrompt}
+            setSelectedValue={setSelectedPrompt}
+            onPress={handleSubmit}
+          />
+
+          <FlatList
+            data={responseMessage}
+            renderItem={({ item }) => <Item title={item} />}
+            keyExtractor={(item, index) => index.toString()}
+          />
+        </View>
+        
+        <View style={styles.separator2}>
+          <View style={styles.boxContainer}>
+            <PreviewLayout
+              values={["Find Recipe"]}
+              selectedValue={selectedPrompt}
+              setSelectedValue={setSelectedPrompt}
+              onPress={handleFindRecipe}
+            />
+            <FlatList
+              data={recipes}
+              renderItem={({ item }) => <RecipeItem item={item} />}
+              keyExtractor={(item, index) => index.toString()}
+            />
+          </View>
+        </View>
       </View>
-      <PreviewLayout
-        values={["Find Ingredients"]}
-        selectedValue={selectedPrompt}
-        setSelectedValue={setSelectedPrompt}
-      ></PreviewLayout>
-      <FlatList
-        data={responseMessage}
-        renderItem={({ item }) => (
-          <Item
-            title={item}
-          />
-        )}
-        keyExtractor={(item) => item}
-      />
-      <PreviewLayout
-        values={["Find Recipe"]}
-        selectedValue={selectedPrompt}
-        setSelectedValue={setSelectedPrompt}
-      ></PreviewLayout>
-        <FlatList
-        data={responseMessage}
-        renderItem={({ item }) => (
-          <Item
-            title={item}
-          />
-        )}
-        keyExtractor={(item) => item}
-      />
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   box: {
@@ -196,7 +270,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    alignItems: "center",
+    backgroundColor: "#F8F9FF",
   },
   title: {
     fontSize: 20,
@@ -204,10 +278,22 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   separator: {
-    marginVertical: 3,
-    height: 1,
-    width: "80%",
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 40,
+    marginVertical: 20,
     backgroundColor: "#F8F9FF",
+  },
+  separator2: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    marginVertical: 20,
+    backgroundColor: "#F8F9FF"
   },
   item: {
     backgroundColor: "#f0f0f0",
@@ -232,4 +318,31 @@ const styles = StyleSheet.create({
     color: "#d32f2f",
     fontWeight: "bold",
   },
+  recipeTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  recipeDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginVertical: 4,
+  },
+  recipeIngredients: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+  },
+  boxContainer: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  }
 });

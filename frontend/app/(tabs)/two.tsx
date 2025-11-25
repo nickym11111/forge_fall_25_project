@@ -5,17 +5,20 @@ import {
   FlatList,
   TextInput,
   ActivityIndicator,
+  RefreshControl,
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
+import { router } from 'expo-router';
 
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import ProfileIcon from "@/components/ProfileIcon";
+import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -33,7 +36,7 @@ interface FridgeMate {
 // Updated to match backend response
 interface FoodItem {
   id: number;
-  title: string;
+  name: string;
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -43,7 +46,7 @@ interface FoodItem {
 
 // Defines props type for the Item component
 interface ItemProps {
-  title: string;
+  name: string;
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -52,7 +55,7 @@ interface ItemProps {
 
 // Individual item component
 const Item = ({
-  title,
+  name,
   added_by,
   shared_by,
   quantity,
@@ -63,7 +66,14 @@ const Item = ({
     if (mate.first_name && mate.last_name) {
       return `${mate.first_name} ${mate.last_name}`;
     }
-    return mate.name || "Unknown";
+    if (mate.first_name) return mate.first_name;
+    if (mate.last_name) return mate.last_name;
+    if (mate.name) return mate.name;
+    if (mate.email) {
+      // Use email prefix as fallback
+      return mate.email.split('@')[0];
+    }
+    return "Unknown";
   };
 
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
@@ -79,7 +89,7 @@ const Item = ({
   return (
     <View style={styles.item}>
       <Text style={[styles.itemText]}>
-        <Text style={{ fontWeight: "bold" }}>{title}</Text>
+        <Text style={{ fontWeight: "bold" }}>{name}</Text>
       </Text>
       <Text style={[styles.itemText, { fontSize: 10 }]}>
         <Text style={{ fontWeight: "bold" }}>Quantity:</Text> {quantity || 0} |
@@ -111,12 +121,15 @@ export default function TabOneScreen() {
     "All Items",
   ]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
 
-  // Fetch data from backend when component mounts
-  useEffect(() => {
-    fetchFridgeItems();
-  }, []);
+  // Auto-refresh when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchFridgeItems();
+    }, [])
+  );
 
   const fetchFridgeItems = async () => {
     try {
@@ -126,6 +139,9 @@ export default function TabOneScreen() {
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (error || !session) {
+        setData([]);
+        originalHolder.current = [];
+        setError("");
         throw new Error("You must be logged in to view fridge items");
       }
 
@@ -146,6 +162,12 @@ export default function TabOneScreen() {
       const result = await response.json();
       console.log("API Response:", result);
 
+      if (result.message === "User has no fridge assigned") {
+        setData([]);
+        originalHolder.current = [];
+        setError("NO_FRIDGE");
+        return;
+      }
 
       // Transform backend data to match frontend format
       const transformedData = result.data
@@ -166,9 +188,18 @@ export default function TabOneScreen() {
     } catch (err) {
       console.error("Error fetching items:", err);
       setError(`${err}`);
+      setData([]);
+      originalHolder.current = [];
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  // Manual refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFridgeItems();
   };
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
@@ -220,7 +251,7 @@ export default function TabOneScreen() {
   // Apply the search filter
   const finalListData = filtered_data.filter((item) => {
     if (!searchValue) return true;
-    const itemData = item.title.toUpperCase();
+    const itemData = item.name.toUpperCase();
     const textData = searchValue.toUpperCase();
     return itemData.includes(textData);
   });
@@ -239,6 +270,31 @@ export default function TabOneScreen() {
     );
   }
 
+  if (error === "NO_FRIDGE") {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            You haven't joined a fridge yet!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Create or join a fridge to start tracking your food items.
+          </Text>
+          <TouchableOpacity
+            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
+            onPress={() => {
+              router.push("/(tabs)/create_fridge");
+            }}
+          >
+            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   // Error state
   if (error) {
     return (
@@ -252,6 +308,23 @@ export default function TabOneScreen() {
         >
           <Text style={styles.buttonLabel}>Retry</Text>
         </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            Your fridge is empty!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Add some items to get started.
+          </Text>
+        </View>
       </View>
     );
   }
@@ -286,7 +359,7 @@ export default function TabOneScreen() {
         data={finalListData}
         renderItem={({ item }) => (
           <Item
-            title={item.title}
+            name={item.name}
             added_by={item.added_by}
             shared_by={item.shared_by}
             quantity={item.quantity}
@@ -294,6 +367,14 @@ export default function TabOneScreen() {
           />
         )}
         keyExtractor={(item) => item.id.toString()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["purple"]}
+            tintColor="purple"
+          />
+        }
       />
     </View>
     </View>
@@ -443,3 +524,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+

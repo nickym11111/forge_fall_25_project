@@ -20,7 +20,7 @@ export default function CreateAccount() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Fridge Flow 🏠" />
+      <CustomHeader title="KitchenCloud ☁️" />
       <ToastMessage message={toastMessage} visible={isToastVisible} />
       <View style={styles.createAccountContainer}>
         <View style={styles.createAccountForm}>
@@ -70,7 +70,7 @@ export default function CreateAccount() {
                 );
                 setToastMessage(
                   response?.status === "User created successfully"
-                    ? "Account created!"
+                    ? "Email verification sent! Please verify your email before logging in."
                     : response?.error || "Error creating account"
                 );
               } catch (e) {
@@ -78,7 +78,7 @@ export default function CreateAccount() {
                 console.log(e);
               }
               setIsToastVisible(true);
-              setTimeout(() => setIsToastVisible(false), 3000);
+              setTimeout(() => setIsToastVisible(false), 7000);
             }}
             disabled={!firstName || !lastName || !email || !password}
             style={styles.createAccountButton}

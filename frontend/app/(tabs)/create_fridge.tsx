@@ -12,11 +12,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
+import { router } from 'expo-router';
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
-import { navigate } from "expo-router/build/global-state/routing";
 import ProfileIcon from "@/components/ProfileIcon";
 
 //Type for API response
@@ -168,6 +168,8 @@ export default function CreateFridgeScreen() {
         throw new Error("No fridge ID returned from server");
       }
 
+      // Invite code 
+      /*
       // 2. Then, send invites to all provided emails
       const invitePromises = validEmails.map(async (email) => {
         const inviteResponse = await fetch(SEND_INVITE_URL, {
@@ -176,8 +178,8 @@ export default function CreateFridgeScreen() {
                      "Authorization": `Bearer ${session.access_token}`},
           body: JSON.stringify({
             fridge_id: fridgeId.toString(),
-            emails: emails,
-            invited_by: currentUserEmail,
+            emails: validEmails,
+            invited_by: user?.email,
           }),
         });
         return inviteResponse.json();
@@ -207,17 +209,29 @@ export default function CreateFridgeScreen() {
           "Fridge created and invites sent successfully!"
         );
       }
+      */
 
       await refreshUser();
+
+      // Reset state
+      setIsLoading(false);
+      setFridgeName("");
+      setEmails([""]);
+
+      router.replace("/(tabs)/two");
+
+      Alert.alert(
+        "Success!",
+        "Fridge created successfully!"
+      );
       
     } catch (error) {
       console.error("Error:", error);
+      setIsLoading(false);
       Alert.alert(
         "Error",
         error instanceof Error ? error.message : "An unexpected error occurred"
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -229,7 +243,7 @@ export default function CreateFridgeScreen() {
       title="Create Fridge  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
-<ProfileIcon className="profileIcon" />
+      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}
@@ -287,7 +301,7 @@ export default function CreateFridgeScreen() {
           {/*Navigate to Join Fridge page*/}
           <Text
             style={styles.joinFridgeText}
-            onPress={() => !isLoading && navigate("/(tabs)/Join-Fridge")}
+            onPress={() => !isLoading && router.push("/(tabs)/Join-Fridge")}
           >
             Join a fridge instead
           </Text>

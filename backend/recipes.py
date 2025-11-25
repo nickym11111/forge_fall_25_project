@@ -15,9 +15,8 @@ class Ingredients(BaseModel):
     recipe: str
 
 def getChatGPTResponse(recipe: str):
-    existing_ingredients = (supabase.table("fridge_items")
-        .select("name")
-        .execute())
+    existing_ingredients = (supabase.table("fridge_items").select("name").execute())
+
     response = client.responses.create(
         model="gpt-4.1-mini",
         input=[
@@ -42,6 +41,6 @@ def find_ingredients(ingredients: Ingredients):
     try:
         return getChatGPTResponse(ingredients.recipe);
     except Exception as e:
-        error_msg = f"Error finding ingredients: {str(e)}"
+        error_msg = f"Error parsing receipt: {str(e)}"
         print(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)from dotenv import load_dotenv # type: ignore
