@@ -5,7 +5,7 @@ const CustomButton = (props: { title: string, onPress: () => void, style?: Style
   return (
 <TouchableOpacity onPress={props.onPress} style={props.style} className={props.className} disabled={props.disabled}> 
   <View style={{
-    ...styles.button, backgroundColor: props.disabled ? '#88d08a72' : '#3cca41ff'}}
+    ...styles.button, backgroundColor: props.disabled ? '#88d08a72' : '#14b8a6'}}
   >
     <Text style={{ color: 'white' }}>{props.title}</Text>
   </View>

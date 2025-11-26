@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
 from Join import app as join_router
-from ai_expiration import app as ai_expiration_router
+#from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
 from CostSplitting import app as cost_splitting_router

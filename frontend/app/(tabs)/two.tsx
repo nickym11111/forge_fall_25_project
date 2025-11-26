@@ -5,11 +5,15 @@ import {
   FlatList,
   TextInput,
   ActivityIndicator,
-  RefreshControl,
+  Alert,
+  View,
+  Keyboard,
+  TouchableWithoutFeedback,
+        RefreshControl,
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from 'expo-router';
-
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -46,22 +50,13 @@ interface FoodItem {
 
 // Defines props type for the Item component
 interface ItemProps {
-  name: string;
-  added_by?: FridgeMate | null;
-  shared_by?: FridgeMate[] | null;
-  quantity?: number;
-  days_until_expiration?: number;
+  item: FoodItem;
+  onDelete: (item: FoodItem) => void;
+  onQuantityChange: (item: FoodItem, delta: number) => void;
 }
 
 // Individual item component
-const Item = ({
-  name,
-  added_by,
-  shared_by,
-  quantity,
-  days_until_expiration,
-}: ItemProps) => {
-  // Handle different name formats from backend
+const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
   const getDisplayName = (mate: FridgeMate) => {
     if (mate.first_name && mate.last_name) {
       return `${mate.first_name} ${mate.last_name}`;
@@ -76,46 +71,117 @@ const Item = ({
     return "Unknown";
   };
 
-  const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
-
+  const addedByName = item.added_by ? getDisplayName(item.added_by) : "Unknown";
   const sharedByString: string =
-    shared_by && shared_by.length > 0
-      ? shared_by.map((mate) => getDisplayName(mate)).join(", ")
+    item.shared_by && item.shared_by.length > 0
+      ? item.shared_by.map((mate) => getDisplayName(mate)).join(", ")
       : "No one";
 
-  // Determine if item is expiring soon
-  const isExpiringSoon = (days_until_expiration || 0) <= 7;
+  const isExpiringSoon = (item.days_till_expiration || 0) <= 7;
+  const qty = item.quantity ?? 1;
+
+  const handleDelete = () => {
+    Alert.alert(
+      "Delete Item",
+      `Are you sure you want to delete ${item.title}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Yes", style: "destructive", onPress: () => onDelete(item) },
+      ]
+    );
+  };
 
   return (
     <View style={styles.item}>
-      <Text style={[styles.itemText]}>
-        <Text style={{ fontWeight: "bold" }}>{name}</Text>
-      </Text>
-      <Text style={[styles.itemText, { fontSize: 10 }]}>
-        <Text style={{ fontWeight: "bold" }}>Quantity:</Text> {quantity || 0} |
-        <Text
-          style={[{ fontWeight: "bold" }, isExpiringSoon && styles.redText]}
-        >
-          {" "}
-          Expires in
-        </Text>
-        <Text style={isExpiringSoon && styles.redText}>
-          {" "}
-          {days_until_expiration || 0} days
-        </Text>{" "}
-        |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
-      </Text>
-      <Text style={[styles.itemText, { fontSize: 10 }]}>
-        <Text style={{ fontWeight: "bold" }}>Shared by:</Text> {sharedByString}
-      </Text>
+      <View style={styles.itemContent}>
+        {/* Item info */}
+        <View style={styles.itemLeft}>
+          <View style={styles.itemTitleRow}>
+            <Text style={styles.itemTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <TouchableOpacity onPress={handleDelete} style={styles.deleteIcon}>
+              <Ionicons name="trash-outline" size={15} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>Quantity: </Text>
+            {qty}
+          </Text>
+
+          <Text style={[styles.infoText, isExpiringSoon && styles.redText]}>
+            <Text style={styles.infoLabel}>Expires in: </Text>
+            {item.days_till_expiration || 0} days
+          </Text>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>Added by: </Text>
+            {addedByName}
+          </Text>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>Shared by: </Text>
+            {sharedByString}
+          </Text>
+        </View>
+
+        {/* Quantity Controls - HORIZONTAL at bottom */}
+        <View style={styles.itemRight}>
+          {qty === 1 ? (
+            <TouchableOpacity onPress={handleDelete} style={styles.controlBtn}>
+              <Ionicons name="trash-outline" size={18} color="#14b8a6" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => onQuantityChange(item, -1)}
+              style={styles.controlBtn}
+            >
+              <Ionicons name="remove-circle-outline" size={20} color="#14b8a6" />
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.qtyBadge}>
+            <Text style={styles.qtyText}>{qty}</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => onQuantityChange(item, 1)}
+            style={styles.controlBtn}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#14b8a6" />
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 };
 
 export default function TabOneScreen() {
   const{ user } = useAuth();
-  const [data, setData] = useState<FoodItem[]>([]);
+  // const [data, setData] = useState<FoodItem[]>([]); add these two back when we want to integrate backend again
   const [searchValue, setSearchValue] = useState<string>("");
+  // NEW: Handler functions for delete and quantity change
+  const handleDelete = (item: FoodItem) => {
+    setData((prev) => prev.filter((i) => i.id !== item.id));
+    originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
+  };
+
+  const handleQuantityChange = (item: FoodItem, delta: number) => {
+    const newQty = Math.max(1, (item.quantity || 1) + delta);
+    const updated = { ...item, quantity: newQty };
+    
+    setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
+    originalHolder.current = originalHolder.current.map((it) =>
+      it.id === item.id ? updated : it
+    );
+  };
+  
+
+  // Fetch data from backend when component mounts
+  useEffect(() => {
+    fetchFridgeItems();
+  }, []);
   const originalHolder = useRef<FoodItem[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([
     "All Items",
@@ -130,6 +196,7 @@ export default function TabOneScreen() {
       fetchFridgeItems();
     }, [])
   );
+
 
   const fetchFridgeItems = async () => {
     try {
@@ -194,7 +261,13 @@ export default function TabOneScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }; 
+
+  // Manual refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFridgeItems();
+  }; 
 
   // Manual refresh handler
   const onRefresh = () => {
@@ -248,6 +321,20 @@ export default function TabOneScreen() {
   // Get the data array based on the selected filter
   const filtered_data = filterData(originalHolder.current, selectedFilters);
 
+  // Apply the search filter and SORT BY EXPIRATION
+  const finalListData = filtered_data
+    .filter((item) => {
+      if (!searchValue) return true;
+      const itemData = item.title.toUpperCase();
+      const textData = searchValue.toUpperCase();
+      return itemData.includes(textData);
+    })
+    .sort((a, b) => {
+      // NEW: Sort by days_till_expiration ascending (soonest expiration first)
+      const aDays = a.days_till_expiration || 999;
+      const bDays = b.days_till_expiration || 999;
+      return aDays - bDays;
+    });
   // Apply the search filter
   const finalListData = filtered_data.filter((item) => {
     if (!searchValue) return true;
@@ -264,7 +351,7 @@ export default function TabOneScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color="purple" />
+        <ActivityIndicator size="large" color="#14b8a6" />
         <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
       </View>
     );
@@ -330,40 +417,33 @@ export default function TabOneScreen() {
   }
 
   return (
-    <View style={{
-      width: '100%', height: '100%',
-    }}>
-      <CustomHeader title="What's In Our Fridge?" />
-      <ProfileIcon className="profileIcon" />
+  <View style={{
+    width: '100%', height: '100%',
+  }}>
+    <CustomHeader title="What's In Our Kitchen?" />
     <View style={styles.container}>
       
-      <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
+      <TextInput
+        style={styles.search_bar}
+        onChangeText={searchFunction}
+        value={searchValue}
+        placeholder="Search food items..."
+        placeholderTextColor="#999"
       />
-      <View>
-        <TextInput
-          style={styles.search_bar}
-          onChangeText={searchFunction}
-          value={searchValue}
-          placeholder="Food item..."
-        />
-      </View>
+      
       <PreviewLayout
         values={["All Items", "Expiring Soon", "My Items", "Shared"]}
         selectedValue={selectedFilters}
         setSelectedValue={setSelectedFilters}
-      ></PreviewLayout>
+      />
+      
       <FlatList
         data={finalListData}
         renderItem={({ item }) => (
           <Item
-            name={item.name}
-            added_by={item.added_by}
-            shared_by={item.shared_by}
-            quantity={item.quantity}
-            days_until_expiration={item.days_till_expiration}
+            item={item}
+            onDelete={handleDelete}
+            onQuantityChange={handleQuantityChange}
           />
         )}
         keyExtractor={(item) => item.id.toString()}
@@ -377,8 +457,8 @@ export default function TabOneScreen() {
         }
       />
     </View>
-    </View>
-  );
+  </View>
+);
 }
 
 type PreviewLayoutProps = PropsWithChildren<{
@@ -456,25 +536,25 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     flexWrap: "wrap",
+    justifyContent: "center",
   },
   filter_button: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-    borderRadius: 4,
-    backgroundColor: "purple",
-    alignSelf: "flex-start",
-    marginHorizontal: "1%",
-    marginBottom: 6,
-    minWidth: "48%",
-    textAlign: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: "#14b8a6",
+    marginHorizontal: 4,
+    marginBottom: 8,
+    minWidth: "45%",
+    alignItems: "center",
   },
   selected_filter_button: {
-    backgroundColor: "grey",
+    backgroundColor: "#0d9488",
     borderWidth: 0,
   },
   buttonLabel: {
-    fontSize: 14,
-    fontWeight: "500",
+    fontSize: 15,
+    fontWeight: "600",
     color: "white",
   },
   selectedLabel: {
@@ -488,40 +568,116 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
+    width: "100%",
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
     padding: 20,
-  },
-  separator: {
-    marginVertical: 3,
-    height: 1,
-    width: "80%",
-    backgroundColor: "#F8F9FF",
-  },
-  item: {
-    backgroundColor: "#f0f0f0",
-    padding: 15,
-    marginVertical: 5,
-    marginHorizontal: 16,
-    borderRadius: 8,
-    width: 350,
-  },
-  itemText: {
-    fontSize: 18,
     color: "#333",
   },
+  
+  searchContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
   search_bar: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    width: 350,
+    height: 55,
+    marginTop: -15,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    padding: 12,
+    width: "90%",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    fontSize: 16,
+  },
+  flatList: {
+    width: "100%",
+  },
+  listContent: {
+    paddingBottom: 20,
+    alignItems: "center",
+  },
+  
+  // Item Card Styles
+  item: {
+    backgroundColor: "#ffffff",
+    padding: 18,
+    marginVertical: 8,
+    borderRadius: 16,
+    width: "90%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  itemContent: {
+    flexDirection: "row",
+  },
+  itemLeft: {
+    width: "100%",
+  },
+  itemTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  itemTitle: {
+    fontSize: 25,
+    fontWeight: "bold",
+    color: "#333",
+    flex: 1,
+    paddingRight: 8,
+  },
+  deleteIcon: {
+    padding: 4,
+    marginTop: -11,
+    marginRight: -8,
+
+  },
+  infoText: {
+    fontSize: 15,
+    color: "#333",
+    marginBottom: 6,
+  },
+  infoLabel: {
+    fontWeight: "600",
   },
   redText: {
-    color: "#d32f2f",
+    color: "#dc2626",
+  },
+  
+  itemRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0fdfa",
+    marginLeft: -125,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    alignSelf: "center",
+  },
+  controlBtn: {
+    padding: 4,
+  },
+  qtyBadge: {
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginHorizontal: 10,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+  },
+  qtyText: {
+    fontSize: 16,
     fontWeight: "bold",
+    color: "#333",
   },
 });
 
