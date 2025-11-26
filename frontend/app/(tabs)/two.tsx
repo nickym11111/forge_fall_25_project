@@ -158,7 +158,7 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
 
 export default function TabOneScreen() {
   const{ user } = useAuth();
-  // const [data, setData] = useState<FoodItem[]>([]); add these two back when we want to integrate backend again
+  const [data, setData] = useState<FoodItem[]>([]); 
   const [searchValue, setSearchValue] = useState<string>("");
   // NEW: Handler functions for delete and quantity change
   const handleDelete = (item: FoodItem) => {
