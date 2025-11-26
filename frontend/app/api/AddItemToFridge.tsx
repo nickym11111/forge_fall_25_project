@@ -1,3 +1,5 @@
+import { supabase } from "../utils/client";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function AddItemToFridge(
@@ -22,6 +24,25 @@ export async function AddItemToFridge(
       price: price || 0.0,
     }),
   });
+
+  if (response.ok) {
+    try {
+      const fullName =
+        sharedByUserIds.length === 0
+          ? "Someone"
+          : sharedByUserIds.join(", ");
+
+      await supabase
+        .from("shopping_list")
+        .update({
+          checked: true,
+          bought_by: fullName,
+        })
+        .ilike("name", name.trim());
+    } catch (err) {
+      console.error("Error auto-checking shopping list:", err);
+    }
+  }
 
   return response;
 }
