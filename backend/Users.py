@@ -56,7 +56,7 @@ async def create_user(user: UserCreate):
     except Exception as e:
         return {"error": str(e)}
 
-
+"""
 @app.get("/userInfo")
 async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
     try:
@@ -86,3 +86,151 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
     except Exception as e:
         print(f"Error getting user info: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+"""
+
+@app.get("/userInfo")
+async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
+    try:
+        user_data = current_user if isinstance(current_user, dict) else {
+            "id": current_user.id,
+            "email": current_user.email,
+            "fridge_id": None,
+            "first_name": None,
+            "last_name": None,
+            "fridgeMates": []
+        }
+        
+        # ✅ ADDED: Get fridge count for multi-fridge detection
+        fridge_count_response = supabase.table("fridge_memberships").select(
+            "fridge_id", count="exact"
+        ).eq("user_id", user_data["id"]).execute()
+        
+        fridge_count = fridge_count_response.count if fridge_count_response.count else 0
+        user_data["fridge_count"] = fridge_count  # ✅ ADDED: New field
+        
+        if user_data.get("fridge_id"):
+            fridge_response = supabase.table("fridges").select("*").eq("id", user_data["fridge_id"]).execute()
+            
+            if fridge_response.data and len(fridge_response.data) > 0:
+                user_data["fridge"] = fridge_response.data[0]
+            else:
+                user_data["fridge"] = None
+        else:
+            user_data["fridge"] = None
+        
+        return user_data
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting user info: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+# Get all fridges user is a member of
+@app.get("/allFridges")
+async def get_user_fridges(current_user = Depends(get_current_user)):
+    """Get all fridges the user is a member of with their fridgemates"""
+    try:
+        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+        
+        # Get all fridge memberships for this user
+        memberships_response = supabase.table("fridge_memberships").select(
+            "fridge_id"
+        ).eq("user_id", user_id).execute()
+        
+        if not memberships_response.data:
+            return {
+                "status": "success",
+                "fridges": []
+            }
+        
+        # Get fridge IDs
+        fridge_ids = [m["fridge_id"] for m in memberships_response.data]
+        
+        # Get full fridge details
+        fridges_response = supabase.table("fridges").select(
+            "id, name, created_at, created_by"
+        ).in_("id", fridge_ids).execute()
+        
+        if not fridges_response.data:
+            return {
+                "status": "success",
+                "fridges": []
+            }
+        
+        # For each fridge, get its fridgemates
+        fridges_with_mates = []
+        for fridge in fridges_response.data:
+            # Get all members of this fridge
+            fridge_members_response = supabase.table("fridge_memberships").select(
+                "users(id, email, first_name, last_name)"
+            ).eq("fridge_id", fridge["id"]).neq("user_id", user_id).execute()
+            
+            # Extract fridgemates from nested structure
+            fridgeMates = []
+            if fridge_members_response.data:
+                for membership in fridge_members_response.data:
+                    if membership.get("users"):
+                        fridgeMates.append(membership["users"])
+            
+            fridges_with_mates.append({
+                "id": fridge["id"],
+                "name": fridge["name"],
+                "created_at": fridge["created_at"],
+                "created_by": fridge["created_by"],
+                "fridgeMates": fridgeMates
+            })
+        
+        return {
+            "status": "success",
+            "fridges": fridges_with_mates
+        }
+        
+    except Exception as e:
+        print(f"Error getting user fridges: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to get fridges: {str(e)}")
+
+
+# Update user's active fridge
+class SetActiveFridgeDTO(BaseModel):
+    fridge_id: str
+
+@app.put("/active-fridge")
+async def set_active_fridge(
+    dto: SetActiveFridgeDTO,
+    current_user = Depends(get_current_user)
+):
+    """Set the user's active fridge"""
+    try:
+        user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
+        fridge_id = dto.fridge_id
+        
+        # Verify user is actually a member of this fridge
+        membership = supabase.table("fridge_memberships").select("*").eq(
+            "user_id", user_id
+        ).eq("fridge_id", fridge_id).execute()
+        
+        if not membership.data:
+            raise HTTPException(status_code=403, detail="You are not a member of this fridge")
+        
+        # Update active_fridge_id
+        update_response = supabase.table("users").update({
+            "active_fridge_id": fridge_id
+        }).eq("id", user_id).execute()
+        
+        if not update_response.data:
+            raise HTTPException(status_code=500, detail="Failed to update active fridge")
+        
+        return {
+            "status": "success",
+            "message": "Active fridge updated successfully",
+            "active_fridge_id": fridge_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error setting active fridge: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to set active fridge: {str(e)}")

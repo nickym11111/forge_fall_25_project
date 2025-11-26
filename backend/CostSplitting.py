@@ -74,7 +74,7 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
         
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
-        
+        """
         # Get all users in the fridge
         users_response = supabase.table("users").select("id, email, first_name, last_name").eq("fridge_id", fridge_id).execute()
         
@@ -86,6 +86,27 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
             }
         
         all_users = users_response.data
+        """
+
+        # ✅ CHANGED: Get all users in the fridge from fridge_memberships
+        memberships_response = supabase.table("fridge_memberships").select(
+            "users(id, email, first_name, last_name)"
+        ).eq("fridge_id", fridge_id).execute()
+        
+        # ✅ CHANGED: Extract users from nested structure
+        all_users = []
+        if memberships_response.data:
+            for membership in memberships_response.data:
+                if membership.get("users"):
+                    all_users.append(membership["users"])
+        
+        if not all_users:
+            return {
+                "status": "success",
+                "fridge_id": fridge_id,
+                "balances": []
+            }
+        
         user_ids = [user["id"] for user in all_users]
         
         # Create user lookup

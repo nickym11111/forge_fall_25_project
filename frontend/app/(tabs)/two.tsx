@@ -193,7 +193,7 @@ export default function TabOneScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchFridgeItems();
-    }, [])
+    }, [user?.active_fridge_id])
   );
 
 
