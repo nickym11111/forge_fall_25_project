@@ -133,20 +133,29 @@ export default function TabLayout() {
           href: null,
         }}
       />
-      <Tabs.Screen
-        name="settle-up"
-        options={{
-          title: "Settle Up",
-          tabBarIcon: ({ color }) => <TabBarIcon name="dollar" color={color} />,
-        }}
+          <Tabs.Screen
+      name="settle-up"
+      options={{
+        title: "Settle Up",
+        tabBarIcon: ({ color, focused }) => (
+          <TabBarIcon name="link" color={color} focused={focused} /> // reassign to dollar logo
+        ),
+      }}
       />
       <Tabs.Screen
-        name="requests"
-        options={{
-          title: "Requests",
-          tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
-        }}
+      name="requests"
+      options={{
+        title: "Requests",
+        tabBarIcon: ({ color, focused }) => (
+          <TabBarIcon
+            name={focused ? "plus" : "plus-outline"}
+            color={color}
+            focused={focused}
       />
+    ),
+  }}
+/>
+
     </Tabs>
     
   );

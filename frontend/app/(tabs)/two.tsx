@@ -6,7 +6,6 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
-  View,
   Keyboard,
   TouchableWithoutFeedback,
         RefreshControl,
@@ -83,7 +82,7 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
   const handleDelete = () => {
     Alert.alert(
       "Delete Item",
-      `Are you sure you want to delete ${item.title}?`,
+      `Are you sure you want to delete ${item}?`,
       [
         { text: "Cancel", style: "cancel" },
         { text: "Yes", style: "destructive", onPress: () => onDelete(item) },
@@ -98,7 +97,7 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
         <View style={styles.itemLeft}>
           <View style={styles.itemTitleRow}>
             <Text style={styles.itemTitle} numberOfLines={2}>
-              {item.title}
+              {item.name}
             </Text>
             <TouchableOpacity onPress={handleDelete} style={styles.deleteIcon}>
               <Ionicons name="trash-outline" size={15} color="#666" />
@@ -269,12 +268,6 @@ export default function TabOneScreen() {
     fetchFridgeItems();
   }; 
 
-  // Manual refresh handler
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchFridgeItems();
-  };
-
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
 
@@ -325,7 +318,7 @@ export default function TabOneScreen() {
   const finalListData = filtered_data
     .filter((item) => {
       if (!searchValue) return true;
-      const itemData = item.title.toUpperCase();
+      const itemData = item.name.toUpperCase();
       const textData = searchValue.toUpperCase();
       return itemData.includes(textData);
     })
@@ -335,13 +328,7 @@ export default function TabOneScreen() {
       const bDays = b.days_till_expiration || 999;
       return aDays - bDays;
     });
-  // Apply the search filter
-  const finalListData = filtered_data.filter((item) => {
-    if (!searchValue) return true;
-    const itemData = item.name.toUpperCase();
-    const textData = searchValue.toUpperCase();
-    return itemData.includes(textData);
-  });
+
 
   const searchFunction = (text: string) => {
     setSearchValue(text);
