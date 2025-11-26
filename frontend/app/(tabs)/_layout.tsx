@@ -164,8 +164,8 @@ export default function TabLayout() {
 
     if (user && inTabs && onLoginPage) {
       const hasFridge = user.fridge_id !== null && user.fridge_id !== undefined;
-      const hasMultipleFridges = (user.fridge_count || 0) > 1;  // ✅ ADDED
-      const hasSingleFridge = (user.fridge_count || 0) === 1;  // ✅ ADD
+      const hasMultipleFridges = (user.fridge_count || 0) > 1;
+      const hasSingleFridge = (user.fridge_count || 0) === 1;
       const needsSelection = (user.fridge_count || 0) > 0 && !user.active_fridge_id;
 
       console.log("  - hasFridge:", hasFridge);
@@ -174,7 +174,6 @@ export default function TabLayout() {
       console.log("  - needsSelection:", needsSelection);
       
       if (needsSelection) {
-        // ✅ ADDED: Redirect to fridge selector if multiple fridges but no active one
         console.log("  → Redirecting to select-fridge");
         router.replace("/(tabs)/select_fridge");
       } else if (hasFridge) {
@@ -204,7 +203,7 @@ export default function TabLayout() {
     );
   }
 
-  const hasFridge = user?.fridge_id !== null && user?.fridge_id !== undefined;  // ✅ CHANGED: Added undefined check
+  const hasFridge = user?.fridge_id !== null && user?.fridge_id !== undefined;
 
   return (
     <Tabs
@@ -263,12 +262,11 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
         }}
       />
-      {/* ✅ ADDED: Add select-fridge screen to tabs (hidden from tab bar) */}
       <Tabs.Screen
         name="select_fridge"
         options={{
           title: "Select Fridge",
-          tabBarButton: () => null,  // Hide from tab bar
+          tabBarButton: () => null,
         }}
       />
     </Tabs>

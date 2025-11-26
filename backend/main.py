@@ -133,29 +133,10 @@ def get_fridge_items(current_user = Depends(get_current_user)):
             "*, added_by_user:users!fridge_items_added_by_fkey(id, email, first_name, last_name)"
         ).eq("fridge_id", fridge_id).execute()
         
-        """
-        # Get all users in this fridge for shared_by lookup
-        fridge_users_response = supabase.table("users").select(
-            "id, email, first_name, last_name"
-        ).eq("fridge_id", fridge_id).execute()
-        
-        # Create a lookup map of user_id -> user data
-        users_map = {}
-        for user_data in fridge_users_response.data:
-            users_map[user_data["id"]] = {
-                "id": user_data["id"],
-                "email": user_data.get("email"),
-                "first_name": user_data.get("first_name"),
-                "last_name": user_data.get("last_name"),
-            }
-        """
-
-        # ✅ Query fridge_memberships instead
         memberships_response = supabase.table("fridge_memberships").select(
             "users(id, email, first_name, last_name)"
         ).eq("fridge_id", fridge_id).execute()
 
-        # Extract users from nested structure
         users_map = {}
         if memberships_response.data:
             for membership in memberships_response.data:
@@ -309,31 +290,6 @@ async def accept_fridge_request(
                 "message": f"Already a member of {fridge_request['fridges']['name']}!",
             }
 
-        """
-        # Update user profile with fridge_id
-        profile_response = supabase.table("users").update({
-            "fridge_id": fridge_request["fridge_id"]
-        }).eq("id", accept_dto.request_id).execute()
-
-        if not profile_response.data:
-            raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
-
-        # Mark request as accepted
-        supabase.table("fridge_requests").update({
-            "acceptance_status": "ACCEPTED",
-        }).eq("id", fridge_request["id"]).execute()
-
-        return {
-            "status": "success",
-            "message": f"Successfully joined {fridge_request['fridges']['name']}!",
-            "data": {
-                "fridge_id": fridge_request["fridge_id"],
-                "fridge_name": fridge_request["fridges"]["name"]
-            }
-        }
-        """
-
-        # ✅ CHANGED: Add to fridge_memberships instead of updating users.fridge_id
         membership_response = supabase.table("fridge_memberships").insert({
             "user_id": user_id,
             "fridge_id": fridge_id
@@ -342,7 +298,6 @@ async def accept_fridge_request(
         if not membership_response.data:
             raise HTTPException(status_code=500, detail="Failed to add user to fridge")
 
-        # ✅ ADDED: Set as active fridge if user has no active fridge
         user_response = supabase.table("users").select("active_fridge_id").eq("id", user_id).execute()
         
         if user_response.data and not user_response.data[0].get("active_fridge_id"):
@@ -450,30 +405,6 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             print(f"No ID in response data: {createFridge_response.data}")
             raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
 
-
-        """"
-        # Gets the response for updating the fridge id for a user
-        updateFridgeID_response = supabase.table("users").update({
-            "fridge_id": fridge_id
-        }).eq("id", user_id).execute()
-
-        if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
-            print(f"Error updating user fridge ID: {updateFridgeID_response}")
-            raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
-
-        if not fridge_id:
-            print(f"No ID in response data: {createFridge_response.data}")
-            raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
-            
-        return {
-            "status": "success",
-            "message": "Fridge created successfully",
-            "fridge_id": fridge_id,
-            "data": createFridge_response.data
-        }
-        """
-
-         # ✅ CHANGED: Add creator to fridge_memberships
         membership_response = supabase.table("fridge_memberships").insert({
             "user_id": user_id,
             "fridge_id": fridge_id
@@ -482,7 +413,6 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         if not membership_response.data:
             raise HTTPException(status_code=500, detail="Failed to add user to fridge")
 
-        # ✅ CHANGED: Set as active fridge
         active_fridge_response = supabase.table("users").update({
             "active_fridge_id": fridge_id
         }).eq("id", user_id).execute()

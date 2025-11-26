@@ -30,7 +30,6 @@ interface Fridge {
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// Helper to get display name
 const getDisplayName = (mate: FridgeMate): string => {
   if (mate.first_name && mate.last_name) {
     return `${mate.first_name} ${mate.last_name}`;
@@ -38,7 +37,6 @@ const getDisplayName = (mate: FridgeMate): string => {
   return mate.email || "Unknown";
 };
 
-// Individual fridge card with collapsible fridgemates
 const FridgeCard = ({
   fridge,
   onSelect,
@@ -59,7 +57,6 @@ const FridgeCard = ({
       <View style={styles.fridgeInfo}>
         <Text style={styles.fridgeName}>{fridge.name}</Text>
 
-        {/* Fridgemates section */}
         {fridgeMates.length > 0 && (
           <View style={styles.fridgeMatesSection}>
             <Text style={styles.fridgeMatesTitle}>
@@ -117,7 +114,6 @@ export default function SelectFridgeScreen() {
         return;
       }
 
-      // Fetch all fridges user is a member of
       const response = await fetch(`${API_URL}/users/allFridges`, {
         headers: {
           "Authorization": `Bearer ${session.access_token}`
@@ -167,7 +163,6 @@ export default function SelectFridgeScreen() {
         return;
       }
 
-      // Update active_fridge_id
       const response = await fetch(`${API_URL}/users/active-fridge`, {
         method: "PUT",
         headers: {
@@ -181,10 +176,8 @@ export default function SelectFridgeScreen() {
         throw new Error("Failed to set active fridge");
       }
 
-      // Refresh user data to get new active fridge
       await refreshUser();
 
-      // Navigate to fridge items
       router.replace("/(tabs)/two");
 
     } catch (err) {
@@ -207,7 +200,6 @@ export default function SelectFridgeScreen() {
     );
   }
 
-  // No fridges - shouldn't happen if routing is correct, but handle it
   if (fridges.length === 0) {
     return (
       <View style={styles.container}>

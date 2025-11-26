@@ -27,7 +27,7 @@ interface Fridge {
   id: string;
   name: string;
   fridgeMates: FridgeMate[];
-  isActive?: boolean;  // ✅ ADD: To show which is active
+  isActive?: boolean;
 }
 
 interface ManageFridgesScreenProps {
@@ -36,7 +36,6 @@ interface ManageFridgesScreenProps {
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// ✅ ADD: Helper to get display name
 const getDisplayName = (mate: FridgeMate): string => {
   if (mate.first_name && mate.last_name) {
     return `${mate.first_name} ${mate.last_name}`;
@@ -44,7 +43,6 @@ const getDisplayName = (mate: FridgeMate): string => {
   return mate.email || "Unknown";
 };
 
-// ✅ ADD: FridgeCard component with collapsible fridgemates
 const FridgeCard = ({
   fridge,
   onLeaveFridge,
@@ -77,7 +75,6 @@ const FridgeCard = ({
         </View>
         <Text style={styles.fridgeId}>ID: {fridge.id}</Text>
 
-        {/* ✅ ADD: Fridgemates section */}
         {fridgeMates.length > 0 && (
           <View style={styles.fridgeMatesSection}>
             <Text style={styles.fridgeMatesTitle}>
@@ -104,7 +101,6 @@ const FridgeCard = ({
         )}
       </View>
 
-      {/* ✅ ADD: Button row with Switch and Leave */}
       <View style={styles.buttonRow}>
         {!isActive && (
           <CustomButton
@@ -155,7 +151,6 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
       const data = await response.json();
 
       if (response.ok && data.fridges) {
-        // ✅ ADD: Mark which fridge is active
         const fridgesWithActive = data.fridges.map((f: Fridge) => ({
           ...f,
           isActive: f.id === user?.active_fridge_id
@@ -171,47 +166,6 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
       setLoading(false);
     }
   };
-
-  /*const handleSwitchFridge = async (fridgeId: string) => {
-    try {
-      setSwitching(true);
-      const { data: { session }, error } = await supabase.auth.getSession();
-  
-      if (error || !session) {
-        Alert.alert("Error", "Please log in again");
-        return;
-      }
-  
-      const response = await fetch(`${API_URL}/users/active-fridge`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ fridge_id: fridgeId })
-      });
-  
-      if (!response.ok) {
-        throw new Error("Failed to switch fridge");
-      }
-  
-      await refreshUser();
-      
-      onClose();
-      
-      // ✅ CHANGED: Navigate away then back to force refresh
-      router.replace("/(tabs)/shop");  // Navigate to different tab
-      setTimeout(() => {
-        router.replace("/(tabs)/two");  // Navigate back
-      }, 100);
-  
-    } catch (err) {
-      console.error("Error switching fridge:", err);
-      Alert.alert("Error", "Could not switch fridge");
-    } finally {
-      setSwitching(false);
-    }
-  }; */
 
   const handleSwitchFridge = async (fridgeId: string) => {
     try {
@@ -236,10 +190,8 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
         throw new Error("Failed to switch fridge");
       }
   
-      // ✅ Refresh user data
       await refreshUser();
       
-      // ✅ Close modal - useFocusEffect will handle refresh
       onClose();
   
     } catch (err) {
@@ -250,30 +202,6 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
     }
   };
 
-
-  /*const handleLeaveFridge = async (fridgeId: string) => {
-    Alert.alert(
-      "Leave Fridge?",
-      "Are you sure you want to leave this fridge?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Leave",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              // TODO: Call your leave fridge API endpoint
-              await refreshUser();
-              await fetchAllFridges();
-            } catch (err) {
-              console.error("Error leaving fridge:", err);
-              Alert.alert("Error", "Could not leave fridge");
-            }
-          }
-        }
-      ]
-    );
-  }; */
 
   const handleLeaveFridge = async (fridgeId: string) => {
     const isActiveFridge = fridgeId === user?.active_fridge_id;
@@ -298,7 +226,6 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
                 return;
               }
   
-              // ✅ Call leave fridge API
               const response = await fetch(`${API_URL}/fridge/leave-fridge`, {
                 method: 'POST',
                 headers: {
@@ -317,10 +244,8 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
                 throw new Error(data.message || "Failed to leave fridge");
               }
   
-              // ✅ Refresh user data
               await refreshUser();
   
-              // ✅ If they left their active fridge, navigate appropriately
               if (isActiveFridge) {
                 // Check if they have other fridges
                 await fetchAllFridges();
@@ -414,7 +339,6 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
         )}
       </ScrollView>
 
-      {/* ✅ ADD: Loading overlay when switching */}
       {switching && (
         <View style={styles.switchingOverlay}>
           <ActivityIndicator size="large" color="#fff" />

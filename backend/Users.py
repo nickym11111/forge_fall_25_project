@@ -56,38 +56,6 @@ async def create_user(user: UserCreate):
     except Exception as e:
         return {"error": str(e)}
 
-"""
-@app.get("/userInfo")
-async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
-    try:
-        user_data = current_user if isinstance(current_user, dict) else {
-            "id": current_user.id,
-            "email": current_user.email,
-            "fridge_id": None,
-            "first_name": None,
-            "last_name": None,
-            "fridgeMates": [],
-            "profile_photo": None
-        }
-        
-        if user_data.get("fridge_id"):
-            fridge_response = supabase.table("fridges").select("*").eq("id", user_data["fridge_id"]).execute()
-            
-            if fridge_response.data and len(fridge_response.data) > 0:
-                user_data["fridge"] = fridge_response.data[0]
-            else:
-                user_data["fridge"] = None
-        else:
-            user_data["fridge"] = None
-        return user_data
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error getting user info: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-"""
-
 @app.get("/userInfo")
 async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
     try:
@@ -100,13 +68,12 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
             "fridgeMates": []
         }
         
-        # ✅ ADDED: Get fridge count for multi-fridge detection
         fridge_count_response = supabase.table("fridge_memberships").select(
             "fridge_id", count="exact"
         ).eq("user_id", user_data["id"]).execute()
         
         fridge_count = fridge_count_response.count if fridge_count_response.count else 0
-        user_data["fridge_count"] = fridge_count  # ✅ ADDED: New field
+        user_data["fridge_count"] = fridge_count
         
         if user_data.get("fridge_id"):
             fridge_response = supabase.table("fridges").select("*").eq("id", user_data["fridge_id"]).execute()
@@ -133,7 +100,6 @@ async def get_user_fridges(current_user = Depends(get_current_user)):
     try:
         user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
         
-        # Get all fridge memberships for this user
         memberships_response = supabase.table("fridge_memberships").select(
             "fridge_id"
         ).eq("user_id", user_id).execute()
@@ -144,10 +110,8 @@ async def get_user_fridges(current_user = Depends(get_current_user)):
                 "fridges": []
             }
         
-        # Get fridge IDs
         fridge_ids = [m["fridge_id"] for m in memberships_response.data]
         
-        # Get full fridge details
         fridges_response = supabase.table("fridges").select(
             "id, name, created_at, created_by"
         ).in_("id", fridge_ids).execute()
@@ -158,15 +122,12 @@ async def get_user_fridges(current_user = Depends(get_current_user)):
                 "fridges": []
             }
         
-        # For each fridge, get its fridgemates
         fridges_with_mates = []
         for fridge in fridges_response.data:
-            # Get all members of this fridge
             fridge_members_response = supabase.table("fridge_memberships").select(
                 "users(id, email, first_name, last_name)"
             ).eq("fridge_id", fridge["id"]).neq("user_id", user_id).execute()
             
-            # Extract fridgemates from nested structure
             fridgeMates = []
             if fridge_members_response.data:
                 for membership in fridge_members_response.data:
