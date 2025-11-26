@@ -22,7 +22,6 @@ function TabBarIcon(props: {
     />
   );
 }
-
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   
@@ -83,6 +82,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          // start of ploy change being merged in on 11/26
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon name={focused ? 'home' : 'home-outline'} color={color} focused={focused} />
           ),
@@ -133,6 +133,21 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="settle-up"
+        options={{
+          title: "Settle Up",
+          tabBarIcon: ({ color }) => <TabBarIcon name="dollar" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="requests"
+        options={{
+          title: "Requests",
+          tabBarIcon: ({ color }) => <TabBarIcon name="plus" color={color} />,
+        }}
+      />
     </Tabs>
+    
   );
 }

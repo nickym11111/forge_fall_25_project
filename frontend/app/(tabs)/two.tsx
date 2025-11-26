@@ -9,16 +9,20 @@ import {
   View,
   Keyboard,
   TouchableWithoutFeedback,
+        RefreshControl,
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
 import { Ionicons } from "@expo/vector-icons";
-
-import { Text } from "@/components/Themed";
-import React, { useState, useRef, useEffect } from "react";
+import { router } from 'expo-router';
+import EditScreenInfo from "@/components/EditScreenInfo";
+import { Text, View } from "@/components/Themed";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
+import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -36,7 +40,7 @@ interface FridgeMate {
 // Updated to match backend response
 interface FoodItem {
   id: number;
-  title: string;
+  name: string;
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -157,82 +161,6 @@ export default function TabOneScreen() {
   const{ user } = useAuth();
   // const [data, setData] = useState<FoodItem[]>([]); add these two back when we want to integrate backend again
   const [searchValue, setSearchValue] = useState<string>("");
-  // const originalHolder = useRef<FoodItem[]>([]);
-  const [selectedFilters, setSelectedFilters] = useState<string[]>(["All Items",]);
-  const [loading, setLoading] = useState<boolean>(false); // change to true later!!!
-  const [error, setError] = useState<string>("");
-
-  const manualData: FoodItem[] = [
-    {
-      id: 1,
-      title: "Milk",
-      quantity: 2,
-      days_till_expiration: 3,
-      added_by: { first_name: "John", last_name: "Doe" },
-      shared_by: [{ first_name: "John", last_name: "Doe" }]
-    },
-    {
-      id: 2,
-      title: "Eggs",
-      quantity: 12,
-      days_till_expiration: 7,
-      added_by: { first_name: "Jane", last_name: "Smith" },
-      shared_by: [{ first_name: "Jane", last_name: "Smith" }]
-    },
-    {
-      id: 3,
-      title: "Bread",
-      quantity: 1,
-      days_till_expiration: 2,
-      added_by: { first_name: "John", last_name: "Doe" },
-      shared_by: [{ first_name: "John", last_name: "Doe" }]
-    },
-    {
-      id: 4,
-      title: "Cheese",
-      quantity: 1,
-      days_till_expiration: 14,
-      added_by: { first_name: "Jane", last_name: "Smith" },
-      shared_by: [{ first_name: "Jane", last_name: "Smith" }, { first_name: "John", last_name: "Doe" }]
-    },
-    {
-      id: 5,
-      title: "Yogurt",
-      quantity: 6,
-      days_till_expiration: 5,
-      added_by: { first_name: "John", last_name: "Doe" },
-      shared_by: [{ first_name: "John", last_name: "Doe" }]
-    },
-    {
-      id: 6,
-      title: "Apples",
-      quantity: 8,
-      days_till_expiration: 10,
-      added_by: { first_name: "Jane", last_name: "Smith" },
-      shared_by: [{ first_name: "Jane", last_name: "Smith" }, { first_name: "John", last_name: "Doe" }]
-    },
-    {
-      id: 7,
-      title: "Lettuce",
-      quantity: 1,
-      days_till_expiration: 4,
-      added_by: { first_name: "John", last_name: "Doe" },
-      shared_by: [{ first_name: "John", last_name: "Doe" }]
-    },
-    {
-      id: 8,
-      title: "Orange Juice",
-      quantity: 1,
-      days_till_expiration: 6,
-      added_by: { first_name: "Jane", last_name: "Smith" },
-      shared_by: [{ first_name: "Jane", last_name: "Smith" }]
-    },
-  ];
-
-  // these two are just for manual data entry 
-  const [data, setData] = useState<FoodItem[]>(manualData);
-  const originalHolder = useRef<FoodItem[]>(manualData);
-
   // NEW: Handler functions for delete and quantity change
   const handleDelete = (item: FoodItem) => {
     setData((prev) => prev.filter((i) => i.id !== item.id));
@@ -249,16 +177,28 @@ export default function TabOneScreen() {
     );
   };
   
-  // these methods are commented out to use the manual entries
 
   // Fetch data from backend when component mounts
-  /* useEffect(() => {
+  useEffect(() => {
     fetchFridgeItems();
   }, []);
+  const originalHolder = useRef<FoodItem[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([
+    "All Items",
+  ]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
 
-  */
+  // Auto-refresh when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchFridgeItems();
+    }, [])
+  );
 
-  /* const fetchFridgeItems = async () => {
+
+  const fetchFridgeItems = async () => {
     try {
       setLoading(true);
       console.log("Fetching data from:", `${API_URL}/fridge_items/`);
@@ -321,13 +261,19 @@ export default function TabOneScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }; */
+  }; 
 
   // Manual refresh handler
-  /* const onRefresh = () => {
+  const onRefresh = () => {
     setRefreshing(true);
     fetchFridgeItems();
-  }; */
+  }; 
+
+  // Manual refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFridgeItems();
+  };
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
@@ -389,13 +335,20 @@ export default function TabOneScreen() {
       const bDays = b.days_till_expiration || 999;
       return aDays - bDays;
     });
+  // Apply the search filter
+  const finalListData = filtered_data.filter((item) => {
+    if (!searchValue) return true;
+    const itemData = item.name.toUpperCase();
+    const textData = searchValue.toUpperCase();
+    return itemData.includes(textData);
+  });
 
   const searchFunction = (text: string) => {
     setSearchValue(text);
   };
 
   // Loading state
-  /* if (loading) {
+  if (loading) {
     return (
       <View style={[styles.container, { justifyContent: "center" }]}>
         <ActivityIndicator size="large" color="#14b8a6" />
@@ -408,6 +361,7 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
@@ -449,6 +403,7 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!
@@ -459,7 +414,7 @@ export default function TabOneScreen() {
         </View>
       </View>
     );
-  } */
+  }
 
   return (
   <View style={{
@@ -492,6 +447,14 @@ export default function TabOneScreen() {
           />
         )}
         keyExtractor={(item) => item.id.toString()}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["purple"]}
+            tintColor="purple"
+          />
+        }
       />
     </View>
   </View>
@@ -717,3 +680,4 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 });
+

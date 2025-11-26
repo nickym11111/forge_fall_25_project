@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from typing import List, Optional
 from service import get_current_user, generate_invite_code, get_current_user_with_fridgeMates
 import ast
+import base64
+import uuid
 
 app = APIRouter()
 #TEMPLATE to get started :)
@@ -64,7 +66,8 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
             "fridge_id": None,
             "first_name": None,
             "last_name": None,
-            "fridgeMates": []
+            "fridgeMates": [],
+            "profile_photo": None
         }
         
         if user_data.get("fridge_id"):
@@ -76,7 +79,6 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
                 user_data["fridge"] = None
         else:
             user_data["fridge"] = None
-        
         return user_data
         
     except HTTPException:
@@ -84,4 +86,3 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
     except Exception as e:
         print(f"Error getting user info: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-

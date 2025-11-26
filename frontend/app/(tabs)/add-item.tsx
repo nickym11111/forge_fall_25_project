@@ -732,6 +732,16 @@ export default function AddItemManual() {
               editable={!isLoading}
             />
 
+            <Text style={styles.label}>Price ($)</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., 4.99 (optional)"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              editable={!isLoading}
+            />
+
             <Text style={styles.label}>Expiry Date</Text>
             <TouchableOpacity
               style={styles.inputContainer}
