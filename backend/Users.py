@@ -25,7 +25,7 @@ class UserCreate(BaseModel):
     password: str
     firstName: Optional[str] = None
     lastName: Optional[str] = None
-    dietaryRestrictions: Optional[List[str]] = None
+    dietaryRestrictions: Union[List[str], None] = None
     
     
 def findAccount(email: str):
@@ -55,7 +55,6 @@ async def create_user(user: UserCreate):
                 "status": "User created successfully"}
     except Exception as e:
         return {"error": str(e)}
-
 
 @app.get("/userInfo")
 async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):

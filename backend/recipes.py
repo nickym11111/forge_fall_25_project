@@ -43,4 +43,4 @@ def find_ingredients(ingredients: Ingredients):
     except Exception as e:
         error_msg = f"Error parsing receipt: {str(e)}"
         print(error_msg)
-        raise HTTPException(status_code=500, detail=error_msg)
+        raise HTTPException(status_code=500, detail=error_msg)from dotenv import load_dotenv # type: ignore
