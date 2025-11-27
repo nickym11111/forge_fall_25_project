@@ -13,17 +13,13 @@ class JoinRequest(BaseModel):
 def join_fridge(request: JoinRequest):
     code_to_check = request.fridgeCode
 
-    try:
-        response = supabase.table("fridges").select("id, name").eq("invite_code", code_to_check).execute()
+    response = supabase.table("fridge_invitations").select("*, fridge(name)").eq("invite_code", code_to_check).execute()
         
-        if response.data:
-            found_fridge = response.data[0]
-            return {"status": "success", "message": f"Successfully joined fridge: {found_fridge['name']}"}
-        else:
-            return {"status": "error", "message": "Invalid fridge code. Please try again."}
-        
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
+    if not response.data:
+            raise HTTPException(status_code=404, detail="Invalid fridge code. Please try again.")
+
+    found_fridge = response.data[0]
+    return {"status": "success", "message": f"Successfully joined fridge: {found_fridge['name']}"}
     
 
 class LeaveRequest(BaseModel):
