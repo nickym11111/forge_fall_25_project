@@ -269,6 +269,20 @@ export default function TabLayout() {
           tabBarButton: () => null,
         }}
       />
+    <Tabs.Screen
+        name="create_fridge"
+        options={{
+          title: "Create Fridge",
+          href: null,
+        }}
+      />
+    <Tabs.Screen
+        name="Join-Fridge"
+        options={{
+          title: "Join Fridge",
+          href: null,
+      }}
+      />
     </Tabs>
   );
 }
