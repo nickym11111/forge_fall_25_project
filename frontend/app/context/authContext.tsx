@@ -16,6 +16,8 @@ interface UserData {
   id: string;
   email: string;
   fridge_id: string | null;
+  active_fridge_id?: string | null;
+  fridge_count?: number; 
   fridge?: {
     id: string;
     name: string;
