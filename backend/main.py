@@ -110,7 +110,7 @@ async def create_fridge_item(
             "fridge_id": fridge_id,
             "added_by": current_user["id"],
             "shared_by": item.shared_by,
-            "price": item.price  #come back to this,
+            "price": item.price, #come back to this,
             "fridge_id": fridge_id #CHANGED HERE
         }).execute()
 
