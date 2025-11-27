@@ -142,7 +142,7 @@ export default function TabLayout() {
               href: null
             }}
           />
-
+          
     <Tabs.Screen
       name="create_fridge"
       options={{
@@ -155,7 +155,7 @@ export default function TabLayout() {
         href: null,
       }}
     />
-        <Tabs.Screen
+    <Tabs.Screen
     name="settle-up"
     options={{
       title: "Settle Up",
