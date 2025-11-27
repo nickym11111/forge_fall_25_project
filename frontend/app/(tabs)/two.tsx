@@ -92,6 +92,9 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
 
   return (
     <View style={styles.item}>
+      <TouchableOpacity onPress={handleDelete} style={styles.deleteIcon}>
+        <Ionicons name="trash-outline" size={18} color="#666" />
+      </TouchableOpacity>
       <View style={styles.itemContent}>
         {/* Item info */}
         <View style={styles.itemLeft}>
@@ -99,9 +102,6 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
             <Text style={styles.itemTitle} numberOfLines={2}>
               {item.name}
             </Text>
-            <TouchableOpacity onPress={handleDelete} style={styles.deleteIcon}>
-              <Ionicons name="trash-outline" size={15} color="#666" />
-            </TouchableOpacity>
           </View>
 
           <Text style={styles.infoText}>
@@ -177,10 +177,6 @@ export default function TabOneScreen() {
   };
   
 
-  // Fetch data from backend when component mounts
-  useEffect(() => {
-    fetchFridgeItems();
-  }, []);
   const originalHolder = useRef<FoodItem[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([
     "All Items",
@@ -188,18 +184,32 @@ export default function TabOneScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [hasLoadedOnce, setHasLoadedOnce] = useState<boolean>(false);
 
-  // Auto-refresh when tab is focused
+  // Fetch data from backend when component mounts - only once
+  useEffect(() => {
+    fetchFridgeItems(true);
+  }, []);
+
+  // Refresh when tab is focused, but only show refreshing indicator (not full loading screen)
   useFocusEffect(
     useCallback(() => {
-      fetchFridgeItems();
-    }, [])
+      // Only refresh if we've already loaded once
+      if (hasLoadedOnce) {
+        fetchFridgeItems(false); // false = don't show full loading screen
+      }
+    }, [hasLoadedOnce])
   );
 
 
-  const fetchFridgeItems = async () => {
+  const fetchFridgeItems = async (showFullLoading: boolean = false) => {
     try {
-      setLoading(true);
+      if (showFullLoading) {
+        setLoading(true);
+      } else {
+        // For pull-to-refresh, only use refreshing state
+        setRefreshing(true);
+      }
       console.log("Fetching data from:", `${API_URL}/fridge_items/`);
 
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -251,6 +261,7 @@ export default function TabOneScreen() {
       setData(transformedData);
       originalHolder.current = transformedData;
       setError("");
+      setHasLoadedOnce(true);
     } catch (err) {
       console.error("Error fetching items:", err);
       setError(`${err}`);
@@ -262,10 +273,9 @@ export default function TabOneScreen() {
     }
   }; 
 
-  // Manual refresh handler
+  // Manual refresh handler - only refresh items, don't show full screen loading
   const onRefresh = () => {
-    setRefreshing(true);
-    fetchFridgeItems();
+    fetchFridgeItems(false);
   }; 
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
@@ -378,7 +388,7 @@ export default function TabOneScreen() {
         </Text>
         <TouchableOpacity
           style={styles.filter_button}
-          onPress={fetchFridgeItems}
+          onPress={() => fetchFridgeItems(true)}
         >
           <Text style={styles.buttonLabel}>Retry</Text>
         </TouchableOpacity>
@@ -410,13 +420,18 @@ export default function TabOneScreen() {
     <CustomHeader title="What's In Our Kitchen?" />
     <View style={styles.container}>
       
-      <TextInput
-        style={styles.search_bar}
-        onChangeText={searchFunction}
-        value={searchValue}
-        placeholder="Search food items..."
-        placeholderTextColor="#999"
-      />
+      <View style={styles.searchContainer}>
+        <View style={styles.inputContainer}>
+          <Ionicons name="search-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+          <TextInput
+            style={styles.searchInput}
+            onChangeText={searchFunction}
+            value={searchValue}
+            placeholder="Search food items..."
+            placeholderTextColor="#94a3b8"
+          />
+        </View>
+      </View>
       
       <PreviewLayout
         values={["All Items", "Expiring Soon", "My Items", "Shared"]}
@@ -434,6 +449,8 @@ export default function TabOneScreen() {
           />
         )}
         keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        style={styles.flatList}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -554,8 +571,8 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    alignItems: "center",
     width: "100%",
+    alignItems: "center",
   },
   title: {
     fontSize: 20,
@@ -567,45 +584,64 @@ const styles = StyleSheet.create({
   searchContainer: {
     width: "100%",
     alignItems: "center",
-  },
-  search_bar: {
-    height: 55,
-    marginTop: -15,
+    marginTop: 10,
     marginBottom: 10,
-    borderWidth: 2,
-    borderColor: "#14b8a6",
-    padding: 12,
-    width: "90%",
-    borderRadius: 10,
-    backgroundColor: "#ffffff",
+    paddingHorizontal: 20,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+    maxWidth: 600,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
+  searchInput: {
+    flex: 1,
+    paddingVertical: 14,
     fontSize: 16,
+    color: "#1e293b",
   },
   flatList: {
     width: "100%",
+    flex: 1,
   },
   listContent: {
     paddingBottom: 20,
-    alignItems: "center",
+    paddingHorizontal: 20,
   },
-  
   // Item Card Styles
   item: {
     backgroundColor: "#ffffff",
     padding: 18,
     marginVertical: 8,
     borderRadius: 16,
-    width: "90%",
+    width: "100%",
+    maxWidth: 600,
+    alignSelf: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+    position: "relative",
   },
   itemContent: {
+    width: "100%",
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   itemLeft: {
-    width: "100%",
+    flex: 1,
+    marginRight: 12,
   },
   itemTitleRow: {
     flexDirection: "row",
@@ -621,10 +657,11 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   deleteIcon: {
-    padding: 4,
-    marginTop: -11,
-    marginRight: -8,
-
+    position: "absolute",
+    top: 12,
+    right: 12,
+    padding: 6,
+    zIndex: 10,
   },
   infoText: {
     fontSize: 15,
@@ -643,10 +680,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#f0fdfa",
-    marginLeft: -125,
     borderRadius: 10,
     paddingVertical: 6,
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     alignSelf: "center",
   },
   controlBtn: {

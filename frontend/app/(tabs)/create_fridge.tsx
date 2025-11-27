@@ -6,6 +6,7 @@ import {
   Alert,
   ScrollView,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
 import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -255,6 +256,9 @@ export default function CreateFridgeScreen() {
             value={fridgeName}
             onChangeText={setFridgeName}
             editable={!isLoading}
+            returnKeyType="default"
+            onSubmitEditing={Keyboard.dismiss}
+            blurOnSubmit={true}
           />
 
           {/*Invite Fridgemates*/}
@@ -270,6 +274,11 @@ export default function CreateFridgeScreen() {
                 value={email}
                 onChangeText={(text) => enterEmail(text, index)}
                 editable={!isLoading}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+                blurOnSubmit={true}
+                keyboardType="email-address"
+                autoCapitalize="none"
               />
               {/*Remove email button*/}
               {emails.length > 1 && (

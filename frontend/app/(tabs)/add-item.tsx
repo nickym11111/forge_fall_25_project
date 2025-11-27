@@ -723,24 +723,18 @@ export default function AddItemManual() {
             </View>
 
             <Text style={styles.label}>Price ($)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 4.99 (optional)"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="decimal-pad"
-              editable={!isLoading}
-            />
-
-            <Text style={styles.label}>Price ($)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 4.99 (optional)"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="decimal-pad"
-              editable={!isLoading}
-            />
+            <View style={styles.inputContainer}>
+              <Ionicons name="cash-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 4.99 (optional)"
+                placeholderTextColor="#94a3b8"
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="decimal-pad"
+                editable={!isLoading}
+              />
+            </View>
 
             <Text style={styles.label}>Expiry Date</Text>
             <TouchableOpacity
@@ -759,7 +753,7 @@ export default function AddItemManual() {
 
             {isLoadingAI && (
               <View style={styles.loadingIndicator}>
-                <ActivityIndicator size="small" color="#4CAF50" />
+                <ActivityIndicator size="small" color="#14b8a6" />
               </View>
             )}
 

@@ -1,5 +1,5 @@
 import { StyleSheet, TextInput, View, Text, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
@@ -13,6 +13,11 @@ export default function CreateAccount() {
   const [email, setEmail] = useState("");
   const [dietaryRestrictionsText, setDietaryRestrictionsText] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const lastNameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const dietaryRef = useRef<TextInput>(null);
   const dietaryRestrictions = dietaryRestrictionsText
     .split(",")
     .map((item) => item.trim());
@@ -29,7 +34,10 @@ export default function CreateAccount() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.createAccountCard}>
-            <View style={styles.inputContainer}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "firstName" && styles.inputContainerFocused
+            ]} collapsable={false}>
               <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
                 onChangeText={setFirstName}
@@ -37,21 +45,39 @@ export default function CreateAccount() {
                 placeholderTextColor="#94a3b8"
                 value={firstName}
                 style={styles.createAccountInput}
+                onFocus={() => setFocusedInput("firstName")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
               />
             </View>
-            <View style={styles.inputContainer}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "lastName" && styles.inputContainerFocused
+            ]} collapsable={false}>
               <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
+                ref={lastNameRef}
                 onChangeText={setLastName}
                 placeholder="Last Name"
                 placeholderTextColor="#94a3b8"
                 value={lastName}
                 style={styles.createAccountInput}
+                onFocus={() => setFocusedInput("lastName")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
               />
             </View>
-            <View style={styles.inputContainer}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "email" && styles.inputContainerFocused
+            ]} collapsable={false}>
               <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
+                ref={emailRef}
                 onChangeText={setEmail}
                 placeholder="Email"
                 placeholderTextColor="#94a3b8"
@@ -59,17 +85,31 @@ export default function CreateAccount() {
                 style={styles.createAccountInput}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                onFocus={() => setFocusedInput("email")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
               />
             </View>
-            <View style={styles.inputContainer}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "password" && styles.inputContainerFocused
+            ]} collapsable={false}>
               <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
+                ref={passwordRef}
                 onChangeText={setPassword}
                 placeholder="Password"
                 placeholderTextColor="#94a3b8"
                 value={password}
                 secureTextEntry={!showPassword}
                 style={styles.createAccountInput}
+                onFocus={() => setFocusedInput("password")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
@@ -82,14 +122,23 @@ export default function CreateAccount() {
                 />
               </TouchableOpacity>
             </View>
-            <View style={styles.inputContainer}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "dietary" && styles.inputContainerFocused
+            ]} collapsable={false}>
               <Ionicons name="restaurant-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
+                ref={dietaryRef}
                 onChangeText={setDietaryRestrictionsText}
                 placeholder="Dietary Restrictions (optional)"
                 placeholderTextColor="#94a3b8"
                 value={dietaryRestrictionsText}
                 style={styles.createAccountInput}
+                onFocus={() => setFocusedInput("dietary")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
               />
             </View>
             <CustomButton
@@ -164,6 +213,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
     paddingHorizontal: 16,
     paddingVertical: 4,
+  },
+  inputContainerFocused: {
+    borderColor: "#14b8a6",
+    borderWidth: 2.5,
+    backgroundColor: "#ffffff",
+    shadowColor: "#14b8a6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inputIcon: {
     marginRight: 12,
