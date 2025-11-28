@@ -31,6 +31,8 @@ interface ApiResponse {
 interface User {
   id: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   user_metadata?: {
     first_name?: string;
     last_name?: string;
@@ -222,9 +224,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#e2e8f0",
+    backgroundColor: "#FAFBFC",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
 
   modalButton: {
@@ -232,15 +238,15 @@ const styles = StyleSheet.create({
   },
 
   modalButtonText: {
-    fontSize: 17,
-    color: "#007AFF",
+    fontSize: 16,
+    color: "#14b8a6",
     fontWeight: "600",
   },
 
   modalTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
   },
 
   datePickerButtonText: {
@@ -304,30 +310,40 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   popupBox: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    width: "85%",
+    borderRadius: 20,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    width: "90%",
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    overflow: "hidden",
   },
 
   pickerWrapper: {
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 5,
+    paddingTop: 5,
+    paddingBottom: 15,
+    backgroundColor: "#FAFBFC",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
 
   datePickerIOS: {
     alignSelf: "center",
     width: "100%",
-    transform: [{ scale: 0.95 }],
   },
 });
 
@@ -478,22 +494,26 @@ export default function AddItemManual() {
         setUsers([
           {
             id: "1",
-            user_metadata: { first_name: "Alice", last_name: "Johnson" },
+            first_name: "Alice",
+            last_name: "Johnson",
             email: "alice@example.com",
           },
           {
             id: "2",
-            user_metadata: { first_name: "Bob", last_name: "Smith" },
+            first_name: "Bob",
+            last_name: "Smith",
             email: "bob@example.com",
           },
           {
             id: "3",
-            user_metadata: { first_name: "Charlie", last_name: "Brown" },
+            first_name: "Charlie",
+            last_name: "Brown",
             email: "charlie@example.com",
           },
           {
             id: "4",
-            user_metadata: { first_name: "Diana", last_name: "Lee" },
+            first_name: "Diana",
+            last_name: "Lee",
             email: "diana@example.com",
           },
         ]);
@@ -503,34 +523,44 @@ export default function AddItemManual() {
       setUsers([
         {
           id: "1",
+          first_name: "Alice",
+          last_name: "Johnson",
           email: "alice@example.com",
-          user_metadata: { first_name: "Alice", last_name: "Johnson" },
         },
         {
           id: "2",
+          first_name: "Bob",
+          last_name: "Smith",
           email: "bob@example.com",
-          user_metadata: { first_name: "Bob", last_name: "Smith" },
         },
         {
           id: "3",
+          first_name: "Charlie",
+          last_name: "Brown",
           email: "charlie@example.com",
-          user_metadata: { first_name: "Charlie", last_name: "Brown" },
         },
         {
           id: "4",
+          first_name: "Diana",
+          last_name: "Lee",
           email: "diana@example.com",
-          user_metadata: { first_name: "Diana", last_name: "Lee" },
         },
       ]);
     }
   };
 
   const getUserDisplayName = (user: User) => {
+    // Check for first_name/last_name directly (from database)
+    if (user.first_name) {
+      return `${user.first_name} ${user.last_name || ""}`.trim();
+    }
+    // Check for first_name/last_name in user_metadata (from auth)
     if (user.user_metadata?.first_name) {
       return `${user.user_metadata.first_name} ${
         user.user_metadata.last_name || ""
       }`.trim();
     }
+    // Fallback to email if no name available
     return user.email;
   };
 
