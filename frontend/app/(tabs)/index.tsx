@@ -1,5 +1,5 @@
 import { StyleSheet, TextInput, View, Text, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ScrollView, Modal } from "react-native";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
@@ -10,6 +10,8 @@ export default function TabOneScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -31,7 +33,10 @@ export default function TabOneScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.loginCard}>
-            <View style={styles.inputContainer}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "email" && styles.inputContainerFocused
+            ]} collapsable={false}>
               <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
                 onChangeText={setEmail}
@@ -41,17 +46,31 @@ export default function TabOneScreen() {
                 style={styles.loginInput}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                onFocus={() => setFocusedInput("email")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
               />
             </View>
-            <View style={styles.inputContainer}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "password" && styles.inputContainerFocused
+            ]} collapsable={false}>
               <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <TextInput
+                ref={passwordRef}
                 onChangeText={setPassword}
                 placeholder="Password"
                 placeholderTextColor="#94a3b8"
                 value={password}
                 secureTextEntry={!showPassword}
                 style={styles.loginInput}
+                onFocus={() => setFocusedInput("password")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
               />
               <TouchableOpacity
                 onPress={() => setShowPassword(!showPassword)}
@@ -91,7 +110,7 @@ export default function TabOneScreen() {
               }}
             >
               <Text style={styles.createAccountText}>
-                Don't have an account? <Text style={styles.createAccountLink}>Sign up</Text>
+                Don't have an account? <Text style={styles.createAccountLink}>Create Account</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -158,6 +177,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8fafc",
     paddingHorizontal: 16,
     paddingVertical: 4,
+  },
+  inputContainerFocused: {
+    borderColor: "#14b8a6",
+    borderWidth: 2.5,
+    backgroundColor: "#ffffff",
+    shadowColor: "#14b8a6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inputIcon: {
     marginRight: 12,

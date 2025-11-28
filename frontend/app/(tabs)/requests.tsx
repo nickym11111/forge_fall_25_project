@@ -94,7 +94,7 @@ const RequestCard = ({
       );
       Alert.alert(
         "Error",
-        error.message ||
+        (error as Error)?.message ||
           `Failed to ${
             status === "ACCEPTED" ? "accept" : "decline"
           } request. Please try again.`
@@ -108,11 +108,11 @@ const RequestCard = ({
     <View style={styles.card}>
       <Text style={styles.cardTitle}>Join Request</Text>
       <Text style={styles.cardText}>
-        <Text style={styles.label}>User:</Text>{" "}
+        <Text style={styles.cardLabel}>User:</Text>{" "}
         {request.user?.first_name || "Unknown User"}
       </Text>
       <Text style={styles.cardText}>
-        <Text style={styles.label}>Fridge:</Text>{" "}
+        <Text style={styles.cardLabel}>Fridge:</Text>{" "}
         {request.fridge?.name || "Unknown Fridge"}
       </Text>
       <View style={styles.buttonContainer}>
@@ -263,8 +263,8 @@ export default function RequestsScreen() {
             <ActivityIndicator size="large" color="#f4511e" />
           </View>
         ) : requests.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text>No pending requests found.</Text>
+          <View style={styles.center}>
+            <Text style={styles.emptyStateText}>No pending requests found.</Text>
           </View>
         ) : (
           requests.map((request) => (
@@ -283,7 +283,7 @@ export default function RequestsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backGroundColor: "#fff",
+    backgroundColor: "#fff",
   },
   container: {
     flex: 1,
@@ -372,10 +372,13 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  disabledButton: {
-    opacity: 0.6,
+  cardLabel: {
+    fontWeight: "600",
+    color: "#333",
   },
-  loadingContainer: {
-    padding: 20,
+  emptyStateText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
   },
 });
