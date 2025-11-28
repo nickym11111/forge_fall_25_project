@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, Image, TouchableOpacity, Platform, ActivityIndicator } from "react-native";
+import { StyleSheet, View, Text, Image, TouchableOpacity, Platform, ActivityIndicator, Modal } from "react-native";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import { useAuth } from "@/app/context/authContext";
@@ -6,8 +6,10 @@ import { navigate } from "expo-router/build/global-state/routing";
 import { useEffect, useState } from "react";
 import { fetchUserDetails, leaveFridge } from "@/app/api/UserDetails";
 import * as ImagePicker from "expo-image-picker";
+import { router } from "expo-router";
 import { uploadProfilePhotoDirectly } from "@/app/api/AddProfilePhotoDirectly";
 import { supabase } from "@/app/utils/client";
+import ManageFridgesScreen from "@/components/ManageFridges";
 
 export default function ManageAccount() {
   type Fridge = {
@@ -153,33 +155,6 @@ export default function ManageAccount() {
           )}
         </View>
 
-        {/* Manage Fridges Section */}
-        {showManageFridges && (
-          <View style={styles.fridgesSection}>
-            <Text style={styles.sectionTitle}>Your Fridges</Text>
-            {fridges.length > 0 ? (
-              fridges.map((fridge, index) => (
-                <View key={index} style={styles.fridgeCard}>
-                  <Text style={styles.fridgeName}>{fridge.name}</Text>
-                  <Text style={styles.fridgeId}>{fridge.id}</Text>
-                  <CustomButton
-                    className="Leave Fridge"
-                    onPress={() => {
-                      leaveFridge(fridge.id).then(() => {
-                        setReload(!reload);
-                      });
-                    }}
-                    title="Leave Fridge"
-                    style={styles.leaveFridgeButton}
-                  />
-                </View>
-              ))
-            ) : (
-              <Text style={styles.noFridgesText}>No fridges found</Text>
-            )}
-          </View>
-        )}
-
         {/* Action Buttons */}
         <View style={styles.buttonSection}>
           <CustomButton
@@ -194,9 +169,9 @@ export default function ManageAccount() {
           <CustomButton
             className="Manage Fridges"
             onPress={() => {
-              setShowManageFridges(!showManageFridges);
+              setShowManageFridges(true);
             }}
-            title={showManageFridges ? "View Profile" : "Manage Fridges"}
+            title="Manage Fridges"
             style={styles.actionButton}
           />
           
@@ -211,6 +186,16 @@ export default function ManageAccount() {
           />
         </View>
       </View>
+
+      <Modal
+        visible={showManageFridges}
+        animationType="slide"
+        onRequestClose={() => setShowManageFridges(false)}
+      >
+        <ManageFridgesScreen
+          onClose={() => setShowManageFridges(false)}
+        />
+      </Modal>
     </View>
   );
 }

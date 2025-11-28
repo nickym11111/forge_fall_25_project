@@ -160,9 +160,13 @@ export default function CreateFridgeScreen() {
       const fridgeData: ApiResponse = await createFridgeResponse.json();
       console.log("Kitchen creation response:", fridgeData);
 
+      console.log("✅ Step 1: Fridge created successfully"); 
+
       if (!createFridgeResponse.ok || fridgeData.status !== "success") {
         throw new Error(fridgeData.message || "Failed to create Kitchen");
       }
+
+      console.log("✅ Step 2: Response validation passed");
 
       const fridgeId = fridgeData.fridge_id;
       if (!fridgeId) {
@@ -319,3 +323,4 @@ export default function CreateFridgeScreen() {
     </View>
   );
 }
+
