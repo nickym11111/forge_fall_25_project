@@ -9,6 +9,7 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -173,15 +174,23 @@ export default function ParseReceiptScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
       <CustomHeader 
         title="Scan Receipt" 
         subtitle="Take a photo or upload a receipt to automatically add items"
+        noShadow={true}
       />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
       </View>
-      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
       <View style={styles.uploadSection}>
         <View style={styles.imageContainer}>
           <TouchableOpacity
@@ -326,7 +335,8 @@ export default function ParseReceiptScreen() {
           })}
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -335,9 +345,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FAFBFC",
   },
+  scrollView: {
+    flex: 1,
+    marginTop: -32,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 40,
+    paddingTop: 20,
+  },
   uploadSection: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 0,
   },
   imageContainer: {
     height: 300,
