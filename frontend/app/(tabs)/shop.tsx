@@ -11,6 +11,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -379,15 +381,14 @@ export default function SharedListScreen() {
             </View>
 
             {showDatePicker && (
-              <DateTimePicker
-                value={formNeedBy || new Date()}
-                mode="date"
-                display={Platform.OS === "ios" ? "inline" : "default"}
-                onChange={(e, d) => {
-                  if (d) setFormNeedBy(d);
-                  if (Platform.OS !== "ios") setShowDatePicker(false);
-                }}
-              />
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={formNeedBy || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "default"}
+                  onChange={onChangeNeedBy}
+                />
+              </View>
             )}
 
             {/* Button */}
@@ -446,7 +447,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#4caf50",
+    backgroundColor: "#14b8a6",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -548,11 +549,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E8E8E8",
   },
-  dateText: { color: "#333" },
+  dateText: { 
+    color: "#333" 
+  },
+  datePickerContainer: {
+    marginTop: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   addItemButton: {
     marginTop: 14,
-    backgroundColor: "#5FA35F",
+    backgroundColor: "#14b8a6",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",

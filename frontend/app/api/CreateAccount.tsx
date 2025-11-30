@@ -2,7 +2,7 @@
 const api_url = `${process.env.EXPO_PUBLIC_API_URL}` // Replace environment variables later
 
 export async function CreateAccountRequest(email: string, password: string, firstName?: string, lastName?: string, dietaryRestrictions?: string[]) {
-    const response = await fetch(`${api_url}/users/sign-up/`, {
+    const response = await fetch(`${api_url}/users/sign-up`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",

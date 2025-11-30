@@ -14,7 +14,7 @@ interface ApiResponse {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
 
   joinContainer: {
@@ -56,10 +56,10 @@ export default function JoinFridgeScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleJoinFridge = async () => {
-    if (!jCode.trim()) {
-      Alert.alert("error", "Please enter a fridge code.");
-      return;
-    }
+  if (!jCode.trim()){
+    Alert.alert("error", "Please enter a kitchen code.");
+    return;
+  }
 
     setIsLoading(true);
     const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/request-join`;
@@ -107,9 +107,9 @@ export default function JoinFridgeScreen() {
   };
   return (
     <View style={styles.container}>
-      <CustomHeader
-        title="Join Fridge  "
-        logo={require("../../assets/images/FridgeIcon.png")}
+      <CustomHeader 
+      title="Join Kitchen  "
+      logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ProfileIcon className="profileIcon" />
       <View style={styles.joinContainer}>
@@ -132,7 +132,7 @@ export default function JoinFridgeScreen() {
             style={styles.createFridgeButton}
             onPress={() => !isLoading && navigate("/(tabs)/create_fridge")} // connect to "create fridge" page
           >
-            Create a fridge instead
+            Create a kitchen instead
           </Text>
         </View>
       </View>
