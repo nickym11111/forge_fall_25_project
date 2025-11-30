@@ -460,7 +460,7 @@ class FridgeCreate(BaseModel):
     name: str
 
 @app.post("/fridges")
-def create_fridge(fridge: FridgeCreate):
+def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
         # Get user ID from dict
         user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
@@ -478,7 +478,7 @@ def create_fridge(fridge: FridgeCreate):
             print(f"No data returned from database: {response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
         
-        fridge_id = createFridge_response.data[0].get("id")
+        fridge_id = response.data[0].get("id")
 
         if not fridge_id:
             print(f"No ID in response data: {response.data}")

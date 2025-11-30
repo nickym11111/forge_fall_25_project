@@ -125,13 +125,6 @@ export default function CreateFridgeScreen() {
       return;
     }
 
-    // Filter out empty emails
-    const validEmails = emails.filter((email) => email.trim() !== "");
-    if (validEmails.length === 0) {
-      Alert.alert("Error", "Please enter at least one email address.");
-      return;
-    }
-
     setIsLoading(true);
 
     try {
