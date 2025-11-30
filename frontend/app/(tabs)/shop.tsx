@@ -2,10 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
-  Modal,
   Platform,
-  Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -51,6 +48,8 @@ const isoToShort = (iso?: string) => {
   return isNaN(date.getTime()) ? iso : formatShortDate(date);
 };
 
+
+
 // Component
 export default function SharedListScreen() {
   const { user } = useUser();
@@ -59,7 +58,6 @@ export default function SharedListScreen() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [searchValue, setSearchValue] = useState("");
 
-  const [modalOpen, setModalOpen] = useState(false);
   const [formName, setFormName] = useState("");
   const [formQuantity, setFormQuantity] = useState(1);
   const [formNeedBy, setFormNeedBy] = useState<Date | null>(null);
@@ -68,6 +66,12 @@ export default function SharedListScreen() {
   const filteredItems = items.filter((item) =>
   item.name.toLowerCase().includes(searchValue.toLowerCase())
   );
+
+  //Date Picker
+  const onChangeNeedBy = (event: any, selected?: Date) => {
+    if (selected) setFormNeedBy(selected);
+    if (Platform.OS !== "ios") setShowDatePicker(false);
+  };
 
   // Load Items
   const loadItems = async () => {
@@ -129,7 +133,6 @@ export default function SharedListScreen() {
       const data = await resp.json();
       if (resp.ok) {
         resetForm();
-        setModalOpen(false);
         loadItems();
       }
     } catch (err) {
@@ -278,6 +281,7 @@ export default function SharedListScreen() {
     );
   };
 
+
   // Main Render
   return (
     <KeyboardAvoidingView
@@ -286,7 +290,7 @@ export default function SharedListScreen() {
     >
       <CustomHeader title="Shared Shopping List 🛒" />
       <ProfileIcon className="profileIcon" />
-
+      
       {/* Search */}
       <TextInput
         style={styles.search_bar}
@@ -297,20 +301,60 @@ export default function SharedListScreen() {
 
       {/* Add Item Quick Box */}
       <View style={styles.topCard}>
-        <Text style={styles.cardTitle}>Add Item</Text>
+          <Text style={styles.cardTitle}>Add Item</Text>
 
-        <View style={styles.topRow}>
+          {/* Item Name */}
           <TextInput
-            style={styles.topInput}
+            style={styles.input}
             placeholder="Item name..."
+            placeholderTextColor="#888"
             value={formName}
             onChangeText={setFormName}
           />
-          <TouchableOpacity style={styles.plusBtn} onPress={() => setModalOpen(true)}>
-            <Ionicons name="add" size={28} color="#fff" />
-          </TouchableOpacity>
+
+          {/* Quantity */}
+          <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>Quantity</Text>
+                <View style={styles.qtyRow}>
+                  <TouchableOpacity onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}>
+                    <Ionicons name="remove-circle-outline" size={25} color="#222" />
+                  </TouchableOpacity>
+                  <Text style={styles.qtyNumber}>{formQuantity}</Text>
+                  <TouchableOpacity onPress={() => setFormQuantity(formQuantity + 1)}>
+                    <Ionicons name="add-circle-outline" size={25} color="#222" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+          <View style={{ flex: 1}}>
+                <Text style={styles.inputLabel}>Need by</Text>
+                <TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
+                  <Text style={styles.dateText}>
+                    {formNeedBy ? formatShortDate(formNeedBy) : "Tap to select date"}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={20} color="#222" />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {showDatePicker && (
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={formNeedBy || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "default"}
+                  onChange={onChangeNeedBy}
+                />
+              </View>
+          )}
+
+          {/* Add Button */}
+            <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
+              <Text style={styles.addItemButtonText}>Add Item</Text>
+            </TouchableOpacity>
+
         </View>
-      </View>
 
       {/* Items List */}
       <FlatList
@@ -319,91 +363,6 @@ export default function SharedListScreen() {
         renderItem={renderItemCard}
         contentContainerStyle={styles.itemsList}
       />
-
-      {/* Modal */}
-      <Modal visible={modalOpen} transparent animationType="none">
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setModalOpen(false)}
-        />
-
-        <View style={styles.modalCard}>
-          <ScrollView nestedScrollEnabled>
-            <Text style={styles.modalTitle}>Add Item</Text>
-
-            <Text style={styles.inputLabel}>Item Name *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Milk, Eggs, Bread"
-              value={formName}
-              onChangeText={setFormName}
-            />
-
-            {/* Quantity + Need by */}
-            <View style={styles.row}>
-              {/* Qty */}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Quantity</Text>
-                <View style={styles.qtyRow}>
-                  <TouchableOpacity
-                    onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}
-                  >
-                    <Ionicons name="remove-circle-outline" size={25} color="#222" />
-                  </TouchableOpacity>
-
-                  <Text style={styles.qtyNumber}>{formQuantity}</Text>
-
-                  <TouchableOpacity
-                    onPress={() => setFormQuantity(formQuantity + 1)}
-                  >
-                    <Ionicons name="add-circle-outline" size={25} color="#222" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Need by */}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Need by</Text>
-                <TouchableOpacity
-                  style={styles.dateInput}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Text style={styles.dateText}>
-                    {formNeedBy
-                      ? formatShortDate(formNeedBy)
-                      : "Tap to select date"}
-                  </Text>
-                  <Ionicons name="calendar-outline" size={20} color="#222" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={formNeedBy || new Date()}
-                mode="date"
-                display={Platform.OS === "ios" ? "inline" : "default"}
-                onChange={(e, d) => {
-                  if (d) setFormNeedBy(d);
-                  if (Platform.OS !== "ios") setShowDatePicker(false);
-                }}
-              />
-            )}
-
-            {/* Button */}
-            <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
-              <Text style={styles.addItemButtonText}>Add Item</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setModalOpen(false)}
-              style={{ marginTop: 8, alignSelf: "center" }}
-            >
-              <Text style={{ color: "#666" }}>Cancel</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -429,7 +388,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  cardTitle: { fontSize: 20, fontWeight: "700", marginBottom: 8 },
+  cardTitle: { fontSize: 18, fontWeight: "600", marginBottom: 8 },
   topRow: { flexDirection: "row", alignItems: "center" },
   topInput: {
     flex: 1,
@@ -439,16 +398,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     backgroundColor: "#FAFAFB",
-    fontSize: 16,
-  },
-  plusBtn: {
-    marginLeft: 12,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#4caf50",
-    alignItems: "center",
-    justifyContent: "center",
+    fontSize: 14,
   },
 
   section: { marginHorizontal: 22, marginTop: 6 },
@@ -458,7 +408,7 @@ const styles = StyleSheet.create({
   itemCard: {
     marginHorizontal: 18,
     marginTop: 12,
-    backgroundColor: "#FAFAFB",
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 14,
     flexDirection: "row",
@@ -495,31 +445,12 @@ const styles = StyleSheet.create({
   },
   qtyText: { fontSize: 16, fontWeight: "700", color: "#111" },
 
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  modalCard: {
-    position: "absolute",
-    top: "20%",
-    left: "5%",
-    right: "5%",
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 16,
-    maxHeight: "72%",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-  },
-  modalTitle: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
-
-  inputLabel: { fontSize: 13, color: "#555", marginBottom: 6 },
+  inputLabel: { fontSize: 14, fontWeight: "500", marginBottom: 6 },
   input: {
     borderWidth: 1,
     borderColor: "#E8E8E8",
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     backgroundColor: "#FAFBFF",
     fontSize: 16,
   },
@@ -531,35 +462,42 @@ const styles = StyleSheet.create({
     alignItems: "center",
     backgroundColor: "#FAFAFB",
     borderRadius: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
     paddingHorizontal: 10,
     justifyContent: "space-between",
     width: 140,
   },
-  qtyNumber: { fontSize: 18, fontWeight: "700", marginHorizontal: 8 },
+  qtyNumber: { fontSize: 16, fontWeight: "500", marginHorizontal: 8 },
 
   dateInput: {
     flexDirection: "row",
     justifyContent: "space-between",
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     backgroundColor: "#FAFBFF",
     borderWidth: 1,
     borderColor: "#E8E8E8",
   },
-  dateText: { color: "#333" },
+  dateText: { 
+    color: "#333" 
+  },
+  datePickerContainer: {
+    marginTop: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   addItemButton: {
-    marginTop: 14,
-    backgroundColor: "#5FA35F",
+    marginTop: 10,
+    backgroundColor: "#14b8a6",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
   },
   addItemButtonText: {
     color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
+    fontWeight: "600",
+    fontSize: 18,
   },
 });
