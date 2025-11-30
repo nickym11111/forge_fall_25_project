@@ -27,42 +27,50 @@ export async function AddItemToFridge(
 
   if (response.ok) {
     try {
-      const fullName =
-        sharedByUserIds.length === 0
-          ? "Someone"
-          : sharedByUserIds.join(", ");
-
-      await supabase
+      //Get the shopping list item
+      const { data: shoppingItems, error } = await supabase
         .from("shopping_list")
-        .update({
-          checked: true,
-          bought_by: fullName,
-        })
-        .ilike("name", name.trim());
+        .select("*")
+        .ilike("name", name.trim())
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error("Error fetching shopping list:", error);
+        return response;
+      }
+
+      if (shoppingItems) {
+        const currentQty = shoppingItems.quantity;
+        const addedQuantity = Number(quantity);
+        const fullName =
+          sharedByUserIds.length === 0 ? "Someone" : sharedByUserIds.join(", ");
+
+        if (addedQuantity >= currentQty) {
+          await supabase
+            .from("shopping_list")
+            .update({
+              checked: true,
+              bought_by: fullName,
+            })
+            .eq("id", shoppingItems.id);
+        } else {
+          // just reduce quantity if not already checked
+          await supabase
+            .from("shopping_list")
+            .update({
+              checked: false,
+              quantity: currentQty - addedQuantity,
+            })
+            .eq("id", shoppingItems.id)
+        }
+
+      }
     } catch (err) {
-      console.error("Error auto-checking shopping list:", err);
+      console.error("Error updating shopping list:", err);
     }
   }
 
-  return response;
-}
-
-export async function PredictExpiryDate(itemName: string) {
-  const url = `${API_URL}/expiry/predict-expiry`;
-  console.log("📡 Calling:", url);
-
-  const controller = new AbortController();
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      item_name: itemName,
-    }),
-    signal: controller.signal,
-  });
 
   return response;
 }
