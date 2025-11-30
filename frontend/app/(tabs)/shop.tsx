@@ -1,573 +1,109 @@
-import React, { useEffect, useState } from "react";
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  Keyboard,
-  TouchableWithoutFeedback,
-} from "react-native";
-
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { Ionicons } from "@expo/vector-icons";
-import CustomHeader from "@/components/CustomHeader";
-import CustomCheckbox from "@/components/CustomCheckbox";
-import ProfileIcon from "@/components/ProfileIcon";
-
 import { supabase } from "../utils/client";
-import { useUser } from "../hooks/useUser";
-import { useIsFocused } from "@react-navigation/native";
 
-
-interface ShoppingItem {
-  id?: number;
-  name: string;
-  quantity?: number;
-  requested_by: string;
-  bought_by?: string | null;
-  checked?: boolean;
-  need_by?: string;
-  fridge_id?: string;
+/**
+ * Fix profile photo URL to ensure it has the correct /public/ path
+ */
+function fixProfilePhotoUrl(url: string | null | undefined): string {
+  if (!url) return "";
+  
+  // If URL doesn't have /public/ in the path, add it
+  if (url.includes('/object/') && !url.includes('/object/public/')) {
+    return url.replace('/object/', '/object/public/');
+  }
+  
+  return url;
 }
 
-const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/shopping`;
+export async function fetchUserDetails() {
+      try {
+        // Get session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return null;
 
-// Helper Functions
-const formatShortDate = (d: Date) => {
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${mm}/${dd}/${yy}`;
-};
+        // Fetch user info from your API
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        });
 
-const isoToShort = (iso?: string) => {
-  if (!iso) return "";
-  const date = new Date(iso);
-  return isNaN(date.getTime()) ? iso : formatShortDate(date);
-};
+        if (!response.ok) return null;
 
-// Component
-export default function SharedListScreen() {
-  const { user } = useUser();
-  const isFocused = useIsFocused();
+        const data = await response.json();
 
-  const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [searchValue, setSearchValue] = useState("");
+        // -----------------------------
+        // FIX PROFILE PHOTO URL IF NEEDED
+        // -----------------------------
+        let profilePhoto = data.profile_photo;
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [formName, setFormName] = useState("");
-  const [formQuantity, setFormQuantity] = useState(1);
-  const [formNeedBy, setFormNeedBy] = useState<Date | null>(null);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+        if (profilePhoto) {
+          const fixedUrl = fixProfilePhotoUrl(profilePhoto);
 
-  const filteredItems = items.filter((item) =>
-  item.name.toLowerCase().includes(searchValue.toLowerCase())
-  );
+          if (fixedUrl !== profilePhoto) {
+            console.log("Fixing profile photo URL in database...");
+            console.log("Old URL:", profilePhoto);
+            console.log("New URL:", fixedUrl);
 
-  // Load Items
-  const loadItems = async () => {
-    if (!user?.fridge_id) return;
+            profilePhoto = fixedUrl; // update local value
 
-    try {
-      const { data, error } = await supabase
-        .from("shopping_list")
-        .select("*")
-        .eq("fridge_id", user.fridge_id)
-        .order("id", { ascending: true });
+            try {
+              await supabase
+                .from("users")
+                .update({ profile_photo: fixedUrl })
+                .eq("id", session.user.id);
+              console.log("Profile photo URL updated in database.");
+            } catch (dbError) {
+              console.error("Error updating profile photo URL:", dbError);
+            }
+          }
+        }
 
-      if (!error) setItems(data || []);
-      else throw error;
-    } catch (err) {
-      console.error("loadItems:", err);
-    }
-  };
-
-  useEffect(() => {
-    loadItems();
-  }, [user?.fridge_id]);
-
-  useEffect(() => {
-    if (isFocused) loadItems();
-  }, [isFocused]);
-
-  // Add Item
-  const resetForm = () => {
-    setFormName("");
-    setFormQuantity(1);
-    setFormNeedBy(null);
-    setShowDatePicker(false);
-  };
-
-  const addItem = async () => {
-    if (!formName.trim()) return;
-    if (!user?.fridge_id) return;
-
-    const newItem: ShoppingItem = {
-      name: formName.trim(),
-      quantity: Math.max(1, formQuantity),
-      requested_by: `${user.first_name} ${user.last_name}`.trim(),
-      bought_by: null,
-      checked: false,
-      need_by: formNeedBy
-        ? formNeedBy.toISOString().split("T")[0]
-        : undefined,
-      fridge_id: user.fridge_id,
-    };
-
-    try {
-      const resp = await fetch(`${API_URL}/items/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newItem),
-      });
-
-      const data = await resp.json();
-      if (resp.ok) {
-        resetForm();
-        setModalOpen(false);
-        loadItems();
+        // -----------------------------
+        // NORMALIZED RETURN OBJECT
+        // -----------------------------
+        return {
+          id: session.user.id,
+          email: session.user.email,
+          first_name:
+            data.first_name ??
+            session.user.user_metadata?.first_name ??
+            "",
+          last_name:
+            data.last_name ??
+            session.user.user_metadata?.last_name ??
+            "",
+          profile_photo: profilePhoto ?? null,
+          fridge_id: data.fridge_id ?? null,
+          fridge: data.fridge ?? null,
+          fridgeMates: data.fridgeMates ?? [],
+        };
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        return null;
       }
-    } catch (err) {
-      console.error("addItem:", err);
-    }
-  };
 
-  //Delete
-  const deleteItem = async (item: ShoppingItem) => {
-    if (!item.id) return;
-
-    setItems((prev) => prev.filter((i) => i.id !== item.id));
-
-    try {
-      await supabase.from("shopping_list").delete().eq("id", item.id);
-    } catch (err) {
-      console.error("deleteItem:", err);
-    }
-  };
-
-  // Update
-  const changeItemQuantity = async (item: ShoppingItem, delta: number) => {
-    const newQty = Math.max(1, (item.quantity || 1) + delta);
-
-    setItems((prev) =>
-      prev.map((it) => (it.id === item.id ? { ...it, quantity: newQty } : it))
-    );
-
-    if (!item.id) return;
-
-    try {
-      await supabase
-        .from("shopping_list")
-        .update({ quantity: newQty })
-        .eq("id", item.id);
-
-      loadItems();
-    } catch (err) {
-      console.error("changeItemQuantity:", err);
-    }
-  };
-
-  const toggleChecked = async (item: ShoppingItem) => {
-    if (!user || !item.id) return;
-
-    const updated = {
-      checked: !item.checked,
-      bought_by: !item.checked
-        ? `${user.first_name} ${user.last_name}`.trim()
-        : null,
-    };
-
-    setItems((prev) =>
-      prev.map((it) => (it.id === item.id ? { ...it, ...updated } : it))
-    );
-
-    try {
-      await supabase
-        .from("shopping_list")
-        .update(updated)
-        .eq("id", item.id);
-
-      loadItems();
-    } catch (err) {
-      console.error("toggleChecked:", err);
-    }
-  };
-
-  // Render Item
-  const renderItemCard = ({ item }: { item: ShoppingItem }) => {
-    const qty = item.quantity ?? 1;
-
-    return (
-      <View style={styles.itemCard}>
-        {/* Checkbox */}
-        <View style={styles.itemLeft}>
-          <CustomCheckbox
-            value={!!item.checked}
-            onToggle={() => toggleChecked(item)}
-            size={28}
-            borderRadius={8}
-          />
-        </View>
-
-        {/* Middle */}
-        <View style={styles.itemCenter}>
-          <Text
-            style={[styles.itemTitle, item.checked && styles.itemChecked]}
-            numberOfLines={1}
-          >
-            {item.name}
-          </Text>
-
-          {item.checked ? (
-            <Text style={styles.itemMeta}>Bought by You</Text>
-          ) : (
-            <>
-              {item.need_by && (
-                <Text style={styles.itemMeta}>
-                  Need by: {isoToShort(item.need_by)}
-                </Text>
-              )}
-              <Text style={styles.itemMeta}>
-                Requested by {item.requested_by}
-              </Text>
-            </>
-          )}
-        </View>
-
-        {/* Right */}
-        <View style={styles.itemRight}>
-          <View style={styles.controlBox}>
-            {qty === 1 ? (
-              <TouchableOpacity
-                onPress={() => deleteItem(item)}
-                style={styles.controlIcon}
-              >
-                <Ionicons name="trash-outline" size={20} color="#222" />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                onPress={() => changeItemQuantity(item, -1)}
-                style={styles.controlIcon}
-              >
-                <Ionicons
-                  name="remove-circle-outline"
-                  size={22}
-                  color="#222"
-                />
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.qtyBadge}>
-              <Text style={styles.qtyText}>{qty}</Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => changeItemQuantity(item, 1)}
-              style={styles.controlIcon}
-            >
-              <Ionicons name="add-circle-outline" size={22} color="#222" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
-  };
-
-  // Main Render
-  return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <CustomHeader title="Shared Shopping List 🛒" />
-      <ProfileIcon className="profileIcon" />
-
-      {/* Search */}
-      <TextInput
-        style={styles.search_bar}
-        onChangeText={setSearchValue}
-        value={searchValue}
-        placeholder="Search items..."
-      />
-
-      {/* Add Item Quick Box */}
-      <View style={styles.topCard}>
-        <Text style={styles.cardTitle}>Add Item</Text>
-
-        <View style={styles.topRow}>
-          <TextInput
-            style={styles.topInput}
-            placeholder="Item name..."
-            value={formName}
-            onChangeText={setFormName}
-          />
-          <TouchableOpacity style={styles.plusBtn} onPress={() => setModalOpen(true)}>
-            <Ionicons name="add" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Items List */}
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
-        renderItem={renderItemCard}
-        contentContainerStyle={styles.itemsList}
-      />
-
-      {/* Modal */}
-      <Modal visible={modalOpen} transparent animationType="none">
-        <Pressable
-          style={styles.modalOverlay}
-          onPress={() => setModalOpen(false)}
-        />
-
-        <View style={styles.modalCard}>
-          <ScrollView nestedScrollEnabled>
-            <Text style={styles.modalTitle}>Add Item</Text>
-
-            <Text style={styles.inputLabel}>Item Name *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Milk, Eggs, Bread"
-              value={formName}
-              onChangeText={setFormName}
-            />
-
-            {/* Quantity + Need by */}
-            <View style={styles.row}>
-              {/* Qty */}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Quantity</Text>
-                <View style={styles.qtyRow}>
-                  <TouchableOpacity
-                    onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}
-                  >
-                    <Ionicons name="remove-circle-outline" size={25} color="#222" />
-                  </TouchableOpacity>
-
-                  <Text style={styles.qtyNumber}>{formQuantity}</Text>
-
-                  <TouchableOpacity
-                    onPress={() => setFormQuantity(formQuantity + 1)}
-                  >
-                    <Ionicons name="add-circle-outline" size={25} color="#222" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Need by */}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Need by</Text>
-                <TouchableOpacity
-                  style={styles.dateInput}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Text style={styles.dateText}>
-                    {formNeedBy
-                      ? formatShortDate(formNeedBy)
-                      : "Tap to select date"}
-                  </Text>
-                  <Ionicons name="calendar-outline" size={20} color="#222" />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {showDatePicker && (
-              <View style={styles.datePickerContainer}>
-                <DateTimePicker
-                  value={formNeedBy || new Date()}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "inline" : "default"}
-                  onChange={onChangeNeedBy}
-                />
-              </View>
-            )}
-
-            {/* Button */}
-            <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
-              <Text style={styles.addItemButtonText}>Add Item</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => setModalOpen(false)}
-              style={{ marginTop: 8, alignSelf: "center" }}
-            >
-              <Text style={{ color: "#666" }}>Cancel</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </Modal>
-    </KeyboardAvoidingView>
-  );
 }
 
-// Styles
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7F8FC" },
-  search_bar: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
-  },
-
-  topCard: {
-    margin: 18,
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  cardTitle: { fontSize: 20, fontWeight: "700", marginBottom: 8 },
-  topRow: { flexDirection: "row", alignItems: "center" },
-  topInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#E6E6E6",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: "#FAFAFB",
-    fontSize: 16,
-  },
-  plusBtn: {
-    marginLeft: 12,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#14b8a6",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  section: { marginHorizontal: 22, marginTop: 6 },
-  sectionTitle: { fontSize: 20, fontWeight: "700", color: "#2C2C54" },
-
-  itemsList: { paddingHorizontal: 10, paddingBottom: 140 },
-  itemCard: {
-    marginHorizontal: 18,
-    marginTop: 12,
-    backgroundColor: "#FAFAFB",
-    borderRadius: 10,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-  },
-  itemLeft: { width: 40, alignItems: "center" },
-  itemCenter: { flex: 1, paddingRight: 12 },
-  itemTitle: { fontSize: 17, fontWeight: "700", color: "#111" },
-  itemChecked: { textDecorationLine: "line-through", color: "#8c8c8c" },
-  itemMeta: { marginTop: 6, color: "#666", fontSize: 13 },
-
-  itemRight: { width: 120, alignItems: "center", justifyContent: "center" },
-  controlBox: {
-    width: 110,
-    backgroundColor: "#F6F6F8",
-    borderRadius: 26,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  controlIcon: { paddingHorizontal: 6 },
-  qtyBadge: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: "#eee",
-  },
-  qtyText: { fontSize: 16, fontWeight: "700", color: "#111" },
-
-  modalOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.45)",
-  },
-  modalCard: {
-    position: "absolute",
-    top: "20%",
-    left: "5%",
-    right: "5%",
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 16,
-    maxHeight: "72%",
-    shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-  },
-  modalTitle: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
-
-  inputLabel: { fontSize: 13, color: "#555", marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    borderRadius: 12,
-    padding: 12,
-    backgroundColor: "#FAFBFF",
-    fontSize: 16,
-  },
-
-  row: { flexDirection: "row", marginTop: 10 },
-
-  qtyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FAFAFB",
-    borderRadius: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    justifyContent: "space-between",
-    width: 140,
-  },
-  qtyNumber: { fontSize: 18, fontWeight: "700", marginHorizontal: 8 },
-
-  dateInput: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: "#FAFBFF",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-  },
-  dateText: { 
-    color: "#333" 
-  },
-  datePickerContainer: {
-    marginTop: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  addItemButton: {
-    marginTop: 14,
-    backgroundColor: "#14b8a6",
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  addItemButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-  },
-});
+export async function leaveFridge(fridgeId: string) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          return null;
+        }
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/fridge/leave-fridge`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ fridgeId, userId: session.user.id })
+        });
+        
+        if (response.ok) {
+          return(await response.json());
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        return null;
+      }
+}

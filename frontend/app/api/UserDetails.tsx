@@ -16,23 +16,72 @@ function fixProfilePhotoUrl(url: string | null | undefined): string {
 
 export async function fetchUserDetails() {
       try {
+        // Get session
         const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
-          return null;
-        }
+        if (!session) return null;
+
+        // Fetch user info from your API
         const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
           headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
+            Authorization: `Bearer ${session.access_token}`,
+          },
         });
 
-        if (response.ok) {
-          return(await response.json());
+        if (!response.ok) return null;
+
+        const data = await response.json();
+
+        // -----------------------------
+        // FIX PROFILE PHOTO URL IF NEEDED
+        // -----------------------------
+        let profilePhoto = data.profile_photo;
+
+        if (profilePhoto) {
+          const fixedUrl = fixProfilePhotoUrl(profilePhoto);
+
+          if (fixedUrl !== profilePhoto) {
+            console.log("Fixing profile photo URL in database...");
+            console.log("Old URL:", profilePhoto);
+            console.log("New URL:", fixedUrl);
+
+            profilePhoto = fixedUrl; // update local value
+
+            try {
+              await supabase
+                .from("users")
+                .update({ profile_photo: fixedUrl })
+                .eq("id", session.user.id);
+              console.log("Profile photo URL updated in database.");
+            } catch (dbError) {
+              console.error("Error updating profile photo URL:", dbError);
+            }
+          }
         }
+
+        // -----------------------------
+        // NORMALIZED RETURN OBJECT
+        // -----------------------------
+        return {
+          id: session.user.id,
+          email: session.user.email,
+          first_name:
+            data.first_name ??
+            session.user.user_metadata?.first_name ??
+            "",
+          last_name:
+            data.last_name ??
+            session.user.user_metadata?.last_name ??
+            "",
+          profile_photo: profilePhoto ?? null,
+          fridge_id: data.fridge_id ?? null,
+          fridge: data.fridge ?? null,
+          fridgeMates: data.fridgeMates ?? [],
+        };
       } catch (error) {
-        console.error('Error fetching user:', error);
+        console.error("Error fetching user:", error);
         return null;
       }
+
 }
 
 export async function leaveFridge(fridgeId: string) {
