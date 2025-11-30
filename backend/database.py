@@ -9,7 +9,7 @@ from supabase import create_client
 load_dotenv()
 
 url = os.getenv("SUPABASE_URL")
-key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+key = os.getenv("SUPABASE_KEY")
 
 print(f"DEBUG: Connecting with URL: '{url}'")
 
