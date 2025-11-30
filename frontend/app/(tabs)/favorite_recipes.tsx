@@ -88,7 +88,7 @@ export default function TabOneScreen() {
   const fetchRecipeItems = async () => {
     try {
       setLoading(true);
-      console.log("Fetching data from:", `${API_URL}/get-favorite-recipes/`);
+      console.log("Fetching data from:", `${API_URL}/favorite-recipes/get-favorite-recipes/`);
 
       const { data: { session }, error } = await supabase.auth.getSession();
 
@@ -101,7 +101,7 @@ export default function TabOneScreen() {
 
       console.log("User ID:", user?.id);
 
-      const response = await fetch(`${API_URL}/get-favorite-recipes/`, {
+      const response = await fetch(`${API_URL}/favorite-recipes/get-favorite-recipes/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
