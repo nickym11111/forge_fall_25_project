@@ -31,9 +31,7 @@ export async function fetchUserDetails() {
 
       const data = await response.json();
 
-      // -----------------------------
-      // FIX PROFILE PHOTO URL IF NEEDED
-      // -----------------------------
+      // Fix profile pic if needed
       let profilePhoto = data.profile_photo;
 
       if (profilePhoto) {
@@ -58,9 +56,7 @@ export async function fetchUserDetails() {
         }
       }
 
-      // -----------------------------
-      // NORMALIZED RETURN OBJECT
-      // -----------------------------
+      // Normalized User
       return {
         id: session.user.id,
         email: session.user.email,

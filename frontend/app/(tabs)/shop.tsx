@@ -8,6 +8,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -294,7 +296,7 @@ export default function SharedListScreen() {
       {/* Search */}
       <TextInput
         style={styles.search_bar}
-        onChangeText={setSearchValue}
+https://github.com/nickym11111/forge_fall_25_project/pull/59/conflict?name=frontend%252Fapp%252Fapi%252FAddItemToFridge.tsx&ancestor_oid=7e3fa57668c840163db4b974fdb0fb9694cdf1e8&base_oid=848f6fa3108da48242e9e9fab607bfd8baed2d90&head_oid=53e1ef4b2f7a85cb5e5d6573cb98f4347270bad2        onChangeText={setSearchValue}
         value={searchValue}
         placeholder="Search items..."
       />

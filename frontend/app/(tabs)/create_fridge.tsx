@@ -6,6 +6,7 @@ import {
   Alert,
   ScrollView,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
 import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -34,7 +35,7 @@ const SEND_INVITE_URL = `${process.env.EXPO_PUBLIC_API_URL}/fridge/send-invite`;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
   formContainer: {
     flexGrow: 1,
@@ -120,14 +121,7 @@ export default function CreateFridgeScreen() {
   //Handle fridge creation and sending invites
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
-      Alert.alert("Error", "Please enter a fridge name.");
-      return;
-    }
-
-    // Filter out empty emails
-    const validEmails = emails.filter((email) => email.trim() !== "");
-    if (validEmails.length === 0) {
-      Alert.alert("Error", "Please enter at least one email address.");
+      Alert.alert("Error", "Please enter a Kitchen name.");
       return;
     }
 
@@ -157,15 +151,19 @@ export default function CreateFridgeScreen() {
       });
 
       const fridgeData: ApiResponse = await createFridgeResponse.json();
-      console.log("Fridge creation response:", fridgeData);
+      console.log("Kitchen creation response:", fridgeData);
+
+      console.log("✅ Step 1: Fridge created successfully"); 
 
       if (!createFridgeResponse.ok || fridgeData.status !== "success") {
-        throw new Error(fridgeData.message || "Failed to create fridge");
+        throw new Error(fridgeData.message || "Failed to create Kitchen");
       }
+
+      console.log("✅ Step 2: Response validation passed");
 
       const fridgeId = fridgeData.fridge_id;
       if (!fridgeId) {
-        throw new Error("No fridge ID returned from server");
+        throw new Error("No Kitchen ID returned from server");
       }
 
       // Invite code 
@@ -199,14 +197,14 @@ export default function CreateFridgeScreen() {
       if (failedInvites.length > 0) {
         Alert.alert(
           "Partial Success",
-          `Fridge created successfully, but failed to send invites to: ${failedInvites.join(
+          `Kitchen created successfully, but failed to send invites to: ${failedInvites.join(
             ", "
           )}`
         );
       } else {
         Alert.alert(
           "Success!",
-          "Fridge created and invites sent successfully!"
+          "Kitchen created and invites sent successfully!"
         );
       }
       */
@@ -247,7 +245,7 @@ export default function CreateFridgeScreen() {
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}
-          <Text style={styles.label}>Fridge Name:</Text>
+          <Text style={styles.label}>Kitchen Name:</Text>
           <TextInput
             style={styles.input}
             placeholder="example"
@@ -255,11 +253,14 @@ export default function CreateFridgeScreen() {
             value={fridgeName}
             onChangeText={setFridgeName}
             editable={!isLoading}
+            returnKeyType="default"
+            onSubmitEditing={Keyboard.dismiss}
+            blurOnSubmit={true}
           />
 
           {/*Create button*/}
           <CustomButton
-            title={isLoading ? "Creating..." : "Create Fridge"}
+            title={isLoading ? "Creating..." : "Create Kitchen"}
             onPress={handleCreateFridge}
             style={styles.createButton}
             disabled={isLoading}
@@ -271,10 +272,11 @@ export default function CreateFridgeScreen() {
             style={styles.joinFridgeText}
             onPress={() => !isLoading && router.push("/(tabs)/Join-Fridge")}
           >
-            Join a fridge instead
+            Join a kitchen instead
           </Text>
         </View>
       </ScrollView>
     </View>
   );
 }
+

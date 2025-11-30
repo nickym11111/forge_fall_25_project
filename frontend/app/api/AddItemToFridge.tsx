@@ -74,3 +74,30 @@ export async function AddItemToFridge(
 
   return response;
 }
+
+export async function UpdateFridgeItem(
+  access_token: string,
+  itemId: number,
+  name: string,
+  quantity: string,
+  expiryDate: Date,
+  sharedByUserIds: string[],
+  price?: number
+) {
+  const response = await fetch(`${API_URL}/fridge_items/${itemId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${access_token}`,
+    },
+    body: JSON.stringify({
+      name: name.trim(),
+      quantity: quantity ? Number(quantity) : 1,
+      expiry_date: expiryDate.toISOString().split("T")[0],
+      shared_by: sharedByUserIds.length > 0 ? sharedByUserIds : null,
+      price: price || 0.0,
+    }),
+  });
+
+  return response;
+}
