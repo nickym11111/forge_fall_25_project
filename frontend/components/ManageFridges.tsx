@@ -210,7 +210,11 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
       }
 
       await refreshUser();
-      onClose();
+      
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await fetchAllFridges();
+      
+      Alert.alert("Success", "Switched to fridge successfully!");
 
     } catch (err) {
       console.error("Error switching fridge:", err);
@@ -335,7 +339,8 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
                 setSelectedFridge({ id, name });
                 setShowRequestsModal(true);
               }}
-              isActive={fridge.isActive || false}
+              // Calculate logic directly against the live user object
+              isActive={fridge.id === user?.active_fridge_id} 
             />
           ))
         )}
