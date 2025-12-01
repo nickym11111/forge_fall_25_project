@@ -375,45 +375,86 @@ export default function ParseReceiptScreen() {
             <TouchableOpacity
               style={[styles.addButton, styles.addAllButton]}
               onPress={async () => {
+                if (!parsedItems || parsedItems.length === 0 || isAddingItems)
+                  return;
+
                 try {
                   setIsAddingItems(true);
-                  for (const [index, item] of parsedItems.entries()) {
-                    const itemName = Object.keys(item)[0];
-                    const itemData = item[itemName];
-                    await sendItemToFridge({
-                      name: itemName,
-                      quantity: Math.ceil(itemData.quantity),
-                      price: itemData.price,
-                      index,
-                      sharedWith: [...sharingWith],
-                    });
-                    setAddingItemIndex((prev) => [...prev, index]);
+
+                  // Process all items in parallel
+                  const results = await Promise.all(
+                    parsedItems.map(async (item, index) => {
+                      const itemName = Object.keys(item)[0];
+                      const itemData = item[itemName];
+
+                      try {
+                        await sendItemToFridge({
+                          name: itemName,
+                          quantity: Math.ceil(itemData.quantity),
+                          price: itemData.price,
+                          index,
+                          sharedWith: [...sharingWith],
+                        });
+                        return { success: true, index, name: itemName };
+                      } catch (error) {
+                        console.error(`Error adding item ${itemName}:`, error);
+                        return { success: false, index, name: itemName, error };
+                      }
+                    })
+                  );
+
+                  // Count successes and failures
+                  const successCount = results.filter((r) => r.success).length;
+                  const failedItems = results.filter((r) => !r.success);
+
+                  // If all succeeded, clear everything
+                  if (successCount === parsedItems.length) {
+                    setParsedItems([]);
+                    setSelectedItems([]);
+                    setAddingItemIndex([]);
+
+                    Alert.alert(
+                      "Success",
+                      `Successfully added all ${successCount} items to your fridge!`
+                    );
+                    setToastMessage(
+                      `Successfully added all ${successCount} items to your fridge!`
+                    );
+                    setIsToastVisible(true);
+                    setTimeout(() => setIsToastVisible(false), 3000);
                   }
+                  // If some failed, only remove successful ones
+                  else {
+                    const successfulIndices = results
+                      .filter((r) => r.success)
+                      .map((r) => r.index);
 
-                  setParsedItems(null);
-                  setSelectedItems([]);
-                  setAddingItemIndex([]);
-                  setIsShareModalVisible(false);
+                    setParsedItems((prev) =>
+                      prev.filter((_, idx) => !successfulIndices.includes(idx))
+                    );
 
-                  // Show success message
-                  Alert.alert(
-                    "Success",
-                    `Successfully added all items to your fridge!`
-                  );
-                  setToastMessage(
-                    "Successfully added all items to your fridge!"
-                  );
-                  setIsToastVisible(true);
-                  setTimeout(() => {
-                    setIsToastVisible(false);
-                    setIsAddingItems(false);
-                  }, 3000);
+                    setSelectedItems([]);
+                    setAddingItemIndex([]);
+
+                    Alert.alert(
+                      "Partial Success",
+                      `Added ${successCount} of ${parsedItems.length} 
+                      items.\n${failedItems.length} item(s) failed and remain in the list.`
+                    );
+
+                    setToastMessage(
+                      `Added ${successCount} items. ${failedItems.length} failed.`
+                    );
+                    setIsToastVisible(true);
+                    setTimeout(() => setIsToastVisible(false), 3000);
+                  }
                 } catch (error) {
-                  console.error("Error adding items:", error);
+                  console.error("Unexpected error:", error);
                   Alert.alert(
                     "Error",
-                    "Failed to add some items. Please try again."
+                    "An unexpected error occurred while processing your request."
                   );
+                } finally {
                   setIsAddingItems(false);
                 }
               }}
@@ -431,54 +472,78 @@ export default function ParseReceiptScreen() {
                 selectedItems.length === 0 && styles.buttonDisabled,
               ]}
               onPress={async () => {
+                if (selectedItems.length === 0 || isAddingItems) return;
+
                 try {
                   setIsAddingItems(true);
-                  let successCount = 0;
-                  for (const index of selectedItems) {
-                    const item = parsedItems[index];
-                    const itemName = Object.keys(item)[0];
-                    const itemData = item[itemName];
 
-                    await sendItemToFridge({
-                      name: itemName,
-                      quantity: Math.ceil(itemData.quantity),
-                      price: itemData.price,
-                      index,
-                      sharedWith: [...sharingWith],
-                    });
+                  // Process all items in parallel
+                  const results = await Promise.all(
+                    selectedItems.map(async (index) => {
+                      const item = parsedItems[index];
+                      const itemName = Object.keys(item)[0];
+                      const itemData = item[itemName];
 
-                    setAddingItemIndex((prev) => [...prev, index]);
-                    successCount++;
+                      try {
+                        await sendItemToFridge({
+                          name: itemName,
+                          quantity: Math.ceil(itemData.quantity),
+                          price: itemData.price,
+                          index,
+                          sharedWith: [...sharingWith],
+                        });
+                        return { success: true, index };
+                      } catch (error) {
+                        console.error(`Error adding item ${itemName}:`, error);
+                        return { success: false, index, error };
+                      }
+                    })
+                  );
+
+                  // Update UI for all successfully added items
+                  const successfulItems = results
+                    .filter((r) => r.success)
+                    .map((r) => r.index);
+
+                  // Remove all processed items from the list
+                  setParsedItems((prev) =>
+                    prev.filter((_, idx) => !selectedItems.includes(idx))
+                  );
+
+                  // Show success message
+                  const successCount = successfulItems.length;
+                  if (successCount > 0) {
+                    Alert.alert(
+                      "Success",
+                      `Successfully added ${successCount} item(s) to your fridge!`
+                    );
+                    setToastMessage(
+                      `Successfully added ${successCount} item(s) to your fridge!`
+                    );
+                    setIsToastVisible(true);
+                    setTimeout(() => setIsToastVisible(false), 3000);
                   }
 
-                  setParsedItems((prev) =>
-                    prev.filter((_, index) => !selectedItems.includes(index))
-                  );
-
-                  // Show success message after all items are processed
-                  Alert.alert(
-                    "Success",
-                    `Successfully added ${successCount} item(s) to your fridge!`
-                  );
-                  setToastMessage(
-                    `Successfully added ${successCount} item(s) to your fridge!`
-                  );
-                  setIsToastVisible(true);
-                  setTimeout(() => setIsToastVisible(false), 3000);
+                  // If some items failed, show a warning
+                  if (successCount < selectedItems.length) {
+                    Alert.alert(
+                      "Partial Success",
+                      `Added ${successCount} of ${selectedItems.length} items. Some items may not have been added.`
+                    );
+                  }
 
                   setSelectedItems([]);
-                  setAddingItemIndex([]);
                 } catch (error) {
-                  console.error("Error adding items:", error);
+                  console.error("Unexpected error:", error);
                   Alert.alert(
                     "Error",
-                    "Failed to add some items. Please try again."
+                    "An unexpected error occurred while processing your request."
                   );
                 } finally {
                   setIsAddingItems(false);
                 }
               }}
-              disabled={selectedItems.length === 0}
+              disabled={selectedItems.length === 0 || isAddingItems}
             >
               {isAddingItems ? (
                 <ActivityIndicator color="#fff" />
