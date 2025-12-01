@@ -1,19 +1,17 @@
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
-  StatusBar,
   ActivityIndicator,
   TouchableOpacity,
   Alert,
   RefreshControl,
-  SafeAreaView,
 } from "react-native";
-import { Stack } from "expo-router";
-import { useEffect, useState } from "react";
-import { supabase } from "../utils/client";
-import { useUser } from "../hooks/useUser";
+import { Ionicons } from "@expo/vector-icons";
+import { supabase } from "../app/utils/client";
+import CustomButton from "./CustomButton";
 
 interface FridgeRequest {
   id: string;
@@ -31,16 +29,15 @@ interface FridgeRequest {
     id: string;
     name: string;
   };
-  // Add these fields to match your UI expectations
-  user?: {
-    id: string;
-    first_name: string;
-    last_name: string;
-  };
-  fridge?: {
-    name: string;
-  };
 }
+
+interface ViewRequestsModalProps {
+  fridgeId: string;
+  fridgeName: string;
+  onClose: () => void;
+}
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 const RequestCard = ({
   request,
@@ -55,20 +52,21 @@ const RequestCard = ({
     try {
       setIsProcessing(true);
 
-      const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
-
       const endpoint =
         status === "ACCEPTED" ? "/fridge/accept-request/" : "/decline-request/";
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        Alert.alert("Error", "Please log in again");
+        return;
+      }
 
       const response = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            (
-              await supabase.auth.getSession()
-            ).data.session?.access_token
-          }`,
+          "Authorization": `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           request_id: request.id,
@@ -82,11 +80,9 @@ const RequestCard = ({
 
       const result = await response.json();
 
-      // Show success message
       Alert.alert("Success", result.message);
-
-      // Refresh the requests list
       onStatusChange();
+
     } catch (error) {
       console.error(
         `Error ${status === "ACCEPTED" ? "accepting" : "declining"} request:`,
@@ -94,26 +90,32 @@ const RequestCard = ({
       );
       Alert.alert(
         "Error",
-        (error as Error)?.message ||
-          `Failed to ${
-            status === "ACCEPTED" ? "accept" : "decline"
-          } request. Please try again.`
+        error instanceof Error 
+          ? error.message 
+          : `Failed to ${status === "ACCEPTED" ? "accept" : "decline"} request`
       );
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const getUserName = () => {
+    const user = request.users;
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user?.first_name) return user.first_name;
+    return user?.email || "Unknown User";
+  };
+
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>Join Request</Text>
       <Text style={styles.cardText}>
-        <Text style={styles.cardLabel}>User:</Text>{" "}
-        {request.user?.first_name || "Unknown User"}
+        <Text style={styles.label}>User:</Text> {getUserName()}
       </Text>
       <Text style={styles.cardText}>
-        <Text style={styles.cardLabel}>Fridge:</Text>{" "}
-        {request.fridge?.name || "Unknown Fridge"}
+        <Text style={styles.label}>Email:</Text> {request.users?.email || "N/A"}
       </Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -147,27 +149,17 @@ const RequestCard = ({
   );
 };
 
-export default function RequestsScreen() {
-  const { user } = useUser();
+const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalProps) => {
   const [requests, setRequests] = useState<FridgeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchRequests = async () => {
-    if (!user?.fridge_id) {
-      setLoading(false);
-      return;
-    }
-
     try {
-      setRefreshing(true);
       if (!refreshing) setLoading(true);
+      setRefreshing(true);
 
-      console.log("Searching for requests...");
-      console.log("User fridge ID:", user.fridge_id);
-
-      const { data, error: fetchError } = await supabase
+      const { data, error } = await supabase
         .from("fridge_requests")
         .select(
           `
@@ -176,24 +168,16 @@ export default function RequestsScreen() {
           fridges:fridge_id!inner(id, name)
         `
         )
-        .eq("fridge_id", user.fridge_id)
+        .eq("fridge_id", fridgeId)
         .eq("acceptance_status", "PENDING");
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
 
-      // Transform the data to match our UI expectations
-      const formattedData = (data || []).map((request) => ({
-        ...request,
-        // Map users to user for backward compatibility
-        user: request.users,
-        // Map fridges to fridge for backward compatibility
-        fridge: request.fridges,
-      }));
-      setRequests(formattedData);
-      setError(null);
+      setRequests(data || []);
+
     } catch (err) {
       console.error("Error fetching requests:", err);
-      setError("Failed to load requests. Please try again.");
+      Alert.alert("Error", "Failed to load requests");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -202,111 +186,108 @@ export default function RequestsScreen() {
 
   useEffect(() => {
     fetchRequests();
-  }, [user?.fridge_id]);
-
-  if (loading && !refreshing) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" color="#f4511e" />
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.container, styles.center]}>
-        <Text style={styles.errorText}>{error}</Text>
-      </View>
-    );
-  }
-
-  const handleStatusChange = () => {
-    fetchRequests();
-  };
+  }, [fridgeId]);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#f4511e" />
-      <Stack.Screen
-        options={{
-          title: "Join Requests",
-          headerStyle: {
-            backgroundColor: "#f4511e",
-          },
-          headerTintColor: "#fff",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-        }}
-      />
+    <View style={styles.container}>
+      {/* X Button in top right */}
+      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+        <Ionicons name="close-circle" size={36} color="#333" />
+      </TouchableOpacity>
 
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Join Requests</Text>
+        <Text style={styles.headerSubtitle}>{fridgeName}</Text>
+      </View>
+
+      {/* Content */}
       <ScrollView
-        style={styles.scrollView}
+        style={styles.content}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={fetchRequests}
-            colors={["#f4511e"]}
-            tintColor="#f4511e"
+            colors={["#7C3AED"]}
+            tintColor="#7C3AED"
           />
         }
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Pending Join Requests</Text>
-          <Text style={styles.headerSubtitle}>
-            Review and manage fridge join requests
-          </Text>
-        </View>
-
-        {loading ? (
+        {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#f4511e" />
+            <ActivityIndicator size="large" color="#7C3AED" />
+            <Text style={styles.loadingText}>Loading requests...</Text>
           </View>
         ) : requests.length === 0 ? (
-          <View style={styles.center}>
-            <Text style={styles.emptyStateText}>No pending requests found.</Text>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No pending requests</Text>
           </View>
         ) : (
           requests.map((request) => (
             <RequestCard
               key={request.id}
               request={request}
-              onStatusChange={handleStatusChange}
+              onStatusChange={fetchRequests}
             />
           ))
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#F8F9FF",
   },
-  scrollView: {
-    padding: 16,
+  closeButton: {
+    position: "absolute",
+    top: 60,
+    right: 20,
+    zIndex: 1000,
   },
   header: {
-    marginBottom: 24,
-    paddingBottom: 16,
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "#333",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#666",
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  loadingContainer: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#666",
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: "#999",
   },
   card: {
     backgroundColor: "#fff",
@@ -329,6 +310,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#555",
     marginBottom: 8,
+  },
+  label: {
+    fontWeight: "600",
   },
   buttonContainer: {
     flexDirection: "row",
@@ -355,30 +339,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  errorText: {
-    color: "#f44336",
-    textAlign: "center",
-  },
   disabledButton: {
     opacity: 0.6,
   },
-  loadingContainer: {
-    padding: 20,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  cardLabel: {
-    fontWeight: "600",
-    color: "#333",
-  },
-  emptyStateText: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-  },
 });
+
+export default ViewRequestsModal;

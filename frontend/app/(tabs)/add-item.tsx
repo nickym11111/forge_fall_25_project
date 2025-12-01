@@ -10,14 +10,16 @@ import {
   TouchableOpacity,
   Modal,
   ActivityIndicator,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
-import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
 
 interface ApiResponse {
@@ -29,6 +31,8 @@ interface ApiResponse {
 interface User {
   id: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
   user_metadata?: {
     first_name?: string;
     last_name?: string;
@@ -40,54 +44,66 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
 
   scrollContent: {
     flexGrow: 1,
+    paddingBottom: 40,
   },
 
   formContainer: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 40,
+    paddingTop: 24,
   },
 
   form: {
     width: "100%",
     maxWidth: 400,
     backgroundColor: "white",
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: 24,
+    padding: 28,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
 
   label: {
     fontSize: 15,
     fontWeight: "600",
-    color: "#333",
+    color: "#0f172a",
     marginBottom: 6,
-    marginTop: 12,
+    marginTop: 8,
   },
 
   required: {
-    color: "#FF6B6B",
+    color: "#ef4444",
   },
 
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
   input: {
-    width: "100%",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    fontSize: 15,
-    backgroundColor: "#F9F9F9",
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#1e293b",
   },
 
   buttonContainer: {
@@ -117,7 +133,7 @@ const styles = StyleSheet.create({
 
   aiSuggestionText: {
     fontSize: 11,
-    color: "#2E7D32",
+    color: "#14b8a6",
     fontWeight: "600",
   },
 
@@ -125,24 +141,18 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  datePickerButton: {
-    width: "100%",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#F9F9F9",
-    justifyContent: "center",
-  },
-
   datePickerText: {
-    fontSize: 15,
-    color: "#333",
+    flex: 1,
+    fontSize: 16,
+    color: "#1e293b",
+    paddingVertical: 14,
   },
 
   datePickerPlaceholder: {
-    fontSize: 15,
-    color: "#999",
+    flex: 1,
+    fontSize: 16,
+    color: "#94a3b8",
+    paddingVertical: 14,
   },
 
   successOverlay: {
@@ -214,9 +224,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    padding: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#e2e8f0",
+    backgroundColor: "#FAFBFC",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
 
   modalButton: {
@@ -224,15 +238,15 @@ const styles = StyleSheet.create({
   },
 
   modalButtonText: {
-    fontSize: 17,
-    color: "#007AFF",
+    fontSize: 16,
+    color: "#14b8a6",
     fontWeight: "600",
   },
 
   modalTitle: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#333",
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
   },
 
   datePickerButtonText: {
@@ -240,24 +254,18 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 
-  userPickerButton: {
-    width: "100%",
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    backgroundColor: "#F9F9F9",
-    justifyContent: "center",
-  },
-
   userPickerButtonText: {
-    fontSize: 15,
-    color: "#333",
+    flex: 1,
+    fontSize: 16,
+    color: "#1e293b",
+    paddingVertical: 14,
   },
 
   userPickerPlaceholder: {
-    fontSize: 15,
-    color: "#999",
+    flex: 1,
+    fontSize: 16,
+    color: "#94a3b8",
+    paddingVertical: 14,
   },
 
   userListContainer: {
@@ -302,30 +310,40 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   popupBox: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-    width: "85%",
+    borderRadius: 20,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    width: "90%",
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
     shadowColor: "#000",
-    shadowOpacity: 0.2,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 5,
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+    overflow: "hidden",
   },
 
   pickerWrapper: {
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
+    paddingVertical: 5,
+    paddingTop: 5,
+    paddingBottom: 15,
+    backgroundColor: "#FAFBFC",
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
 
   datePickerIOS: {
     alignSelf: "center",
     width: "100%",
-    transform: [{ scale: 0.95 }],
   },
 });
 
@@ -350,6 +368,7 @@ export default function AddItemManual() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
 
   // AI Expiry Date Prediction
   useEffect(() => {
@@ -475,22 +494,26 @@ export default function AddItemManual() {
         setUsers([
           {
             id: "1",
-            user_metadata: { first_name: "Alice", last_name: "Johnson" },
+            first_name: "Alice",
+            last_name: "Johnson",
             email: "alice@example.com",
           },
           {
             id: "2",
-            user_metadata: { first_name: "Bob", last_name: "Smith" },
+            first_name: "Bob",
+            last_name: "Smith",
             email: "bob@example.com",
           },
           {
             id: "3",
-            user_metadata: { first_name: "Charlie", last_name: "Brown" },
+            first_name: "Charlie",
+            last_name: "Brown",
             email: "charlie@example.com",
           },
           {
             id: "4",
-            user_metadata: { first_name: "Diana", last_name: "Lee" },
+            first_name: "Diana",
+            last_name: "Lee",
             email: "diana@example.com",
           },
         ]);
@@ -500,34 +523,44 @@ export default function AddItemManual() {
       setUsers([
         {
           id: "1",
+          first_name: "Alice",
+          last_name: "Johnson",
           email: "alice@example.com",
-          user_metadata: { first_name: "Alice", last_name: "Johnson" },
         },
         {
           id: "2",
+          first_name: "Bob",
+          last_name: "Smith",
           email: "bob@example.com",
-          user_metadata: { first_name: "Bob", last_name: "Smith" },
         },
         {
           id: "3",
+          first_name: "Charlie",
+          last_name: "Brown",
           email: "charlie@example.com",
-          user_metadata: { first_name: "Charlie", last_name: "Brown" },
         },
         {
           id: "4",
+          first_name: "Diana",
+          last_name: "Lee",
           email: "diana@example.com",
-          user_metadata: { first_name: "Diana", last_name: "Lee" },
         },
       ]);
     }
   };
 
   const getUserDisplayName = (user: User) => {
+    // Check for first_name/last_name directly (from database)
+    if (user.first_name) {
+      return `${user.first_name} ${user.last_name || ""}`.trim();
+    }
+    // Check for first_name/last_name in user_metadata (from auth)
     if (user.user_metadata?.first_name) {
       return `${user.user_metadata.first_name} ${
         user.user_metadata.last_name || ""
       }`.trim();
     }
+    // Fallback to email if no name available
     return user.email;
   };
 
@@ -679,59 +712,78 @@ export default function AddItemManual() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <CustomHeader title="Add Item 🍎" />
-      <ProfileIcon className="profileIcon" />
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.formContainer}>
-          <View style={styles.form}>
+      <CustomHeader 
+        title="Add Item" 
+        subtitle="Manually add items to your kitchen inventory"
+      />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.formContainer}>
+            <View style={styles.form}>
             <Text style={styles.label}>
               Item Name <Text style={styles.required}>*</Text>
             </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., Milk, Eggs, Chicken"
-              value={title}
-              onChangeText={setTitle}
-              editable={!isLoading}
-            />
+            <View style={styles.inputContainer}>
+              <Ionicons name="cube-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Milk, Eggs, Chicken"
+                placeholderTextColor="#94a3b8"
+                value={title}
+                onChangeText={setTitle}
+                editable={!isLoading}
+              />
+            </View>
 
             <Text style={styles.label}>Quantity</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 2 (default: 1)"
-              value={quantity}
-              onChangeText={setQuantity}
-              keyboardType="numeric"
-              editable={!isLoading}
-            />
+            <View style={styles.inputContainer}>
+              <Ionicons name="calculator-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 2 (default: 1)"
+                placeholderTextColor="#94a3b8"
+                value={quantity}
+                onChangeText={setQuantity}
+                keyboardType="numeric"
+                editable={!isLoading}
+              />
+            </View>
 
             <Text style={styles.label}>Price ($)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g., 4.99 (optional)"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="decimal-pad"
-              editable={!isLoading}
-            />
+            <View style={styles.inputContainer}>
+              <Ionicons name="cash-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., 4.99 (optional)"
+                placeholderTextColor="#94a3b8"
+                value={price}
+                onChangeText={setPrice}
+                keyboardType="decimal-pad"
+                editable={!isLoading}
+              />
+            </View>
 
             <Text style={styles.label}>Expiry Date</Text>
             <TouchableOpacity
-              style={styles.datePickerButton}
+              style={styles.inputContainer}
               onPress={() => {
                 setTempExpiryDate(expiryDate);
                 setShowDatePicker(true);
               }}
               disabled={isLoading}
             >
-              <Text style={styles.datePickerButtonText}>
+              <Ionicons name="calendar-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <Text style={styles.datePickerText}>
                 {formatDate(expiryDate)}
               </Text>
             </TouchableOpacity>
 
             {isLoadingAI && (
               <View style={styles.loadingIndicator}>
-                <ActivityIndicator size="small" color="#4CAF50" />
+                <ActivityIndicator size="small" color="#14b8a6" />
               </View>
             )}
 
@@ -749,10 +801,11 @@ export default function AddItemManual() {
 
             <Text style={styles.label}>Shared By</Text>
             <TouchableOpacity
-              style={styles.userPickerButton}
+              style={styles.inputContainer}
               onPress={() => setShowUserPicker(true)}
               disabled={isLoading}
             >
+              <Ionicons name="people-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
               <Text
                 style={
                   sharedByUserIds.length > 0
@@ -778,7 +831,8 @@ export default function AddItemManual() {
             </View>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </TouchableWithoutFeedback>
 
       {showDatePicker && Platform.OS === "ios" && (
         <Modal

@@ -11,6 +11,8 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
@@ -240,19 +242,23 @@ export default function SharedListScreen() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <CustomHeader title="Shared Shopping List 🛒" />
-      <ProfileIcon className="profileIcon" />
-      {/* Top Card (Add Item quick input) */}
-      <View style={styles.topCard}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View>
+          {/* Top Card (Add Item quick input) */}
+          <View style={styles.topCard}>
         <Text style={styles.cardTitle}>Add Item</Text>
 
         <View style={styles.topRow}>
-          <TextInput
-            style={styles.topInput}
-            placeholder="Item name..."
-            placeholderTextColor="#888"
-            value={formName}
-            onChangeText={setFormName}
-          />
+          <View style={styles.inputContainer}>
+            <Ionicons name="cube-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+            <TextInput
+              style={styles.topInput}
+              placeholder="Item name..."
+              placeholderTextColor="#94a3b8"
+              value={formName}
+              onChangeText={setFormName}
+            />
+          </View>
           <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
             <Ionicons name="add" size={28} color="#fff" />
           </TouchableOpacity>
@@ -268,7 +274,10 @@ export default function SharedListScreen() {
         keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
         renderItem={renderItemCard}
         contentContainerStyle={styles.itemsList}
+        keyboardShouldPersistTaps="handled"
       />
+        </View>
+      </TouchableWithoutFeedback>
 
       {/* Popup (Add Item) */}
       <Modal visible={modalOpen} transparent animationType="none" onRequestClose={closeModal}>
@@ -315,14 +324,14 @@ export default function SharedListScreen() {
             </View>
 
             {showDatePicker && (
-              (
+              <View style={styles.datePickerContainer}>
                 <DateTimePicker
                   value={formNeedBy || new Date()}
                   mode="date"
                   display={Platform.OS === "ios" ? "inline" : "default"}
                   onChange={onChangeNeedBy}
                 />
-              )
+              </View>
             )}
 
 
@@ -361,23 +370,33 @@ const styles = StyleSheet.create({
     fontSize: 20, 
     fontWeight: "700", 
     marginBottom: 8 },
-  topRow: { flexDirection: "row", alignItems: "center" },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  inputContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
   topInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#E6E6E6",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: "#FAFAFB",
+    paddingVertical: 14,
     fontSize: 16,
+    color: "#1e293b",
   },
   plusBtn: {
     marginLeft: 12,
     width: 46,
     height: 46,
     borderRadius: 23,
-    backgroundColor: "#4caf50",
+    backgroundColor: "#14b8a6",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#6C63FF",
@@ -539,11 +558,16 @@ const styles = StyleSheet.create({
   dateText: { 
     color: "#333" 
   },
+  datePickerContainer: {
+    marginTop: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   // Buttons
   addItemButton: {
     marginTop: 14,
-    backgroundColor: "#5FA35F",
+    backgroundColor: "#14b8a6",
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
