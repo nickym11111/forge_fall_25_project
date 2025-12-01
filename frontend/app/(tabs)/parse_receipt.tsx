@@ -120,6 +120,14 @@ export default function ParseReceiptScreen() {
     setTimeout(() => setIsToastVisible(false), 3000);
 
     if (AddItemToFridgeResponse.ok) {
+      const updatedItems = parsedItems.filter(
+        (i) =>
+          Object.keys(i)[0] !== item.name &&
+          i.quantity !== item.quantity &&
+          i.price !== item.price
+      );
+      console.log("Updating parsed items:", updatedItems);
+      setParsedItems(updatedItems);
       Alert.alert("Success!", "Item added to fridge!");
       setToastMessage("Item added to fridge!");
     } else {
@@ -279,6 +287,7 @@ export default function ParseReceiptScreen() {
                   sendItemToFridge({
                     name: itemName,
                     quantity: Math.ceil(itemData.quantity),
+                    price: itemData.price,
                     index,
                   });
                   setAddingItemIndex((prev) => [...prev, index]);
@@ -293,7 +302,6 @@ export default function ParseReceiptScreen() {
             const itemName = Object.keys(item)[0];
             const itemData = item[itemName];
             const isAdding = addingItemIndex.includes(index);
-
             return (
               <View key={index} style={styles.itemCard}>
                 <View style={styles.itemInfo}>
@@ -322,6 +330,7 @@ export default function ParseReceiptScreen() {
                       sendItemToFridge({
                         name: itemName,
                         quantity: Math.ceil(itemData.quantity),
+                        price: itemData.price,
                         index,
                       });
                       setAddingItemIndex((prev) => [...prev, index]);
