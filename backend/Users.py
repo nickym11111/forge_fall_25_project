@@ -6,6 +6,7 @@ from service import get_current_user, generate_invite_code, get_current_user_wit
 import ast
 import base64
 import uuid
+from typing import List, Optional, Union
 
 app = APIRouter()
 #TEMPLATE to get started :)

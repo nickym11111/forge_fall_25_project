@@ -25,6 +25,7 @@ load_dotenv()
 app = FastAPI()
 app.include_router(users_router)
 app.include_router(recipes_router)
+app.include_router(favorite_recipes_router)
 app.include_router(recipe_gen_router)
 #app.include_router(ai_expiration_router, tags=["ai"])
 
@@ -110,7 +111,7 @@ async def create_fridge_item(
             "fridge_id": fridge_id,
             "added_by": current_user["id"],
             "shared_by": item.shared_by,
-            "price": item.price  #come back to this,
+            "price": item.price,  #come back to this,
             "fridge_id": fridge_id #CHANGED HERE
         }).execute()
 
