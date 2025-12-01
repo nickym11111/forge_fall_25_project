@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 from service import get_current_user, generate_invite_code
 from Join import app as join_router
-#from ai_expiration import app as ai_expiration_router
+from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
 from CostSplitting import app as cost_splitting_router
@@ -20,15 +20,12 @@ from favorite_recipes import app as favorite_recipes_router
 #from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
 
-# Import new API routers
-from api.fridge_requests import app as fridge_requests_api_router
-from api.shopping_list import app as shopping_list_api_router
-from api.profile_photos import app as profile_photos_router
 
 load_dotenv()
 app = FastAPI()
 app.include_router(users_router)
 app.include_router(recipes_router)
+app.include_router(favorite_recipes_router)
 app.include_router(recipe_gen_router)
 #app.include_router(ai_expiration_router, tags=["ai"])
 
@@ -39,7 +36,6 @@ origins = [
     "http://127.0.0.1:8081",
     "http://localhost:8082",
     "http://127.0.0.1:8082",
-    "*",  # Allow all origins for development (mobile app)
 ]
 
 app.add_middleware(
@@ -75,7 +71,7 @@ class FridgeItemCreate(BaseModel):
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
-    price: Optional[float]
+    price: Optional[int]
 
 class AcceptFridgeRequestDTO(BaseModel):
     request_id: str
@@ -108,27 +104,27 @@ async def create_fridge_item(
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
-        # insert new item to fridge
         response = supabase.table("fridge_items").insert({
-            "name": item.name.strip().lower(),
+            "name": item.name,
             "quantity": item.quantity,
-            "days_till_expiration": days_till_expiration,
+            "days_till_expiration": days_till_expiration, 
             "fridge_id": fridge_id,
             "added_by": current_user["id"],
-            "shared_by": item.shared_by
+            "shared_by": item.shared_by,
+            "price": item.price,  #come back to this,
+            "fridge_id": fridge_id #CHANGED HERE
         }).execute()
 
-        #check off matching item in shopping_list
+        #Remove matching item from shopping list
         supabase.table("shopping_list") \
-            .update({"checked": True}) \
-            .ilike("name", item.name.strip().lower()) \
+            .delete() \
+            .eq("name", item.name.lower()) \
             .eq("fridge_id", fridge_id) \
-            .eq("checked", False) \
             .execute()
         
         return {
             "status": "success",
-            "message": "Fridge item added and shopping list item checked off",
+            "message": "Fridge item added and removed from shopping list",
             "data": response.data,
         }
 
@@ -155,21 +151,20 @@ def get_fridge_items(current_user = Depends(get_current_user)):
             "*, added_by_user:users!fridge_items_added_by_fkey(id, email, first_name, last_name)"
         ).eq("fridge_id", fridge_id).execute()
         
-        memberships_response = supabase.table("fridge_memberships").select(
-            "users(id, email, first_name, last_name)"
+        # Get all users in this fridge for shared_by lookup
+        fridge_users_response = supabase.table("users").select(
+            "id, email, first_name, last_name"
         ).eq("fridge_id", fridge_id).execute()
-
+        
+        # Create a lookup map of user_id -> user data
         users_map = {}
-        if memberships_response.data:
-            for membership in memberships_response.data:
-                if membership.get("users"):
-                    user_data = membership["users"]
-                    users_map[user_data["id"]] = {
-                        "id": user_data["id"],
-                        "email": user_data.get("email"),
-                        "first_name": user_data.get("first_name"),
-                        "last_name": user_data.get("last_name"),
-                    }
+        for user_data in fridge_users_response.data:
+            users_map[user_data["id"]] = {
+                "id": user_data["id"],
+                "email": user_data.get("email"),
+                "first_name": user_data.get("first_name"),
+                "last_name": user_data.get("last_name"),
+            }
         
         # Transform the data to populate shared_by with user details
         transformed_items = []
@@ -241,49 +236,6 @@ def get_expiring_items():
                .execute())
     return {"data": response.data}
 
-@app.put("/fridge_items/{item_id}")
-async def update_fridge_item(
-    item_id: int,
-    item: FridgeItemCreate,
-    current_user = Depends(get_current_user)
-):
-    try:
-        from datetime import datetime, date
-        
-        # Calculate days till expiration
-        expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
-        today = date.today()
-        days_till_expiration = (expiry - today).days
-
-        fridge_id = current_user["fridge_id"] if isinstance(current_user, dict) else None
-        
-        if not fridge_id:
-            raise HTTPException(status_code=403, detail="User has no fridge assigned")
-        
-        # Update the item
-        response = supabase.table("fridge_items").update({
-            "name": item.name,
-            "quantity": item.quantity,
-            "days_till_expiration": days_till_expiration,
-            "shared_by": item.shared_by,
-            "price": item.price,
-        }).eq("id", item_id).eq("fridge_id", fridge_id).execute()
-        
-        if not response.data:
-            raise HTTPException(status_code=404, detail="Item not found or you don't have permission to update it")
-        
-        return {
-            "status": "success",
-            "message": "Fridge item updated successfully",
-            "data": response.data[0],
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"Error updating fridge item: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to update item: {str(e)}")
-
 @app.delete("/items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
@@ -337,38 +289,14 @@ async def accept_fridge_request(
             raise HTTPException(status_code=404, detail="Invalid code, expired, or not sent to your email")
 
         fridge_request = request_response.data[0]
-        fridge_id = fridge_request["fridge_id"]
-        user_id = fridge_request["requested_by"]
 
-        existing_membership = supabase.table("fridge_memberships").select("*").eq(
-            "user_id", user_id
-        ).eq("fridge_id", fridge_id).execute()
-        
-        if existing_membership.data:
-            # Already a member, just mark request as accepted
-            supabase.table("fridge_requests").update({
-                "acceptance_status": "ACCEPTED",
-            }).eq("id", fridge_request["id"]).execute()
-            
-            return {
-                "status": "success",
-                "message": f"Already a member of {fridge_request['fridges']['name']}!",
-            }
+        # Update user profile with fridge_id
+        profile_response = supabase.table("users").update({
+            "fridge_id": fridge_request["fridge_id"]
+        }).eq("id", accept_dto.request_id).execute()
 
-        membership_response = supabase.table("fridge_memberships").insert({
-            "user_id": user_id,
-            "fridge_id": fridge_id
-        }).execute()
-
-        if not membership_response.data:
-            raise HTTPException(status_code=500, detail="Failed to add user to fridge")
-
-        user_response = supabase.table("users").select("active_fridge_id").eq("id", user_id).execute()
-        
-        if user_response.data and not user_response.data[0].get("active_fridge_id"):
-            supabase.table("users").update({
-                "active_fridge_id": fridge_id
-            }).eq("id", user_id).execute()
+        if not profile_response.data:
+            raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
 
         # Mark request as accepted
         supabase.table("fridge_requests").update({
@@ -436,11 +364,6 @@ app.include_router(favorite_recipes_router, prefix="/favorite-recipes")
 app.include_router(ai_expiration_router, prefix="/expiry")
 app.include_router(cost_splitting_router, prefix="/cost-splitting")
 app.include_router(shopping_router, prefix="/shopping")
-
-# Include new API routers
-app.include_router(fridge_requests_api_router, prefix="/api/fridge-requests", tags=["api", "fridge-requests"])
-app.include_router(shopping_list_api_router, prefix="/api/shopping-list", tags=["api", "shopping-list"])
-app.include_router(profile_photos_router, prefix="/api/profile-photos", tags=["api", "profile-photos"])
        
 
 # Login Page
@@ -470,7 +393,7 @@ class FridgeCreate(BaseModel):
     name: str
 
 @app.post("/fridges")
-def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
+def create_fridge(fridge: FridgeCreate):
     try:
         # Get user ID from dict
         user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
@@ -488,27 +411,21 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
             print(f"No data returned from database: {response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
         
-        fridge_id = response.data[0].get("id")
+        fridge_id = createFridge_response.data[0].get("id")
+
+
+        # Gets the response for updating the fridge id for a user
+        updateFridgeID_response = supabase.table("users").update({
+            "fridge_id": fridge_id
+        }).eq("id", user_id).execute()
+
+        if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:
+            print(f"Error updating user fridge ID: {updateFridgeID_response}")
+            raise HTTPException(status_code=500, detail = "Error updating user fridge ID")
 
         if not fridge_id:
             print(f"No ID in response data: {response.data}")
             raise HTTPException(status_code=500, detail="Failed to get fridge ID from response")
-
-        membership_response = supabase.table("fridge_memberships").insert({
-            "user_id": user_id,
-            "fridge_id": fridge_id
-        }).execute()
-
-        if not membership_response.data:
-            raise HTTPException(status_code=500, detail="Failed to add user to fridge")
-
-        active_fridge_response = supabase.table("users").update({
-            "active_fridge_id": fridge_id
-        }).eq("id", user_id).execute()
-
-        if not active_fridge_response.data or len(active_fridge_response.data) == 0:
-            print(f"Error updating user active_fridge_id: {active_fridge_response}")
-            raise HTTPException(status_code=500, detail="Error setting active fridge")
             
         return {
             "status": "success",

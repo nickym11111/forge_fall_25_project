@@ -2,6 +2,8 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional, List
 from database import supabase
+from fastapi import FastAPI, HTTPException, Depends, Header
+from service import get_current_user, generate_invite_code
 
 app = APIRouter()
 
@@ -36,31 +38,40 @@ def add_item(recipe: Recipe, user: User):
 
 #Get All Current fav recipes
 @app.get("/get-favorite-recipes/")
-def get_items():
+def get_items(current_user = Depends(get_current_user)):
     try:
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+        
+        if not fridge_id:
+            return {
+                "status": "success",
+                "message": "User has no fridge assigned",
+                "data": []
+            }
+        
         # First, try to get recipes with joined user data
         # Try different possible foreign key names and handle missing profile_photo_url column
         try:
-            response = supabase.table("favorite_recipes").select(
+            items_response = supabase.table("favorite_recipes").select(
                 "*, added_by_user:users!favorite_recipes_added_by_fkey(id, email, first_name, last_name, profile_photo)"
-            ).execute()
+            ).eq("fridge_id", fridge_id).execute()
         except Exception as e:
             # If profile_photo_url doesn't exist or foreign key name is different, try without it
             try:
-                response = supabase.table("favorite_recipes").select(
+                items_response = supabase.table("favorite_recipes").select(
                     "*, added_by_user:users!favorite_recipes_added_by_fkey(id, email, first_name, last_name)"
-                ).execute()
+                ).eq("fridge_id", fridge_id).execute()
             except:
                 # Last resort: try without specifying the foreign key
-                response = supabase.table("favorite_recipes").select(
+                items_response = supabase.table("favorite_recipes").select(
                     "*, added_by_user:users(id, email, first_name, last_name)"
-                ).execute()
+                ).eq("fridge_id", fridge_id).execute()
         
         # Transform the data to include user details
-        transformed_recipes = []
-        for recipe in response.data:
-            added_by_data = recipe.get("added_by_user")
-            added_by_id = recipe.get("added_by")
+        transformed_items = []
+        for item in items_response.data:
+            added_by_data = item.get("added_by_user")
+            added_by_id = item.get("added_by")
             
             # If we got user data from the join
             if added_by_data:
@@ -93,29 +104,30 @@ def get_items():
             else:
                 added_by = None
             
-            transformed_recipes.append({
-                "id": recipe["id"],
-                "recipe_name": recipe["recipe_name"],
-                "created_at": recipe.get("created_at"),
-                "fridge_id": recipe.get("fridge_id"),
+            transformed_items.append({
+                "id": item["id"],
+                "recipe_name": item["recipe_name"],
+                "created_at": item.get("created_at"),
+                "fridge_id": item.get("fridge_id"),
                 "added_by": added_by
             })
         
-        print("Retrieved recipes:", transformed_recipes)
-        return {"data": transformed_recipes}
+        return {
+            "status": "success",
+            "data": transformed_items
+        }
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Error getting recipes: {str(e)}")
+        print(f"Error getting recipe items: {str(e)}")
         import traceback
         traceback.print_exc()
-        # Fallback to returning raw data
-        response = supabase.table("favorite_recipes").select("*").execute()
-        return {"data": response.data}
+        raise HTTPException(status_code=500, detail=f"Failed to get recipe items: {str(e)}")
 
-#Delete Item
 @app.delete("/delete-recipe/{recipe_id}")
 def delete_item(recipe_id: str):
     response = (
-        supabase.table("favorite_recipe")
+        supabase.table("favorite_recipes")
         .delete()
         .eq("id", recipe_id)
         .execute()
