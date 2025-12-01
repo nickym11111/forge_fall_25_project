@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -20,7 +20,7 @@ import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import { useAuth } from "../context/authContext"; 
 import { supabase } from "../utils/client";
-import ProfileIcon from "@/components/ProfileIcon";
+import { useIsFocused } from "@react-navigation/native";
 
 interface ShoppingItem {
   id?: number; 
@@ -31,8 +31,6 @@ interface ShoppingItem {
   checked?: boolean; 
   need_by?: string;
   fridge_id?: string; }
-
-const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/shopping`;
 
 //Helper Functions
 const formatShortDate = (d: Date) => {
@@ -52,6 +50,7 @@ const isoToShort = (iso?: string) => {
 export default function SharedListScreen() {
   const { user } = useAuth(); 
   const user_id = user?.id; 
+  const isFocused = useIsFocused();
 
   // ---------- State ----------
   const [items, setItems] = useState<ShoppingItem[]>([]);
@@ -63,7 +62,34 @@ export default function SharedListScreen() {
   const [formNeedBy, setFormNeedBy] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  // Load Items
+  const loadItems = async () => {
+    if (!user?.fridge_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("shopping_list")
+        .select("*")
+        .eq("fridge_id", user.fridge_id)
+        .order("id", { ascending: true });
+
+      if (!error) setItems(data || []);
+      else throw error;
+    } catch (err) {
+      console.error("loadItems:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadItems();
+  }, [user?.fridge_id]);
+
+  useEffect(() => {
+    if (isFocused) loadItems();
+  }, [isFocused]);
+
   const resetForm = () => {
+    setFormName("");
     setFormQuantity(1);
     setFormNeedBy(null);
     setShowDatePicker(false);
