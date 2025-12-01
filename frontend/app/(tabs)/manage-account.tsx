@@ -132,7 +132,7 @@ export default function ManageAccount() {
               />
             ) : (
               <Image
-                source={require("../../../assets/images/profile-icon.png")}
+                source={require("../../assets/images/profile-icon.png")}
                 style={styles.profilePhoto}
               />
             )}

@@ -20,6 +20,7 @@
     "@reduxjs/toolkit": "^2.9.0",
     "@supabase/supabase-js": "^2.75.0",
     "axios": "^1.12.2",
+    "base64-arraybuffer": "^1.0.2",
     "expo": "~54.0.10",
     "expo-constants": "~18.0.9",
     "expo-file-system": "~19.0.17",
