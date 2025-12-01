@@ -5,7 +5,14 @@ import {
   FlatList,
   TextInput,
   ActivityIndicator,
+<<<<<<< Updated upstream
   RefreshControl,
+=======
+  Alert,
+  Keyboard,
+  TouchableWithoutFeedback,
+        RefreshControl,
+>>>>>>> Stashed changes
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
 import { router } from 'expo-router';
@@ -47,6 +54,7 @@ interface FoodItem {
 
 // Defines props type for the Item component
 interface ItemProps {
+<<<<<<< Updated upstream
   title: string;
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
@@ -63,6 +71,15 @@ const Item = ({
   days_until_expiration,
 }: ItemProps) => {
   // Handle different name formats from backend
+=======
+  item: FoodItem;
+  onDelete: (item: FoodItem) => void;
+  onQuantityChange: (item: FoodItem, delta: number) => void;
+}
+
+// Individual item component
+const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
+>>>>>>> Stashed changes
   const getDisplayName = (mate: FridgeMate) => {
     if (mate.first_name && mate.last_name) {
       return `${mate.first_name} ${mate.last_name}`;
@@ -89,6 +106,7 @@ const Item = ({
 
   return (
     <View style={styles.item}>
+<<<<<<< Updated upstream
       <Text style={[styles.itemText]}>
         <Text style={{ fontWeight: "bold" }}>{title}</Text>
       </Text>
@@ -109,6 +127,68 @@ const Item = ({
       <Text style={[styles.itemText, { fontSize: 10 }]}>
         <Text style={{ fontWeight: "bold" }}>Shared by:</Text> {sharedByString}
       </Text>
+=======
+      <View style={styles.itemContent}>
+        {/* Item info */}
+        <View style={styles.itemLeft}>
+          <View style={styles.itemTitleRow}>
+            <Text style={styles.itemTitle} numberOfLines={2}>
+              {item.name}
+            </Text>
+            <TouchableOpacity onPress={handleDelete} style={styles.deleteIcon}>
+              <Ionicons name="trash-outline" size={15} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>Quantity: </Text>
+            {qty}
+          </Text>
+
+          <Text style={[styles.infoText, isExpiringSoon && styles.redText]}>
+            <Text style={styles.infoLabel}>Expires in: </Text>
+            {item.days_till_expiration || 0} days
+          </Text>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>Added by: </Text>
+            {addedByName}
+          </Text>
+
+          <Text style={styles.infoText}>
+            <Text style={styles.infoLabel}>Shared by: </Text>
+            {sharedByString}
+          </Text>
+        </View>
+
+        {/* Quantity Controls - HORIZONTAL at bottom */}
+        <View style={styles.itemRight}>
+          {qty === 1 ? (
+            <TouchableOpacity onPress={handleDelete} style={styles.controlBtn}>
+              <Ionicons name="trash-outline" size={18} color="#14b8a6" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => onQuantityChange(item, -1)}
+              style={styles.controlBtn}
+            >
+              <Ionicons name="remove-circle-outline" size={20} color="#14b8a6" />
+            </TouchableOpacity>
+          )}
+
+          <View style={styles.qtyBadge}>
+            <Text style={styles.qtyText}>{qty}</Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={() => onQuantityChange(item, 1)}
+            style={styles.controlBtn}
+          >
+            <Ionicons name="add-circle-outline" size={20} color="#14b8a6" />
+          </TouchableOpacity>
+        </View>
+      </View>
+>>>>>>> Stashed changes
     </View>
   );
 };
@@ -117,6 +197,30 @@ export default function TabOneScreen() {
   const{ user } = useAuth();
   const [data, setData] = useState<FoodItem[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
+<<<<<<< Updated upstream
+=======
+  // NEW: Handler functions for delete and quantity change
+  const handleDelete = (item: FoodItem) => {
+    setData((prev) => prev.filter((i) => i.id !== item.id));
+    originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
+  };
+
+  const handleQuantityChange = (item: FoodItem, delta: number) => {
+    const newQty = Math.max(1, (item.quantity || 1) + delta);
+    const updated = { ...item, quantity: newQty };
+    
+    setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
+    originalHolder.current = originalHolder.current.map((it) =>
+      it.id === item.id ? updated : it
+    );
+  };
+  
+
+  // Fetch data from backend when component mounts
+  useEffect(() => {
+    fetchFridgeItems();
+  }, []);
+>>>>>>> Stashed changes
   const originalHolder = useRef<FoodItem[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([
     "All Items",
@@ -129,9 +233,16 @@ export default function TabOneScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchFridgeItems();
+<<<<<<< Updated upstream
     }, [])
   );
 
+=======
+    }, [user?.active_fridge_id])
+  );
+
+
+>>>>>>> Stashed changes
   const fetchFridgeItems = async () => {
     try {
       setLoading(true);
@@ -201,7 +312,11 @@ export default function TabOneScreen() {
   const onRefresh = () => {
     setRefreshing(true);
     fetchFridgeItems();
+<<<<<<< Updated upstream
   };
+=======
+  }; 
+>>>>>>> Stashed changes
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
@@ -338,6 +453,7 @@ export default function TabOneScreen() {
       <ProfileIcon className="profileIcon" />
     <View style={styles.container}>
       
+<<<<<<< Updated upstream
       <View
         style={styles.separator}
         lightColor="#eee"
@@ -351,6 +467,16 @@ export default function TabOneScreen() {
           placeholder="Food item..."
         />
       </View>
+=======
+      <TextInput
+        style={styles.search_bar}
+        onChangeText={searchFunction}
+        value={searchValue}
+        placeholder="Search food items..."
+        placeholderTextColor="#999"
+      />
+      
+>>>>>>> Stashed changes
       <PreviewLayout
         values={["All Items", "Expiring Soon", "My Items", "Shared"]}
         selectedValue={selectedFilters}
@@ -360,11 +486,17 @@ export default function TabOneScreen() {
         data={finalListData}
         renderItem={({ item }) => (
           <Item
+<<<<<<< Updated upstream
             title={item.title}
             added_by={item.added_by}
             shared_by={item.shared_by}
             quantity={item.quantity}
             days_until_expiration={item.days_till_expiration}
+=======
+            item={item}
+            onDelete={handleDelete}
+            onQuantityChange={handleQuantityChange}
+>>>>>>> Stashed changes
           />
         )}
         keyExtractor={(item) => item.id.toString()}
@@ -378,8 +510,13 @@ export default function TabOneScreen() {
         }
       />
     </View>
+<<<<<<< Updated upstream
     </View>
   );
+=======
+  </View>
+);
+>>>>>>> Stashed changes
 }
 
 type PreviewLayoutProps = PropsWithChildren<{
@@ -489,12 +626,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: "center",
+    width: "100%",
   },
   title: {
     fontSize: 20,
     fontWeight: "bold",
     padding: 20,
   },
+<<<<<<< Updated upstream
   separator: {
     marginVertical: 3,
     height: 1,
@@ -511,8 +650,64 @@ const styles = StyleSheet.create({
   },
   itemText: {
     fontSize: 18,
+=======
+  
+  searchContainer: {
+    width: "100%",
+    alignItems: "center",
+  },
+  search_bar: {
+    height: 55,
+    marginTop: -15,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    padding: 12,
+    width: "90%",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    fontSize: 16,
+  },
+  flatList: {
+    width: "100%",
+  },
+  listContent: {
+    paddingBottom: 20,
+    alignItems: "center",
+  },
+  
+  // Item Card Styles
+  item: {
+    backgroundColor: "#ffffff",
+    padding: 18,
+    marginVertical: 8,
+    borderRadius: 16,
+    width: "90%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  itemContent: {
+    flexDirection: "row",
+  },
+  itemLeft: {
+    width: "100%",
+  },
+  itemTitleRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  itemTitle: {
+    fontSize: 25,
+    fontWeight: "bold",
+>>>>>>> Stashed changes
     color: "#333",
   },
+<<<<<<< Updated upstream
   search_bar: {
     height: 40,
     margin: 12,
@@ -523,6 +718,53 @@ const styles = StyleSheet.create({
   redText: {
     color: "#d32f2f",
     fontWeight: "bold",
+=======
+  deleteIcon: {
+    padding: 4,
+    marginTop: -11,
+    marginRight: -8,
+
+  },
+  infoText: {
+    fontSize: 15,
+    color: "#333",
+    marginBottom: 6,
+  },
+  infoLabel: {
+    fontWeight: "600",
+  },
+  redText: {
+    color: "#dc2626",
+  },
+  
+  itemRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0fdfa",
+    marginLeft: -125,
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    alignSelf: "center",
+  },
+  controlBtn: {
+    padding: 4,
+  },
+  qtyBadge: {
+    backgroundColor: "#ffffff",
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginHorizontal: 10,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+  },
+  qtyText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+>>>>>>> Stashed changes
   },
 });
 
