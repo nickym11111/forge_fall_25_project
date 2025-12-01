@@ -364,6 +364,7 @@ export default function AddItemManual() {
   const { user } = useAuth();
 
   const currentUserId = user?.id;
+  const currentUserName
 
   useEffect(() => {
     fetchUsers();

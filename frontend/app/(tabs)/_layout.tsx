@@ -176,7 +176,19 @@ export default function TabLayout() {
   ),
 }}
 />
-
+    <Tabs.Screen
+    name="recipes"
+    options={{
+      title: "Recipes",
+      tabBarIcon: ({ color, focused }) => (
+        <TabBarIcon
+          name={"chef-hat"}
+          color={color}
+          focused={focused}
+    />
+  ),
+}}
+    />
         </Tabs>
         
       );
