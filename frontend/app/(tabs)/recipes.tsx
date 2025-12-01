@@ -168,7 +168,7 @@ const RecipeItem = ({
     if (item.recipe_name) {
         return (
             <View style={styles.itemContainer}> 
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, backgroundColor: 'transparent' }}>
                     <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
                     {item.description && (
                         <Text style={styles.recipeDescription}>{item.description}</Text>
