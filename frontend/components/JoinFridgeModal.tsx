@@ -57,13 +57,11 @@ const JoinFridgeModal = ({ onClose, onSwitchToCreate }: JoinFridgeModalProps) =>
         throw new Error(data.message || "Failed to join fridge");
       }
 
-      // ✅ Show success alert and stay on page
       Alert.alert(
         "Request Sent!",
         "Your request to join the fridge has been sent. You'll be notified when it's approved."
       );
 
-      // Clear form but stay on page
       setFridgeCode("");
 
     } catch (error) {
@@ -79,7 +77,6 @@ const JoinFridgeModal = ({ onClose, onSwitchToCreate }: JoinFridgeModalProps) =>
 
   return (
     <View style={styles.container}>
-      {/* X Button in top left */}
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
         <Ionicons name="close-circle" size={36} color="#333" />
       </TouchableOpacity>

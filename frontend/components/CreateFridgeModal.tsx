@@ -91,8 +91,8 @@ const CreateFridgeModal = ({ onClose, onSwitchToJoin }: CreateFridgeModalProps) 
           {
             text: "OK",
             onPress: () => {
-              onClose(); // Close modal
-              router.replace("/(tabs)/two"); // Navigate to fridge items
+              onClose();
+              router.replace("/(tabs)/two");
             }
           }
         ]
@@ -110,7 +110,6 @@ const CreateFridgeModal = ({ onClose, onSwitchToJoin }: CreateFridgeModalProps) 
 
   return (
     <View style={styles.container}>
-      {/* X Button in top left */}
       <TouchableOpacity style={styles.closeButton} onPress={onClose}>
         <Ionicons name="close-circle" size={36} color="#333" />
       </TouchableOpacity>
