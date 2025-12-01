@@ -618,7 +618,7 @@ const ProfileIcon = (props: {
             <CustomButton
               className="Manage Account"
               onPress={async () => {
-                navigate("/account/manage");
+                navigate("/manage-account");
                 setIsModalVisible(false);
               }}
               title="Manage Account"
