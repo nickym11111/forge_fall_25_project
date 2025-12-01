@@ -7,12 +7,16 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Modal,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { supabase } from "../app/utils/client";
 import { useAuth } from "../app/context/authContext";
 import CustomButton from "./CustomButton";
+import CreateFridgeModal from "./CreateFridgeModal";
+import JoinFridgeModal from "./JoinFridgeModal";
+import ViewRequestsModal from "./ViewRequestsModal";
 
 interface FridgeMate {
   id: string;
@@ -22,10 +26,10 @@ interface FridgeMate {
 }
 
 interface Fridge {
-  created_at: string;
-  created_by: string;
   id: string;
   name: string;
+  created_at: string;
+  created_by: string;
   fridgeMates: FridgeMate[];
   isActive?: boolean;
 }
@@ -47,11 +51,13 @@ const FridgeCard = ({
   fridge,
   onLeaveFridge,
   onSwitchFridge,
+  onViewRequests,
   isActive,
 }: {
   fridge: Fridge;
   onLeaveFridge: (fridgeId: string) => void;
   onSwitchFridge: (fridgeId: string) => void;
+  onViewRequests: (fridgeId: string, fridgeName: string) => void;
   isActive: boolean;
 }) => {
   const [expanded, setExpanded] = useState(false);
@@ -102,6 +108,15 @@ const FridgeCard = ({
       </View>
 
       <View style={styles.buttonRow}>
+        <CustomButton
+          className="View Requests"
+          onPress={() => onViewRequests(fridge.id, fridge.name)}
+          title="View Requests"
+          style={styles.viewRequestsButton}
+        />
+      </View>
+      
+      <View style={[styles.buttonRow, { marginTop: 12 }]}>
         {!isActive && (
           <CustomButton
             className="Switch Fridge"
@@ -125,6 +140,10 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
   const [fridges, setFridges] = useState<Fridge[]>([]);
   const [loading, setLoading] = useState(true);
   const [switching, setSwitching] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showRequestsModal, setShowRequestsModal] = useState(false);
+  const [selectedFridge, setSelectedFridge] = useState<{ id: string; name: string } | null>(null);
   const { user, refreshUser } = useAuth();
 
   useEffect(() => {
@@ -171,12 +190,12 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
     try {
       setSwitching(true);
       const { data: { session }, error } = await supabase.auth.getSession();
-  
+
       if (error || !session) {
         Alert.alert("Error", "Please log in again");
         return;
       }
-  
+
       const response = await fetch(`${API_URL}/users/active-fridge`, {
         method: "PUT",
         headers: {
@@ -185,15 +204,14 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
         },
         body: JSON.stringify({ fridge_id: fridgeId })
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to switch fridge");
       }
-  
+
       await refreshUser();
-      
       onClose();
-  
+
     } catch (err) {
       console.error("Error switching fridge:", err);
       Alert.alert("Error", "Could not switch fridge");
@@ -202,13 +220,12 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
     }
   };
 
-
   const handleLeaveFridge = async (fridgeId: string) => {
     const isActiveFridge = fridgeId === user?.active_fridge_id;
-    
+
     Alert.alert(
       "Leave Fridge?",
-      isActiveFridge 
+      isActiveFridge
         ? "This is your active fridge. Are you sure you want to leave?"
         : "Are you sure you want to leave this fridge?",
       [
@@ -220,51 +237,41 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
             try {
               setSwitching(true);
               const { data: { session }, error } = await supabase.auth.getSession();
-  
+
               if (error || !session) {
                 Alert.alert("Error", "Please log in again");
                 return;
               }
-  
+
               const response = await fetch(`${API_URL}/fridge/leave-fridge`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${session.access_token}`
                 },
-                body: JSON.stringify({ 
-                  fridgeId: fridgeId, 
-                  userId: session.user.id 
+                body: JSON.stringify({
+                  fridgeId: fridgeId,
+                  userId: session.user.id
                 })
               });
-  
+
               const data = await response.json();
-  
+
               if (!response.ok || data.status !== "success") {
                 throw new Error(data.message || "Failed to leave fridge");
               }
-  
+
               await refreshUser();
-  
-              if (isActiveFridge) {
-                // Check if they have other fridges
-                await fetchAllFridges();
-                
-                if (fridges.length === 1) {
-                  // Was their only fridge, go to create fridge
-                  onClose();
-                  router.replace("/(tabs)/create_fridge");
-                } else {
-                  // They have other fridges, refresh the list
-                  await fetchAllFridges();
-                }
+
+              if (isActiveFridge && fridges.length === 1) {
+                onClose();
+                router.replace("/(tabs)/create_fridge");
               } else {
-                // Just refresh the list
                 await fetchAllFridges();
               }
-  
+
               Alert.alert("Success", "Left fridge successfully");
-  
+
             } catch (err) {
               console.error("Error leaving fridge:", err);
               Alert.alert("Error", err instanceof Error ? err.message : "Could not leave fridge");
@@ -290,7 +297,6 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
 
   return (
     <View style={styles.container}>
-      {/* Header with X button */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Manage Fridges</Text>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -298,29 +304,21 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
         </TouchableOpacity>
       </View>
 
-      {/* Action buttons */}
       <View style={styles.actionButtons}>
         <CustomButton
           className="Create Fridge"
-          onPress={() => {
-            onClose();
-            router.push("/(tabs)/create_fridge");
-          }}
+          onPress={() => setShowCreateModal(true)}
           title="Create Fridge"
           style={styles.actionButton}
         />
         <CustomButton
           className="Join Fridge"
-          onPress={() => {
-            onClose();
-            router.push("/(tabs)/Join-Fridge");
-          }}
+          onPress={() => setShowJoinModal(true)}
           title="Join Fridge"
           style={styles.actionButton}
         />
       </View>
 
-      {/* Content */}
       <ScrollView style={styles.content}>
         {fridges.length === 0 ? (
           <View style={styles.emptyState}>
@@ -333,6 +331,10 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
               fridge={fridge}
               onLeaveFridge={handleLeaveFridge}
               onSwitchFridge={handleSwitchFridge}
+              onViewRequests={(id, name) => {
+                setSelectedFridge({ id, name });
+                setShowRequestsModal(true);
+              }}
               isActive={fridge.isActive || false}
             />
           ))
@@ -342,9 +344,54 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
       {switching && (
         <View style={styles.switchingOverlay}>
           <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.switchingText}>Switching fridge...</Text>
+          <Text style={styles.switchingText}>Processing...</Text>
         </View>
       )}
+
+      {/* Create Fridge Modal */}
+      <Modal
+        visible={showCreateModal}
+        animationType="slide"
+        onRequestClose={() => setShowCreateModal(false)}
+      >
+        <CreateFridgeModal
+          onClose={() => setShowCreateModal(false)}
+          onSwitchToJoin={() => {
+            setShowCreateModal(false);
+            setShowJoinModal(true);
+          }}
+        />
+      </Modal>
+
+      {/* Join Fridge Modal */}
+      <Modal
+        visible={showJoinModal}
+        animationType="slide"
+        onRequestClose={() => setShowJoinModal(false)}
+      >
+        <JoinFridgeModal
+          onClose={() => setShowJoinModal(false)}
+          onSwitchToCreate={() => {
+            setShowJoinModal(false);
+            setShowCreateModal(true);
+          }}
+        />
+      </Modal>
+
+      {/* View Requests Modal */}
+      <Modal
+        visible={showRequestsModal}
+        animationType="slide"
+        onRequestClose={() => setShowRequestsModal(false)}
+      >
+        {selectedFridge && (
+          <ViewRequestsModal
+            fridgeId={selectedFridge.id}
+            fridgeName={selectedFridge.name}
+            onClose={() => setShowRequestsModal(false)}
+          />
+        )}
+      </Modal>
     </View>
   );
 };
@@ -487,6 +534,9 @@ const styles = StyleSheet.create({
   },
   switchButton: {
     flex: 1,
+  },
+  viewRequestsButton: {
+    width: "100%",
   },
   leaveButton: {
     width: "100%",

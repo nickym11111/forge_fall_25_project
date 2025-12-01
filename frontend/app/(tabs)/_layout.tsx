@@ -37,14 +37,18 @@ export default function TabLayout() {
     const onLoginPage = segments[1] === undefined;
 
     if (user && inTabs && onLoginPage) {
-      const hasFridge = user.fridge_id !== null && user.fridge_id !== undefined;
+      /*const hasFridge = user.fridge_id !== null && user.fridge_id !== undefined;
       const hasMultipleFridges = (user.fridge_count || 0) > 1;
       const hasSingleFridge = (user.fridge_count || 0) === 1;
-      const needsSelection = (user.fridge_count || 0) > 0 && !user.active_fridge_id;
+      const needsSelection = (user.fridge_count || 0) > 0 && !user.active_fridge_id; */
+
+      const hasActiveFridge = user.active_fridge_id !== null && user.active_fridge_id !== undefined;
+      const hasFridges = (user.fridge_count || 0) > 0;
+      const needsSelection = hasFridges && !hasActiveFridge;
       
       if (needsSelection) {
         router.replace("/(tabs)/select_fridge");
-      } else if (hasFridge) {
+      } else if (hasActiveFridge) {
         router.replace("/(tabs)/two");
       } else {
         router.replace("/(tabs)/create_fridge");
@@ -69,7 +73,7 @@ export default function TabLayout() {
     );
   }
 
-  const hasFridge = user?.fridge_id !== null && user?.fridge_id !== undefined;
+  const hasFridge = user?.active_fridge_id !== null && user?.active_fridge_id !== undefined;
 
   return (
     <Tabs
@@ -78,7 +82,7 @@ export default function TabLayout() {
       tabBarInactiveTintColor: '#94a3b8',
       tabBarShowLabel: false,
       headerShown: false,
-      tabBarStyle: {
+      tabBarStyle: (user && hasFridge) ? {
         backgroundColor: '#ffffff',
         borderTopWidth: 1,
         borderTopColor: '#e2e8f0',
@@ -90,7 +94,7 @@ export default function TabLayout() {
         shadowOpacity: 0.08,
         shadowRadius: 8,
         elevation: 8,
-      },
+      } : { display: 'none' },
       }}>
     <Tabs.Screen
           name="index"
@@ -167,6 +171,7 @@ export default function TabLayout() {
     <Tabs.Screen
     name="requests"
     options={{
+      href: null,
       title: "Requests",
       tabBarIcon: ({ color, focused }) => (
         <TabBarIcon
