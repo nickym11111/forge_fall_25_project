@@ -181,7 +181,32 @@ export default function TabLayout() {
   ),
 }}
 />
-
+    <Tabs.Screen
+    name="recipes"
+    options={{
+      title: "Recipes",
+      tabBarIcon: ({ color, focused }) => (
+        <TabBarIcon
+          name={"chef-hat"}
+          color={color}
+          focused={focused}
+    />
+  ),
+}}
+/>
+    <Tabs.Screen
+    name="favorite_recipes"
+    options={{
+      title: "Favorite Recipes",
+      tabBarIcon: ({ color, focused }) => (
+        <TabBarIcon
+          name={focused ? "heart-circle" : "heart-circle-outline"}
+          color={color}
+          focused={focused}
+    />
+  ),
+}}
+    />
         </Tabs>
         
       );
