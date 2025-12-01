@@ -37,7 +37,7 @@ async def get_current_user(
             raise HTTPException(status_code=401, detail="Invalid token")
         
         user_response = supabase.table("users").select(
-            "id, email, active_fridge_id, first_name, last_name"
+            "id, email, active_fridge_id, first_name, last_name, profile_photo"
         ).eq("id", response.user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:

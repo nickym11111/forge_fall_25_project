@@ -65,6 +65,7 @@ async def get_current_user_info(current_user = Depends(get_current_user)):
             "fridge_id": None,
             "first_name": None,
             "last_name": None,
+            "profile_photo": None,
             "fridgeMates": []
         }
         
