@@ -140,6 +140,7 @@ export default function TabOneScreen() {
 
       const result = await response.json();
       console.log("API Response:", result);
+      console.log("Added by data:", result.data.map((item: RecipeItem) => item.added_by));
 
       if (result.message === "User has no fridge assigned") {
         setData([]);
