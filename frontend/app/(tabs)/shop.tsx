@@ -249,13 +249,16 @@ export default function SharedListScreen() {
         <Text style={styles.cardTitle}>Add Item</Text>
 
         <View style={styles.topRow}>
-          <TextInput
-            style={styles.topInput}
-            placeholder="Item name..."
-            placeholderTextColor="#888"
-            value={formName}
-            onChangeText={setFormName}
-          />
+          <View style={styles.inputContainer}>
+            <Ionicons name="cube-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+            <TextInput
+              style={styles.topInput}
+              placeholder="Item name..."
+              placeholderTextColor="#94a3b8"
+              value={formName}
+              onChangeText={setFormName}
+            />
+          </View>
           <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
             <Ionicons name="add" size={28} color="#fff" />
           </TouchableOpacity>
@@ -367,16 +370,26 @@ const styles = StyleSheet.create({
     fontSize: 20, 
     fontWeight: "700", 
     marginBottom: 8 },
-  topRow: { flexDirection: "row", alignItems: "center" },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  inputContainer: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
   topInput: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#E6E6E6",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 10,
-    backgroundColor: "#FAFAFB",
+    paddingVertical: 14,
     fontSize: 16,
+    color: "#1e293b",
   },
   plusBtn: {
     marginLeft: 12,

@@ -4,11 +4,12 @@ type CustomHeaderProps = {
   title: string;
   logo?: ImageSourcePropType;
   subtitle?: string;
+  noShadow?: boolean;
 }
 
-const CustomHeader = ({ title, logo, subtitle }: CustomHeaderProps) => {
+const CustomHeader = ({ title, logo, subtitle, noShadow = false }: CustomHeaderProps) => {
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, noShadow && styles.headerNoShadow]}>
       <StatusBar barStyle="light-content" backgroundColor="#14b8a6" />
       <View style={styles.content}>
         <View style={styles.titleRow}>
@@ -33,6 +34,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+  },
+  headerNoShadow: {
+    shadowColor: "transparent",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
   },
   content: {
     paddingHorizontal: 20,

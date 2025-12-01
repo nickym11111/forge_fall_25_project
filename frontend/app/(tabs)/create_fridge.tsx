@@ -6,6 +6,7 @@ import {
   Alert,
   ScrollView,
   TouchableOpacity,
+  Keyboard,
 } from "react-native";
 import { useState, useCallback } from "react";
 import { Ionicons } from "@expo/vector-icons";
@@ -121,13 +122,6 @@ export default function CreateFridgeScreen() {
   const handleCreateFridge = async () => {
     if (!fridgeName.trim()) {
       Alert.alert("Error", "Please enter a Kitchen name.");
-      return;
-    }
-
-    // Filter out empty emails
-    const validEmails = emails.filter((email) => email.trim() !== "");
-    if (validEmails.length === 0) {
-      Alert.alert("Error", "Please enter at least one email address.");
       return;
     }
 
@@ -259,6 +253,9 @@ export default function CreateFridgeScreen() {
             value={fridgeName}
             onChangeText={setFridgeName}
             editable={!isLoading}
+            returnKeyType="default"
+            onSubmitEditing={Keyboard.dismiss}
+            blurOnSubmit={true}
           />
 
           {/*Invite Fridgemates*/}
@@ -274,6 +271,11 @@ export default function CreateFridgeScreen() {
                 value={email}
                 onChangeText={(text) => enterEmail(text, index)}
                 editable={!isLoading}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+                blurOnSubmit={true}
+                keyboardType="email-address"
+                autoCapitalize="none"
               />
               {/*Remove email button*/}
               {emails.length > 1 && (

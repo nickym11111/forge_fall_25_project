@@ -236,6 +236,49 @@ def get_expiring_items():
                .execute())
     return {"data": response.data}
 
+@app.put("/fridge_items/{item_id}")
+async def update_fridge_item(
+    item_id: int,
+    item: FridgeItemCreate,
+    current_user = Depends(get_current_user)
+):
+    try:
+        from datetime import datetime, date
+        
+        # Calculate days till expiration
+        expiry = datetime.strptime(item.expiry_date, "%Y-%m-%d").date()
+        today = date.today()
+        days_till_expiration = (expiry - today).days
+
+        fridge_id = current_user["fridge_id"] if isinstance(current_user, dict) else None
+        
+        if not fridge_id:
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
+        
+        # Update the item
+        response = supabase.table("fridge_items").update({
+            "name": item.name,
+            "quantity": item.quantity,
+            "days_till_expiration": days_till_expiration,
+            "shared_by": item.shared_by,
+            "price": item.price,
+        }).eq("id", item_id).eq("fridge_id", fridge_id).execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Item not found or you don't have permission to update it")
+        
+        return {
+            "status": "success",
+            "message": "Fridge item updated successfully",
+            "data": response.data[0],
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating fridge item: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to update item: {str(e)}")
+
 @app.delete("/items/{item_id}")
 def delete_fridge_item(item_id: int):
     response = supabase.table("fridge_items").delete().eq("id", item_id).execute()
@@ -417,7 +460,7 @@ class FridgeCreate(BaseModel):
     name: str
 
 @app.post("/fridges")
-def create_fridge(fridge: FridgeCreate):
+def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)):
     try:
         # Get user ID from dict
         user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
@@ -435,7 +478,7 @@ def create_fridge(fridge: FridgeCreate):
             print(f"No data returned from database: {response}")
             raise HTTPException(status_code=500, detail="Failed to create fridge: No data returned")
         
-        fridge_id = createFridge_response.data[0].get("id")
+        fridge_id = response.data[0].get("id")
 
         if not fridge_id:
             print(f"No ID in response data: {response.data}")
