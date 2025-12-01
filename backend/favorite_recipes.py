@@ -42,7 +42,7 @@ def get_items():
         # Try different possible foreign key names and handle missing profile_photo_url column
         try:
             response = supabase.table("favorite_recipes").select(
-                "*, added_by_user:users!favorite_recipes_added_by_fkey(id, email, first_name, last_name, profile_photo_url)"
+                "*, added_by_user:users!favorite_recipes_added_by_fkey(id, email, first_name, last_name, profile_photo)"
             ).execute()
         except Exception as e:
             # If profile_photo_url doesn't exist or foreign key name is different, try without it
@@ -69,14 +69,14 @@ def get_items():
                     "email": added_by_data.get("email"),
                     "first_name": added_by_data.get("first_name"),
                     "last_name": added_by_data.get("last_name"),
-                    "profile_photo_url": added_by_data.get("profile_photo_url"),
+                    "profile_photo_url": added_by_data.get("profile_photo"),
                 }
             # If we have an added_by ID but no joined data, fetch it separately
             elif added_by_id:
                 try:
-                    user_response = supabase.table("users").select("id, email, first_name, last_name, profile_photo_url").eq("id", added_by_id).execute()
+                    user_response = supabase.table("users").select("id, email, first_name, last_name, profile_photo").eq("id", added_by_id).execute()
                 except:
-                    # If profile_photo_url doesn't exist, fetch without it
+                    # If profile_photo doesn't exist, fetch without it
                     user_response = supabase.table("users").select("id, email, first_name, last_name").eq("id", added_by_id).execute()
                 
                 if user_response.data and len(user_response.data) > 0:
@@ -86,7 +86,7 @@ def get_items():
                         "email": user_data.get("email"),
                         "first_name": user_data.get("first_name"),
                         "last_name": user_data.get("last_name"),
-                        "profile_photo_url": user_data.get("profile_photo_url"),
+                        "profile_photo_url": user_data.get("profile_photo"),
                     }
                 else:
                     added_by = None
