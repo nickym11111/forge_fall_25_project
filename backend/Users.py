@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database import supabase  
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Union
 from service import get_current_user, generate_invite_code, get_current_user_with_fridgeMates
 import ast
 import base64
@@ -25,7 +25,7 @@ class UserCreate(BaseModel):
     password: str
     firstName: Optional[str] = None
     lastName: Optional[str] = None
-    dietaryRestrictions: Optional[List[str]] = None
+    dietaryRestrictions: Union[List[str], None] = None
     
     
 def findAccount(email: str):

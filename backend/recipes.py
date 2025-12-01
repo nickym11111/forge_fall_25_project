@@ -39,7 +39,7 @@ def getChatGPTResponse(recipe: str):
 @app.post("/find_ingredients")
 def find_ingredients(ingredients: Ingredients):
     try:
-        return getChatGPTResponse(ingredients.recipe);
+        return getChatGPTResponse(ingredients.recipe)
     except Exception as e:
         error_msg = f"Error parsing receipt: {str(e)}"
         print(error_msg)
