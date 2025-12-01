@@ -96,7 +96,10 @@ export default function ParseReceiptScreen() {
         newExpiryDate.setDate(newExpiryDate.getDate() + days);
       }
     } catch (expiryError) {
-      console.warn("⚠️ Failed to predict expiry date, using default:", expiryError);
+      console.warn(
+        "⚠️ Failed to predict expiry date, using default:",
+        expiryError
+      );
       // Continue with default date (today)
     }
 
@@ -157,7 +160,7 @@ export default function ParseReceiptScreen() {
         base64Image = file.base64Sync();
       }
       const response = await CreateParseReceiptRequest(base64Image);
-      const parsed = JSON.parse(response.output[0].content[0].text);
+      const parsed = JSON.parse(response);
 
       setParsedItems(parsed);
       console.log(parsed);
@@ -174,14 +177,14 @@ export default function ParseReceiptScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <CustomHeader 
-        title="Scan Receipt" 
+      <CustomHeader
+        title="Scan Receipt"
         subtitle="Take a photo or upload a receipt to automatically add items"
       />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
       </View>
-      
+
       <View style={styles.uploadSection}>
         <View style={styles.imageContainer}>
           <TouchableOpacity
@@ -195,7 +198,11 @@ export default function ParseReceiptScreen() {
                 <View style={styles.imageOverlay}>
                   <View style={styles.overlayContent}>
                     <View style={styles.overlayIconCircle}>
-                      <Ionicons name="camera-outline" size={28} color="#14b8a6" />
+                      <Ionicons
+                        name="camera-outline"
+                        size={28}
+                        color="#14b8a6"
+                      />
                     </View>
                     <Text style={styles.imageOverlayText}>
                       Tap to change image
@@ -237,11 +244,15 @@ export default function ParseReceiptScreen() {
               </View>
               <View style={styles.tipItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                <Text style={styles.tipText}>Keep receipt flat and in focus</Text>
+                <Text style={styles.tipText}>
+                  Keep receipt flat and in focus
+                </Text>
               </View>
               <View style={styles.tipItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                <Text style={styles.tipText}>Include all items in the frame</Text>
+                <Text style={styles.tipText}>
+                  Include all items in the frame
+                </Text>
               </View>
             </View>
           </View>
@@ -282,7 +293,7 @@ export default function ParseReceiptScreen() {
             const itemName = Object.keys(item)[0];
             const itemData = item[itemName];
             const isAdding = addingItemIndex.includes(index);
-            
+
             return (
               <View key={index} style={styles.itemCard}>
                 <View style={styles.itemInfo}>
@@ -302,7 +313,10 @@ export default function ParseReceiptScreen() {
                   </View>
                 </View>
                 <TouchableOpacity
-                  style={[styles.addButton, isAdding && styles.addButtonDisabled]}
+                  style={[
+                    styles.addButton,
+                    isAdding && styles.addButtonDisabled,
+                  ]}
                   onPress={() => {
                     if (!isAdding) {
                       sendItemToFridge({
