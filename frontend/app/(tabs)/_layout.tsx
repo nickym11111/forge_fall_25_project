@@ -207,6 +207,13 @@ export default function TabLayout() {
   ),
 }}
     />
+    <Tabs.Screen
+      name="manage-account"
+      options={{
+        href: null,
+        title: "Manage Account",
+      }}
+    />
         </Tabs>
         
       );
