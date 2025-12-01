@@ -57,8 +57,8 @@ async def create_user(user: UserCreate):
     except Exception as e:
         return {"error": str(e)}
 
-@app.get("/userInfo")
-async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
+@app.get("/userInfo/")
+async def get_current_user_info(current_user = Depends(get_current_user)):
     try:
         user_data = current_user if isinstance(current_user, dict) else {
             "id": current_user.id,
@@ -66,6 +66,7 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
             "fridge_id": None,
             "first_name": None,
             "last_name": None,
+            "profile_photo": None,
             "fridgeMates": []
         }
         
