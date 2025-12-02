@@ -21,7 +21,7 @@ export async function fetchUserDetails() {
       if (!session) return null;
 
       // Fetch user info from your API
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo/`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
