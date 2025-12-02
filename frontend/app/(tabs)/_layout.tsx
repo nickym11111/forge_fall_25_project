@@ -3,7 +3,6 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { Link, Tabs, router, useSegments } from "expo-router";
 import { Pressable, ActivityIndicator, View, Platform } from "react-native";
 import Colors from "@/constants/Colors";
-import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useAuth } from "../context/authContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -20,7 +19,6 @@ function TabBarIcon(props: {
 }
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const segments = useSegments();
   const { user, loading } = useAuth();
 
