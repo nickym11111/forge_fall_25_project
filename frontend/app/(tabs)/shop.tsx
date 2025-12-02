@@ -242,6 +242,8 @@ export default function SharedListScreen() {
   return (
     <KeyboardAvoidingView style={styles.screen} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <CustomHeader title="Shared Shopping List 🛒" />
+            <ProfileIcon className="profileIcon" />
+
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View>
           {/* Top Card (Add Item quick input) */}
