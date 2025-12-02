@@ -77,7 +77,7 @@ export async function fetchUserDetails() {
       // Normalized User
       return {
         id: session.user.id,
-        email: session.user.email,
+        email: session.user.email ?? "",
         first_name:
           data.first_name ??
           session.user.user_metadata?.first_name ??
@@ -88,6 +88,8 @@ export async function fetchUserDetails() {
           "",
         profile_photo: profilePhoto ?? null,
         fridge_id: data.fridge_id ?? null,
+        active_fridge_id: data.active_fridge_id ?? null,
+        fridge_count: data.fridge_count ?? 0,
         fridge: data.fridge ?? null,
         fridgeMates: data.fridgeMates ?? [],
       };
