@@ -19,14 +19,30 @@ export async function fetchUserDetails() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
 
-    const response = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/userInfo`,
-      {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+    // Fetch user info from your API
+    let response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+
+    // If 401, try to refresh token and retry
+    if (response.status === 401) {
+      console.log("Token expired, attempting to refresh...");
+      const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+      
+      if (error || !newSession) {
+        console.error("Session refresh failed:", error);
+        return null;
       }
-    );
+      
+      // Retry with new token
+      response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
+        headers: {
+          Authorization: `Bearer ${newSession.access_token}`,
+        },
+      });
+    }
 
     if (!response.ok) return null;
 
@@ -85,7 +101,7 @@ export async function leaveFridge(fridgeId: string) {
         if (!session) {
           return null;
         }
-        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/fridge/leave-fridge`, {
+        let response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/fridge/leave-fridge`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -93,6 +109,27 @@ export async function leaveFridge(fridgeId: string) {
           },
           body: JSON.stringify({ fridgeId, userId: session.user.id })
         });
+        
+        // If 401, try to refresh token and retry
+        if (response.status === 401) {
+          console.log("Token expired, attempting to refresh...");
+          const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+          
+          if (error || !newSession) {
+            console.error("Session refresh failed:", error);
+            return null;
+          }
+          
+          // Retry with new token
+          response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/fridge/leave-fridge`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${newSession.access_token}`
+            },
+            body: JSON.stringify({ fridgeId, userId: session.user.id })
+          });
+        }
         
         if (response.ok) {
           return(await response.json());
