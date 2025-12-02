@@ -1,6 +1,5 @@
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import {
-  DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
@@ -10,7 +9,6 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
 import "react-native-reanimated";
 
-import { useColorScheme } from "@/components/useColorScheme";
 import { AuthProvider } from "./context/authContext";
 
 export { ErrorBoundary } from "expo-router";
@@ -45,11 +43,9 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
     <AuthProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen 

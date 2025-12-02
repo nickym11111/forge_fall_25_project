@@ -42,11 +42,23 @@ export async function fetchUserDetails() {
               console.log('New URL:', fixedUrl);
               
               try {
-                await supabase
-                  .from('users')
-                  .update({ profile_photo: fixedUrl })
-                  .eq('id', session.user.id);
-                console.log('Profile photo URL updated in database');
+                const fixResponse = await fetch(
+                  `${process.env.EXPO_PUBLIC_API_URL}/api/profile-photos/fix-profile-photo-url`,
+                  {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${session.access_token}`,
+                    },
+                    body: JSON.stringify({
+                      user_id: session.user.id,
+                      new_url: fixedUrl,
+                    }),
+                  }
+                );
+                if (fixResponse.ok) {
+                  console.log('Profile photo URL updated in database');
+                }
               } catch (error) {
                 console.error('Error updating profile photo URL:', error);
               }

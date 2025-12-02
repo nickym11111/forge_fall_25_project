@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import ToastMessage from "@/components/ToastMessage";
@@ -225,6 +226,7 @@ export default function ParseReceiptScreen() {
         subtitle="Take a photo or upload a receipt to automatically add items"
         noShadow={true}
       />
+      <ProfileIcon className="profileIcon" />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
       </View>
