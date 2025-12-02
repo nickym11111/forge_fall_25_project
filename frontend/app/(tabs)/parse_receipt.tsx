@@ -64,10 +64,12 @@ export default function ParseReceiptScreen() {
     if (!user) return;
 
     try {
-      const mates = user.fridgeMates.map((mate) => ({
-        id: mate.id,
-        name: `${mate.first_name} ${mate.last_name}` || "Unknown User",
-      }));
+      const mates = Array.isArray(user.fridgeMates)
+        ? user.fridgeMates.map((mate) => ({
+            id: mate.id,
+            name: `${mate.first_name} ${mate.last_name}` || "Unknown User",
+          }))
+        : [];
       setFridgeMates(mates);
     } catch (error) {
       console.error("Error fetching fridge mates:", error);
@@ -478,7 +480,7 @@ export default function ParseReceiptScreen() {
               style={[
                 styles.addButton,
                 styles.addSelectedButton,
-                selectedItems.length === 0 && styles.buttonDisabled,
+                selectedItems.length === 0 && styles.addButtonDisabled,
               ]}
               onPress={async () => {
                 if (selectedItems.length === 0 || isAddingItems) return;
@@ -593,7 +595,7 @@ export default function ParseReceiptScreen() {
                       styles.checkboxButton,
                       selectedItems.includes(index) &&
                         styles.checkboxButtonSelected,
-                      isAdding && styles.buttonDisabled,
+                      isAdding && styles.addButtonDisabled,
                     ]}
                     onPress={() => !isAdding && toggleItemSelection(index)}
                     disabled={isAdding}

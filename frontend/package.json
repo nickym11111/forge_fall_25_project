@@ -20,6 +20,7 @@
     "@reduxjs/toolkit": "^2.9.0",
     "@supabase/supabase-js": "^2.75.0",
     "axios": "^1.12.2",
+    "base64-arraybuffer": "^1.0.2",
     "expo": "~54.0.10",
     "expo-constants": "~18.0.9",
     "expo-file-system": "~19.0.17",
@@ -46,6 +47,7 @@
     "react-redux": "^9.2.0"
   },
   "devDependencies": {
+    "@types/base64-arraybuffer": "^0.1.0",
     "@types/react": "~19.1.0",
     "@types/react-datepicker": "^6.2.0",
     "react-test-renderer": "19.1.0",
