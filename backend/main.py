@@ -108,27 +108,28 @@ async def create_fridge_item(
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
+        # insert new item to fridge
         response = supabase.table("fridge_items").insert({
-            "name": item.name,
+            "name": item.name.strip().lower(),
             "quantity": item.quantity,
-            "days_till_expiration": days_till_expiration, 
+            "days_till_expiration": days_till_expiration,
             "fridge_id": fridge_id,
             "added_by": current_user["id"],
             "shared_by": item.shared_by,
-            "price": item.price, #come back to this,
-            "fridge_id": fridge_id #CHANGED HERE
+            "price": item.price
         }).execute()
 
-        #Remove matching item from shopping list
+        #check off matching item in shopping_list
         supabase.table("shopping_list") \
-            .delete() \
-            .eq("name", item.name.lower()) \
+            .update({"checked": True}) \
+            .ilike("name", item.name.strip().lower()) \
             .eq("fridge_id", fridge_id) \
+            .eq("checked", False) \
             .execute()
         
         return {
             "status": "success",
-            "message": "Fridge item added and removed from shopping list",
+            "message": "Fridge item added and shopping list item checked off",
             "data": response.data,
         }
 
