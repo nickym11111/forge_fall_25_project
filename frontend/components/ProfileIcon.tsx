@@ -16,7 +16,7 @@ const ProfileIcon = (props: {
   return (
     <TouchableOpacity
       onPress={() => {
-        navigate("/(tabs)/manage-account");
+        navigate("/account/manage/manage-account");
       }}
       style={[styles.buttonParent, props.style]}
       className={props.className}
