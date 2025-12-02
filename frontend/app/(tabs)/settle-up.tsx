@@ -305,6 +305,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   centerContainer: {
+    width: "100%",
     flex: 1,
     backgroundColor: "#F8F9FF",
     justifyContent: "center",
