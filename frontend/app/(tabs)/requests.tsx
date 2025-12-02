@@ -168,29 +168,26 @@ export default function RequestsScreen() {
       console.log("Searching for requests...");
       console.log("User fridge ID:", user.fridge_id);
 
-      const { data, error: fetchError } = await supabase
-        .from("fridge_requests")
-        .select(
-          `
-          *,
-          users:users!fridge_requests_requested_by_fkey(id, email, first_name, last_name),
-          fridges:fridge_id!inner(id, name)
-        `
-        )
-        .eq("fridge_id", user.fridge_id)
-        .eq("acceptance_status", "PENDING");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No active session");
+      }
 
-      if (fetchError) throw fetchError;
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/fridge-requests/pending`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
-      // Transform the data to match our UI expectations
-      const formattedData = (data || []).map((request) => ({
-        ...request,
-        // Map users to user for backward compatibility
-        user: request.users,
-        // Map fridges to fridge for backward compatibility
-        fridge: request.fridges,
-      }));
-      setRequests(formattedData);
+      if (!response.ok) {
+        throw new Error("Failed to fetch requests");
+      }
+
+      const result = await response.json();
+      setRequests(result.data || []);
       setError(null);
     } catch (err) {
       console.error("Error fetching requests:", err);

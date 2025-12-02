@@ -20,6 +20,10 @@ from favorite_recipes import app as favorite_recipes_router
 #from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
 
+# Import new API routers
+from api.fridge_requests import app as fridge_requests_api_router
+from api.shopping_list import app as shopping_list_api_router
+from api.profile_photos import app as profile_photos_router
 
 load_dotenv()
 app = FastAPI()
@@ -432,6 +436,11 @@ app.include_router(favorite_recipes_router, prefix="/favorite-recipes")
 app.include_router(ai_expiration_router, prefix="/expiry")
 app.include_router(cost_splitting_router, prefix="/cost-splitting")
 app.include_router(shopping_router, prefix="/shopping")
+
+# Include new API routers
+app.include_router(fridge_requests_api_router, prefix="/api/fridge-requests", tags=["api", "fridge-requests"])
+app.include_router(shopping_list_api_router, prefix="/api/shopping-list", tags=["api", "shopping-list"])
+app.include_router(profile_photos_router, prefix="/api/profile-photos", tags=["api", "profile-photos"])
        
 
 # Login Page
