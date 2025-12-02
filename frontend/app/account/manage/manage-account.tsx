@@ -1,5 +1,4 @@
 import { StyleSheet, View, Text, Image, TouchableOpacity, Platform, ActivityIndicator, Modal } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import ProfileIcon from "@/components/ProfileIcon";
@@ -112,12 +111,7 @@ export default function ManageAccount() {
   return (
     <View style={styles.container}>
       <CustomHeader title="Manage Account 🧾" />
-      <TouchableOpacity 
-        style={styles.closeButton} 
-        onPress={() => router.back()}
-      >
-        <Ionicons name="close-circle" size={36} color="#333" />
-      </TouchableOpacity>
+      
       
       <View style={styles.content}>
         {/* Profile Section */}
@@ -140,7 +134,7 @@ export default function ManageAccount() {
               />
             ) : (
               <Image
-                source={require("../../assets/images/profile-icon.png")}
+                source={require("../../../assets/images/profile-icon.png")}
                 style={styles.profilePhoto}
               />
             )}
@@ -212,12 +206,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F9FF",
-  },
-  closeButton: {
-    position: "absolute",
-    right: 20,
-    top: 60,
-    zIndex: 1000,
   },
   content: {
     flex: 1,

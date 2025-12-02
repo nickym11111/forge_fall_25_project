@@ -11,6 +11,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { Stack } from "expo-router";
+import ProfileIcon from "@/components/ProfileIcon";
 import { useEffect, useState } from "react";
 import { supabase } from "../utils/client";
 import { useUser } from "../hooks/useUser";
@@ -226,6 +227,7 @@ export default function RequestsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <ProfileIcon className="profileIcon" />
       <StatusBar barStyle="light-content" backgroundColor="#f4511e" />
       <Stack.Screen
         options={{

@@ -12,6 +12,7 @@ import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
+import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
 
 interface ItemProps {
@@ -246,6 +247,7 @@ return (
       title="Share Recipes!  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
+      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentSection}>
           <View style={styles.boxContainer}>
@@ -263,8 +265,6 @@ return (
             <CustomButton
               title= {isLoading1 ? "Getting Ingredients..." : "Get Ingredients"}
               onPress={handleSubmit}
-              selectedValue={selectedIngredientsPrompt}
-              setSelectedValue={setSelectedIngredientsPrompt}
               className=""
               disabled={isLoading1}
             />
@@ -283,8 +283,6 @@ return (
             <CustomButton
               title={isLoading2 ? "Getting Recipes..." : "Get Recipes"}
               onPress={handleFindRecipe}
-              selectedValue={selectedRecipePrompt}
-              setSelectedValue={setSelectedRecipePrompt}
               className=""
               disabled={isLoading2}
             />
@@ -295,6 +293,7 @@ return (
                   item={item} 
                   currentUserId={currentUserId} 
                   currentFridgeId={currentFridgeId}
+                  currentUserName={user?.email || 'User'}
                 />
               )} 
               keyExtractor={(item, index) => item.recipe_name || index.toString()}
