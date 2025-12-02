@@ -59,9 +59,6 @@ async def get_pending_requests(
             """
         ).eq("fridge_id", fridge_id).eq("acceptance_status", "PENDING").execute()
         
-        if response.error:
-            raise HTTPException(status_code=500, detail=str(response.error))
-        
         # Transform the data to match frontend expectations
         transformed_data = []
         for request in response.data:
@@ -106,9 +103,6 @@ async def get_requests_by_fridge(
             fridges:fridge_id!inner(id, name)
             """
         ).eq("fridge_id", fridge_id).eq("acceptance_status", "PENDING").execute()
-        
-        if response.error:
-            raise HTTPException(status_code=500, detail=str(response.error))
         
         return {
             "status": "success",
