@@ -191,7 +191,7 @@ export default function TabOneScreen() {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-  
+
   // NEW: Handler functions for delete and quantity change
   const handleDelete = (item: FoodItem) => {
     setData((prev) => prev.filter((i) => i.id !== item.id));
@@ -377,7 +377,7 @@ export default function TabOneScreen() {
   const fetchFridgeItems = async (showFullLoading: boolean = false) => {
     try {
       if (showFullLoading) {
-        setLoading(true);
+      setLoading(true);
       } else {
         // For pull-to-refresh, only use refreshing state
         setRefreshing(true);
@@ -443,7 +443,7 @@ export default function TabOneScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }; 
+  };
 
   // Manual refresh handler - only refresh items, don't show full screen loading
   const onRefresh = () => {
@@ -595,13 +595,13 @@ export default function TabOneScreen() {
       <View style={styles.searchContainer}>
         <View style={styles.inputContainer}>
           <Ionicons name="search-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+      <TextInput
             style={styles.searchInput}
-            onChangeText={searchFunction}
-            value={searchValue}
-            placeholder="Search food items..."
+        onChangeText={searchFunction}
+        value={searchValue}
+        placeholder="Search food items..."
             placeholderTextColor="#94a3b8"
-          />
+      />
         </View>
       </View>
       

@@ -248,7 +248,7 @@ export default function CreateFridgeScreen() {
       title="Create Fridge  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
-      <ProfileIcon className="profileIcon" />
+<ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}

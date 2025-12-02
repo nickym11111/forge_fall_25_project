@@ -626,7 +626,7 @@ export default function AddItemManual() {
       // Retry logic
       if (retryCount < MAX_RETRIES) {
         console.log(`🔄 Retrying... (attempt ${retryCount + 2})`);
-        Alert.alert(
+      Alert.alert(
           "Connection Issue",
           "Failed to add item. Retrying...",
           [{ text: "OK" }]
@@ -643,7 +643,7 @@ export default function AddItemManual() {
           error instanceof Error 
             ? error.message 
             : "Could not connect to the server. Please check your internet connection and try again."
-        );
+      );
       }
     } finally {
       setIsLoading(false);
@@ -721,35 +721,35 @@ export default function AddItemManual() {
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.formContainer}>
-            <View style={styles.form}>
+        <View style={styles.formContainer}>
+          <View style={styles.form}>
             <Text style={styles.label}>
               Item Name <Text style={styles.required}>*</Text>
             </Text>
             <View style={styles.inputContainer}>
               <Ionicons name="cube-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., Milk, Eggs, Chicken"
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Milk, Eggs, Chicken"
                 placeholderTextColor="#94a3b8"
-                value={title}
-                onChangeText={setTitle}
-                editable={!isLoading}
-              />
+              value={title}
+              onChangeText={setTitle}
+              editable={!isLoading}
+            />
             </View>
 
             <Text style={styles.label}>Quantity</Text>
             <View style={styles.inputContainer}>
               <Ionicons name="calculator-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder="e.g., 2 (default: 1)"
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., 2 (default: 1)"
                 placeholderTextColor="#94a3b8"
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="numeric"
-                editable={!isLoading}
-              />
+              value={quantity}
+              onChangeText={setQuantity}
+              keyboardType="numeric"
+              editable={!isLoading}
+            />
             </View>
 
             <Text style={styles.label}>Price ($)</Text>
@@ -831,7 +831,7 @@ export default function AddItemManual() {
             </View>
           </View>
         </View>
-        </ScrollView>
+      </ScrollView>
       </TouchableWithoutFeedback>
 
       {showDatePicker && Platform.OS === "ios" && (
