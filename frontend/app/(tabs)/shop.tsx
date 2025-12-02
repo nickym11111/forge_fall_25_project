@@ -17,11 +17,10 @@ import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import ProfileIcon from "@/components/ProfileIcon";
-
 import { supabase } from "../utils/client";
 import { useUser } from "../hooks/useUser";
 import { useIsFocused } from "@react-navigation/native";
-
+import { useAuth } from "../context/authContext";
 
 interface ShoppingItem {
   id?: number;
@@ -238,7 +237,7 @@ export default function SharedListScreen() {
                 </Text>
               )}
               <Text style={styles.itemMeta}>
-                Requested by {item.requested_by}
+                Requested by {item.requested_by ?? "You"}
               </Text>
             </>
           )}
@@ -319,21 +318,40 @@ https://github.com/nickym11111/forge_fall_25_project/pull/59/conflict?name=front
               <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>Quantity</Text>
                 <View style={styles.qtyRow}>
-                  <TouchableOpacity onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}>
-                    <Ionicons name="remove-circle-outline" size={25} color="#222" />
+                  <TouchableOpacity
+                    onPress={() =>
+                      setFormQuantity(Math.max(1, formQuantity - 1))
+                    }
+                  >
+                    <Ionicons
+                      name="remove-circle-outline"
+                      size={25}
+                      color="#222"
+                    />
                   </TouchableOpacity>
                   <Text style={styles.qtyNumber}>{formQuantity}</Text>
-                  <TouchableOpacity onPress={() => setFormQuantity(formQuantity + 1)}>
-                    <Ionicons name="add-circle-outline" size={25} color="#222" />
+                  <TouchableOpacity
+                    onPress={() => setFormQuantity(formQuantity + 1)}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={25}
+                      color="#222"
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
 
           <View style={{ flex: 1}}>
                 <Text style={styles.inputLabel}>Need by</Text>
-                <TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
                   <Text style={styles.dateText}>
-                    {formNeedBy ? formatShortDate(formNeedBy) : "Tap to select date"}
+                    {formNeedBy
+                      ? formatShortDate(formNeedBy)
+                      : "Tap to select date"}
                   </Text>
                   <Ionicons name="calendar-outline" size={20} color="#222" />
                 </TouchableOpacity>
@@ -481,8 +499,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E8E8E8",
   },
-  dateText: { 
-    color: "#333" 
+  dateText: {
+    color: "#333",
   },
   datePickerContainer: {
     marginTop: 12,

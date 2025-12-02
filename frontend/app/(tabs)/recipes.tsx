@@ -11,6 +11,8 @@ import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import CustomHeader from "@/components/CustomHeader";
+import CustomButton from "@/components/CustomButton";
+import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
 
 interface ItemProps {
@@ -32,7 +34,10 @@ const Item = ({
 export default function recipes() {
   const [inputValue, setInputValue] = useState<string>('');
   const [responseMessage, setResponseMessage] = useState<string[]>();
-  const [selectedPrompt, setSelectedPrompt] = useState<string>('');
+  const [selectedIngredientsPrompt, setSelectedIngredientsPrompt] = useState<string>('');
+  const [selectedRecipePrompt, setSelectedRecipePrompt] = useState<string>('');
+  const [isLoading1, setIsLoading1] = useState<boolean>(false);
+  const [isLoading2, setIsLoading2] = useState<boolean>(false);
   const [recipes, setRecipes] = useState<any[]>([]);
   const { user } = useAuth();
 
@@ -44,6 +49,7 @@ export default function recipes() {
   };
 
   const handleSubmit = async () => {
+    setIsLoading1(true);
     try {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/find_ingredients`, {
         method: 'POST',
@@ -74,9 +80,11 @@ export default function recipes() {
       console.error('Error sending data:', error);
       setResponseMessage(['Error sending data to backend.']);
     }
+    setIsLoading1(false);
   };
 
   const handleFindRecipe = async () => {
+    setIsLoading2(true);
     try {
         const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/generate-recipes/`);
         const data2 = await response.json();
@@ -103,6 +111,7 @@ export default function recipes() {
         console.error('Error fetching recipes:', error);
         setRecipes([{ message: 'Error sending data to backend.' }]);
       }
+      setIsLoading2(false);
     };
 
 const RecipeItem = ({ 
@@ -134,7 +143,7 @@ const RecipeItem = ({
         
         try {
             if (newState) {
-                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/add-favorite-recipe/`, {
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/favorite-recipes/add-favorite-recipe/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dataToSend),
@@ -160,7 +169,7 @@ const RecipeItem = ({
     if (item.recipe_name) {
         return (
             <View style={styles.itemContainer}> 
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, backgroundColor: 'transparent' }}>
                     <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
                     {item.description && (
                         <Text style={styles.recipeDescription}>{item.description}</Text>
@@ -238,6 +247,7 @@ return (
       title="Share Recipes!  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
+      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentSection}>
           <View style={styles.boxContainer}>
@@ -249,14 +259,14 @@ return (
                 style={styles.search_bar}
                 onChangeText={searchFunction}
                 value={inputValue}
-                placeholder="Recipe Item..."
+                placeholder="Enter a Dish..."
               />
             </View>
-            <PreviewLayout
-              values={["Find Ingredients"]}
-              selectedValue={selectedPrompt}
-              setSelectedValue={setSelectedPrompt}
+            <CustomButton
+              title= {isLoading1 ? "Getting Ingredients..." : "Get Ingredients"}
               onPress={handleSubmit}
+              className=""
+              disabled={isLoading1}
             />
             <FlatList
               data={responseMessage}
@@ -269,11 +279,12 @@ return (
         <View style={styles.contentSection}>
           <View style={styles.boxContainer}>
             <Text>Generate recipes you can make based on your current food inventory!</Text>
-            <PreviewLayout
-              values={["Find Recipes"]}
-              selectedValue={selectedPrompt}
-              setSelectedValue={setSelectedPrompt}
+            <Text></Text>
+            <CustomButton
+              title={isLoading2 ? "Getting Recipes..." : "Get Recipes"}
               onPress={handleFindRecipe}
+              className=""
+              disabled={isLoading2}
             />
             <FlatList
               data={recipes}
@@ -282,6 +293,7 @@ return (
                   item={item} 
                   currentUserId={currentUserId} 
                   currentFridgeId={currentFridgeId}
+                  currentUserName={user?.email || 'User'}
                 />
               )} 
               keyExtractor={(item, index) => item.recipe_name || index.toString()}

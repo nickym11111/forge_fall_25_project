@@ -18,6 +18,7 @@ import { useState, useEffect } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import { useAuth } from "../context/authContext";
@@ -716,6 +717,7 @@ export default function AddItemManual() {
         title="Add Item" 
         subtitle="Manually add items to your kitchen inventory"
       />
+      <ProfileIcon className="profileIcon" />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView 
           contentContainerStyle={styles.scrollContent}

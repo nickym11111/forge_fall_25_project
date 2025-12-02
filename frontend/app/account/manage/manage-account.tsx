@@ -1,6 +1,8 @@
 import { StyleSheet, View, Text, Image, TouchableOpacity, Platform, ActivityIndicator, Modal } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
+import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "@/app/context/authContext";
 import { navigate } from "expo-router/build/global-state/routing";
 import { useEffect, useState } from "react";
@@ -109,7 +111,12 @@ export default function ManageAccount() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Manage Account 🧾" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Manage Account 🧾</Text>
+      </View>
+      <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+        <Ionicons name="close-circle" size={36} color="#333" />
+      </TouchableOpacity>
       
       <View style={styles.content}>
         {/* Profile Section */}
@@ -204,6 +211,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F8F9FF",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#333",
+  },
+  closeButton: {
+    position: "absolute",
+    right: 20,
+    top: 110,
+    zIndex: 1000,
   },
   content: {
     flex: 1,

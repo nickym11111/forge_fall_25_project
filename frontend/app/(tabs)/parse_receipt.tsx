@@ -16,19 +16,31 @@ import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import ToastMessage from "@/components/ToastMessage";
+import { Modal } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useAuth } from "../context/authContext";
 
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
   const [parsedItems, setParsedItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [userSession, setUserSession] = useState<any>(null);
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [addingItemIndex, setAddingItemIndex] = useState<number[]>([]);
+  const [isAddingItems, setIsAddingItems] = useState(false);
+  const [sharingWith, setSharingWith] = useState<string[]>([]);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
+  const [fridgeMates, setFridgeMates] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
+  const [userSession, setUserSession] = useState<any>(null);
+  const { user } = useAuth();
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -48,56 +60,90 @@ export default function ParseReceiptScreen() {
     }
   }, [imageUri]);
 
+  // fetches the user's fridge mates
+  const fetchFridgeMates = async () => {
+    if (!user) return;
+
+    try {
+      const mates = user.fridgeMates.map((mate) => ({
+        id: mate.id,
+        name: `${mate.first_name} ${mate.last_name}` || "Unknown User",
+      }));
+      setFridgeMates(mates);
+    } catch (error) {
+      console.error("Error fetching fridge mates:", error);
+    }
+  };
+
+  // fetches the user's session
+  const getSession = async () => {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
+      return null;
+    }
+    setUserSession(data.session);
+  };
+
   useEffect(() => {
-    let isMounted = true;
-
-    const fetchSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Error getting session:", error);
-        return;
-      }
-      if (isMounted) setUserSession(data.session);
-    };
-
-    fetchSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMounted) setUserSession(session);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
+    getSession();
   }, []);
+
+  useEffect(() => {
+    if (userSession) {
+      fetchFridgeMates();
+    }
+  }, [userSession]);
 
   interface ApiResponse {
     data?: any;
     message: string;
     detail?: string;
   }
+
+  // toggles the fridge mate
+  const toggleFridgeMate = (userId: string) => {
+    setSharingWith((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  // toggles the item selection
+  const toggleItemSelection = (index: number) => {
+    setSelectedItems((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
+  };
+
+  // sends the item to the user's fridge
   const sendItemToFridge = async (item: any) => {
-    if (!userSession) {
+    if (!userSession || !userSession.access_token) {
       Alert.alert("Error", "User not logged in");
       return;
+    }
+
+    if (!item.sharedWith) {
+      item.sharedWith = [...sharingWith];
     }
     const newExpiryDate = new Date(); // Default to today
 
     try {
       const ExpiryDateResponse = await PredictExpiryDate(item.name);
       const ExpiryDateData = await ExpiryDateResponse.json();
-      console.log("📦 Response data:", ExpiryDateData);
+      console.log(" Response data:", ExpiryDateData);
 
       if (ExpiryDateData.days) {
         const days = parseInt(ExpiryDateData.days);
-        console.log("✅ AI predicted", days, "days for", item.name);
+        console.log(" AI predicted", days, "days for", item.name);
         newExpiryDate.setDate(newExpiryDate.getDate() + days);
       }
     } catch (expiryError) {
-      console.warn("⚠️ Failed to predict expiry date, using default:", expiryError);
+      console.warn(
+        " Failed to predict expiry date, using default:",
+        expiryError
+      );
       // Continue with default date (today)
     }
 
@@ -106,7 +152,7 @@ export default function ParseReceiptScreen() {
       item.name,
       item.quantity,
       newExpiryDate,
-      [], // Empty array means shared by all fridge mates
+      item.sharedWith || [],
       item.price
     );
 
@@ -114,13 +160,7 @@ export default function ParseReceiptScreen() {
     console.log("Response status:", AddItemToFridgeResponse.status);
     console.log("Response data:", data);
 
-    setIsToastVisible(true);
-    setTimeout(() => setIsToastVisible(false), 3000);
-
-    if (AddItemToFridgeResponse.ok) {
-      Alert.alert("Success!", "Item added to fridge!");
-      setToastMessage("Item added to fridge!");
-    } else {
+    if (!AddItemToFridgeResponse.ok) {
       Alert.alert(
         "Error",
         data.detail || data.message || "Failed to add item."
@@ -140,6 +180,9 @@ export default function ParseReceiptScreen() {
     try {
       setIsLoading(true);
       setResponseText("Parsing receipt...");
+      setSelectedItems([]);
+      setAddingItemIndex([]);
+      setSharingWith([]);
 
       let base64Image: string;
 
@@ -158,7 +201,7 @@ export default function ParseReceiptScreen() {
         base64Image = file.base64Sync();
       }
       const response = await CreateParseReceiptRequest(base64Image);
-      const parsed = JSON.parse(response.output[0].content[0].text);
+      const parsed = JSON.parse(response);
 
       setParsedItems(parsed);
       console.log(parsed);
@@ -183,6 +226,7 @@ export default function ParseReceiptScreen() {
         subtitle="Take a photo or upload a receipt to automatically add items"
         noShadow={true}
       />
+      <ProfileIcon className="profileIcon" />
       <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
         <ToastMessage message={toastMessage} visible={isToastVisible} />
       </View>
@@ -204,7 +248,11 @@ export default function ParseReceiptScreen() {
                 <View style={styles.imageOverlay}>
                   <View style={styles.overlayContent}>
                     <View style={styles.overlayIconCircle}>
-                      <Ionicons name="camera-outline" size={28} color="#14b8a6" />
+                      <Ionicons
+                        name="camera-outline"
+                        size={28}
+                        color="#14b8a6"
+                      />
                     </View>
                     <Text style={styles.imageOverlayText}>
                       Tap to change image
@@ -246,11 +294,15 @@ export default function ParseReceiptScreen() {
               </View>
               <View style={styles.tipItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                <Text style={styles.tipText}>Keep receipt flat and in focus</Text>
+                <Text style={styles.tipText}>
+                  Keep receipt flat and in focus
+                </Text>
               </View>
               <View style={styles.tipItem}>
                 <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                <Text style={styles.tipText}>Include all items in the frame</Text>
+                <Text style={styles.tipText}>
+                  Include all items in the frame
+                </Text>
               </View>
             </View>
           </View>
@@ -264,26 +316,254 @@ export default function ParseReceiptScreen() {
         </View>
       )}
 
+      <Modal
+        visible={isShareModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsShareModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                Share {selectedItems.length}{" "}
+                {selectedItems.length === 1 ? "Item" : "Items"}
+              </Text>
+              <TouchableOpacity
+                onPress={() => setIsShareModalVisible(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ marginBottom: 16, color: "#64748b" }}>
+              Select who you want to share these items with:
+            </Text>
+
+            <ScrollView style={{ maxHeight: 300 }}>
+              {fridgeMates.map((mate) => (
+                <TouchableOpacity
+                  key={mate.id}
+                  style={styles.fridgeMateItem}
+                  onPress={() => toggleFridgeMate(mate.id)}
+                >
+                  <View
+                    style={[
+                      styles.checkbox,
+                      sharingWith.includes(mate.id) && styles.checkboxChecked,
+                    ]}
+                  >
+                    {sharingWith.includes(mate.id) && (
+                      <Ionicons name="checkmark" size={16} color="white" />
+                    )}
+                  </View>
+                  <Text style={styles.fridgeMateName}>{mate.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {parsedItems && parsedItems.length > 0 && (
         <View style={styles.itemsContainer}>
           <View style={styles.headerRow}>
             <Text style={styles.sectionTitle}>Detected Items</Text>
+          </View>
+          <View style={styles.buttonGroup}>
             <TouchableOpacity
-              style={styles.addAllButton}
-              onPress={() => {
-                parsedItems.forEach((item, index) => {
-                  const itemName = Object.keys(item)[0];
-                  const itemData = item[itemName];
-                  sendItemToFridge({
-                    name: itemName,
-                    quantity: Math.ceil(itemData.quantity),
-                    index,
-                  });
-                  setAddingItemIndex((prev) => [...prev, index]);
-                });
+              style={[styles.shareButton]}
+              onPress={() => setIsShareModalVisible(true)}
+            >
+              <Ionicons name="people" size={18} color="#14b8a6" />
+              <Text style={styles.shareButtonText}>
+                {sharingWith.length > 0
+                  ? `Sharing (${sharingWith.length})`
+                  : "Share"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.addButton, styles.addAllButton]}
+              onPress={async () => {
+                if (!parsedItems || parsedItems.length === 0 || isAddingItems)
+                  return;
+
+                try {
+                  setIsAddingItems(true);
+
+                  // Process all items in parallel
+                  const results = await Promise.all(
+                    parsedItems.map(async (item, index) => {
+                      const itemName = Object.keys(item)[0];
+                      const itemData = item[itemName];
+
+                      try {
+                        await sendItemToFridge({
+                          name: itemName,
+                          quantity: Math.ceil(itemData.quantity),
+                          price: itemData.price,
+                          index,
+                          sharedWith: [...sharingWith],
+                        });
+                        return { success: true, index, name: itemName };
+                      } catch (error) {
+                        console.error(`Error adding item ${itemName}:`, error);
+                        return { success: false, index, name: itemName, error };
+                      }
+                    })
+                  );
+
+                  // Count successes and failures
+                  const successCount = results.filter((r) => r.success).length;
+                  const failedItems = results.filter((r) => !r.success);
+
+                  // If all succeeded, clear everything
+                  if (successCount === parsedItems.length) {
+                    setParsedItems([]);
+                    setSelectedItems([]);
+                    setAddingItemIndex([]);
+
+                    Alert.alert(
+                      "Success",
+                      `Successfully added all ${successCount} items to your fridge!`
+                    );
+                    setToastMessage(
+                      `Successfully added all ${successCount} items to your fridge!`
+                    );
+                    setIsToastVisible(true);
+                    setTimeout(() => setIsToastVisible(false), 3000);
+                  }
+                  // If some failed, only remove successful ones
+                  else {
+                    const successfulIndices = results
+                      .filter((r) => r.success)
+                      .map((r) => r.index);
+
+                    setParsedItems((prev) =>
+                      prev.filter((_, idx) => !successfulIndices.includes(idx))
+                    );
+
+                    setSelectedItems([]);
+                    setAddingItemIndex([]);
+
+                    Alert.alert(
+                      "Partial Success",
+                      `Added ${successCount} of ${parsedItems.length} 
+                      items.\n${failedItems.length} item(s) failed and remain in the list.`
+                    );
+
+                    setToastMessage(
+                      `Added ${successCount} items. ${failedItems.length} failed.`
+                    );
+                    setIsToastVisible(true);
+                    setTimeout(() => setIsToastVisible(false), 3000);
+                  }
+                } catch (error) {
+                  console.error("Unexpected error:", error);
+                  Alert.alert(
+                    "Error",
+                    "An unexpected error occurred while processing your request."
+                  );
+                } finally {
+                  setIsAddingItems(false);
+                }
               }}
             >
-              <Text style={styles.addAllText}>Add All</Text>
+              {isAddingItems ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.addButtonText}>Add All</Text>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                styles.addSelectedButton,
+                selectedItems.length === 0 && styles.buttonDisabled,
+              ]}
+              onPress={async () => {
+                if (selectedItems.length === 0 || isAddingItems) return;
+
+                try {
+                  setIsAddingItems(true);
+
+                  // Process all items in parallel
+                  const results = await Promise.all(
+                    selectedItems.map(async (index) => {
+                      const item = parsedItems[index];
+                      const itemName = Object.keys(item)[0];
+                      const itemData = item[itemName];
+
+                      try {
+                        await sendItemToFridge({
+                          name: itemName,
+                          quantity: Math.ceil(itemData.quantity),
+                          price: itemData.price,
+                          index,
+                          sharedWith: [...sharingWith],
+                        });
+                        return { success: true, index };
+                      } catch (error) {
+                        console.error(`Error adding item ${itemName}:`, error);
+                        return { success: false, index, error };
+                      }
+                    })
+                  );
+
+                  // Update UI for all successfully added items
+                  const successfulItems = results
+                    .filter((r) => r.success)
+                    .map((r) => r.index);
+
+                  // Remove all processed items from the list
+                  setParsedItems((prev) =>
+                    prev.filter((_, idx) => !selectedItems.includes(idx))
+                  );
+
+                  // Show success message
+                  const successCount = successfulItems.length;
+                  if (successCount > 0) {
+                    Alert.alert(
+                      "Success",
+                      `Successfully added ${successCount} item(s) to your fridge!`
+                    );
+                    setToastMessage(
+                      `Successfully added ${successCount} item(s) to your fridge!`
+                    );
+                    setIsToastVisible(true);
+                    setTimeout(() => setIsToastVisible(false), 3000);
+                  }
+
+                  // If some items failed, show a warning
+                  if (successCount < selectedItems.length) {
+                    Alert.alert(
+                      "Partial Success",
+                      `Added ${successCount} of ${selectedItems.length} items. Some items may not have been added.`
+                    );
+                  }
+
+                  setSelectedItems([]);
+                } catch (error) {
+                  console.error("Unexpected error:", error);
+                  Alert.alert(
+                    "Error",
+                    "An unexpected error occurred while processing your request."
+                  );
+                } finally {
+                  setIsAddingItems(false);
+                }
+              }}
+              disabled={selectedItems.length === 0 || isAddingItems}
+            >
+              {isAddingItems ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.addButtonText}>
+                  Add Selected{" "}
+                  {selectedItems.length > 0 ? `(${selectedItems.length})` : ""}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -291,7 +571,6 @@ export default function ParseReceiptScreen() {
             const itemName = Object.keys(item)[0];
             const itemData = item[itemName];
             const isAdding = addingItemIndex.includes(index);
-            
             return (
               <View key={index} style={styles.itemCard}>
                 <View style={styles.itemInfo}>
@@ -310,26 +589,22 @@ export default function ParseReceiptScreen() {
                     )}
                   </View>
                 </View>
-                <TouchableOpacity
-                  style={[styles.addButton, isAdding && styles.addButtonDisabled]}
-                  onPress={() => {
-                    if (!isAdding) {
-                      sendItemToFridge({
-                        name: itemName,
-                        quantity: Math.ceil(itemData.quantity),
-                        index,
-                      });
-                      setAddingItemIndex((prev) => [...prev, index]);
-                    }
-                  }}
-                  disabled={isAdding}
-                >
-                  {isAdding ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <Text style={styles.addButtonText}>Add</Text>
-                  )}
-                </TouchableOpacity>
+                <View style={styles.buttonGroup}>
+                  <TouchableOpacity
+                    style={[
+                      styles.checkboxButton,
+                      selectedItems.includes(index) &&
+                        styles.checkboxButtonSelected,
+                      isAdding && styles.buttonDisabled,
+                    ]}
+                    onPress={() => !isAdding && toggleItemSelection(index)}
+                    disabled={isAdding}
+                  >
+                    {selectedItems.includes(index) && (
+                      <Ionicons name="checkmark" size={16} color="white" />
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
             );
           })}
@@ -552,6 +827,124 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   addButtonText: {
+    color: "#ffffff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  buttonGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+  shareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    backgroundColor: "#ffffff",
+  },
+  shareButtonText: {
+    color: "#14b8a6",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  addSelectedButton: {
+    minWidth: 120,
+  },
+  checkboxButton: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "#cbd5e1",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 8,
+  },
+  checkboxButtonSelected: {
+    backgroundColor: "#14b8a6",
+    borderColor: "#14b8a6",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: "80%",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  modalCloseButton: {
+    padding: 5,
+  },
+  fridgeMateItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  fridgeMateName: {
+    marginLeft: 12,
+    fontSize: 16,
+    color: "#0f172a",
+    flex: 1,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: "#cbd5e1",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  checkboxChecked: {
+    backgroundColor: "#14b8a6",
+    borderColor: "#14b8a6",
+  },
+  modalActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    marginTop: 20,
+    gap: 12,
+  },
+  cancelButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  cancelButtonText: {
+    color: "#64748b",
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  confirmButton: {
+    backgroundColor: "#14b8a6",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  confirmButtonText: {
     color: "#ffffff",
     fontWeight: "600",
     fontSize: 14,
