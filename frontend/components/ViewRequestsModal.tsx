@@ -159,21 +159,24 @@ const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalP
       if (!refreshing) setLoading(true);
       setRefreshing(true);
 
-      const { data, error } = await supabase
-        .from("fridge_requests")
-        .select(
-          `
-          *,
-          users:users!fridge_requests_requested_by_fkey(id, email, first_name, last_name),
-          fridges:fridge_id!inner(id, name)
-        `
-        )
-        .eq("fridge_id", fridgeId)
-        .eq("acceptance_status", "PENDING");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error("No active session");
+      }
 
-      if (error) throw error;
+      const response = await fetch(
+        `${API_URL}/api/fridge-requests/by-fridge/${fridgeId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
 
-      setRequests(data || []);
+      if (!response.ok) throw new Error("Failed to fetch requests");
+
+      const result = await response.json();
+      setRequests(result.data || []);
 
     } catch (err) {
       console.error("Error fetching requests:", err);

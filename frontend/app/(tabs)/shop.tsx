@@ -97,15 +97,29 @@ export default function SharedListScreen() {
     };
 
     try {
-      const { data, error } = await supabase
-        .from("shopping_list") // <-- your Supabase table name
-        .insert([newItem])
-        .select();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.error("No active session");
+        return;
+      }
 
-      if (error) throw error;
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/shopping-list/`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify(newItem),
+        }
+      );
 
-      if (data && data.length > 0) {
-        setItems((prev) => [...prev, data[0]]);
+      if (!response.ok) throw new Error("Failed to add item");
+
+      const result = await response.json();
+      if (result.data) {
+        setItems((prev) => [...prev, result.data]);
       }
 
       resetForm();
@@ -121,12 +135,20 @@ export default function SharedListScreen() {
 
     if (!item.id) return;
     try {
-      const { error } = await supabase
-        .from("shopping_list")
-        .delete()
-        .eq("id", item.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-      if (error) throw error;
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/shopping-list/${item.id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to delete item");
     } catch (err) {
       console.error("deleteItem error:", err);
     }
@@ -140,12 +162,20 @@ export default function SharedListScreen() {
 
     if (!item.id) return;
     try {
-      const { error } = await supabase
-        .from("shopping_list")
-        .update({ quantity: newQty })
-        .eq("id", item.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-      if (error) throw error;
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/shopping-list/${item.id}/quantity?quantity=${newQty}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to update quantity");
     } catch (err) {
       console.error("changeItemQuantity error:", err);
     }
@@ -166,12 +196,20 @@ export default function SharedListScreen() {
 
     if (!item.id) return;
     try {
-      const { error } = await supabase
-        .from("shopping_list")
-        .update(updated)
-        .eq("id", item.id);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
 
-      if (error) throw error;
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/shopping-list/${item.id}/toggle-checked`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to toggle checked status");
     } catch (err) {
       console.error("toggleChecked error:", err);
     }
