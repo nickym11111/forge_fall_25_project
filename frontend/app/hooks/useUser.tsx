@@ -86,7 +86,7 @@ export const refreshUserCache = async () => {
     }
 
     const response = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/userInfo`,
+      `${process.env.EXPO_PUBLIC_API_URL}/userInfo/`,
       {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
