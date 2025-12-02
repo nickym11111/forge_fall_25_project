@@ -76,6 +76,9 @@ async def get_current_user_info(current_user = Depends(get_current_user)):
         fridge_count = fridge_count_response.count if fridge_count_response.count else 0
         user_data["fridge_count"] = fridge_count
         
+        # Include active_fridge_id explicitly for frontend routing logic
+        user_data["active_fridge_id"] = user_data.get("fridge_id")
+        
         if user_data.get("fridge_id"):
             fridge_response = supabase.table("fridges").select("*").eq("id", user_data["fridge_id"]).execute()
             
