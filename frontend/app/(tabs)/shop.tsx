@@ -297,6 +297,8 @@ export default function SharedListScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <CustomHeader title="Shared Shopping List 🛒" />
+            <ProfileIcon className="profileIcon" />
+
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View>
           {/* Search */}
