@@ -108,6 +108,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          href: null,
           // start of ploy change being merged in on 11/26
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
@@ -116,7 +117,6 @@ export default function TabLayout() {
               focused={focused}
             />
           ),
-          //tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
