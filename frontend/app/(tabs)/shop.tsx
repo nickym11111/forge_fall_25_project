@@ -295,6 +295,7 @@ export default function SharedListScreen() {
       {/* Search */}
       <TextInput
         style={styles.search_bar}
+        onChangeText={setSearchValue}
         value={searchValue}
         placeholder="Search items..."
       />

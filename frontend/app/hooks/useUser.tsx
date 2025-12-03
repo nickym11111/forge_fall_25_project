@@ -77,18 +77,21 @@ export const clearUserCache = () => {
 
 export const refreshUserCache = async () => {
   try {
+    console.log("DEBUG: refreshUserCache called");
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
     if (!session) {
+      console.log("DEBUG: No session found in refreshUserCache");
       cachedUser = null;
       notifyListeners();
       return null;
     }
 
+    console.log("DEBUG: Session found, fetching userInfo from backend");
     const response = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/userInfo`,
+      `${process.env.EXPO_PUBLIC_API_URL}/userInfo/`,
       {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -98,6 +101,7 @@ export const refreshUserCache = async () => {
 
     if (response.ok) {
       const userData = await response.json();
+      console.log("DEBUG: User info received from backend");
       console.log("   User ID:", userData.id);
       console.log("   Email:", userData.email);
       console.log("   Fridge ID:", userData.fridge_id);
@@ -106,6 +110,10 @@ export const refreshUserCache = async () => {
       cachedUser = userData;
       notifyListeners(); // Update all components
       return cachedUser;
+    } else {
+      console.log("DEBUG: Failed to fetch userInfo. Status:", response.status);
+      const errorText = await response.text();
+      console.log("DEBUG: Error response:", errorText);
     }
   } catch (error) {
     console.error("Error refreshing user:", error);
