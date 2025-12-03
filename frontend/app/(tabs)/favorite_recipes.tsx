@@ -14,6 +14,7 @@ import CustomHeader from "@/components/CustomHeader";
 import ProfileIcon from "@/components/ProfileIcon";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { Alert } from "react-native";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -35,42 +36,49 @@ interface RecipeItem {
 interface ItemProps {
   recipe_name: string;
   added_by?: FridgeMate | null;
+  onRemove: (recipeName: string) => void;
 }
 
 // Individual item component
 const Item = ({
   recipe_name,
-  added_by
+  added_by,
+  onRemove
 }: ItemProps) => {
   const [isFavorite, setIsFavorite] = useState(true);
-      const handleHeartPress = async () => {
-        const newState = !isFavorite;
-        setIsFavorite(newState);
-        console.log(`Attempting to remove '${recipe_name}'`);
-        
-        try {
-            if (newState) {
-                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/delete-recipe/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                });
+const handleHeartPress = () => {
+  Alert.alert(
+    "Remove Recipe",
+    `Are you sure you want to remove "${recipe_name}" from favorites?`,
+    [{text: "No", onPress: () => console.log("Cancelled"), style: "cancel"},
+      {
+        text: "Yes",
+        onPress: async () => {
+          try {
+            setIsFavorite(false); // update UI immediately
+            const { data: { session } } = await supabase.auth.getSession();
+            const response = await fetch(`${API_URL}/delete-recipe/`, {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${session?.access_token}`
+              },
+              body: JSON.stringify({ recipe_name })
+            });
 
-                if (!response.ok) {
-                    setIsFavorite(false);
-                    throw new Error('Failed to remove recipe from favorites.');
-                }
-                const result = await response.json();
-                console.log("Favorite removed successfully:", result);
-
-            } else {
-                console.warn("Unfavoriting needs the unique DB record ID. Skipping DELETE API call.");
-            }
-        } catch (error) {
-            console.error('Error in API call:', error);
-            setIsFavorite(!newState); 
-            alert(`Could not ${newState ? 'add' : 'remove'} favorite. Please check your connection.`);
+            if (!response.ok) throw new Error("Failed to remove recipe");
+            onRemove(recipe_name);
+          } catch (err) {
+            console.error(err);
+            setIsFavorite(true); 
+          }
         }
-    };
+      }
+    ],
+    { cancelable: true }
+  );
+};
+
   // Handle different name formats from backend
   const getDisplayName = (mate: FridgeMate) => {
     if (mate.first_name && mate.last_name) {
@@ -89,13 +97,16 @@ const Item = ({
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
 
   return (
+    <View style={styles.item}>
     <View style={styles.itemContainer}>
+      <View style={{ backgroundColor: "transparent", flex:1 }}>
       <Text style={[styles.itemText]}>
-        <Text style={{ fontWeight: "bold" }}>{recipe_name}</Text>
+        <Text style={{ fontWeight: "bold", fontSize: 25 }}>{recipe_name}</Text>
       </Text>
-      <Text style={[styles.itemText, { fontSize: 10 }]}>
+      <Text style={[{ fontSize: 15 }]}>
         |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
       </Text>
+      </View>
       <TouchableOpacity onPress={handleHeartPress} style={styles.heartButton}>
       <Ionicons 
           name={isFavorite ? "heart" : "heart-outline"} 
@@ -103,6 +114,7 @@ const Item = ({
           color={isFavorite ? "#E91E63" : "#888"} 
       />
   </TouchableOpacity>
+    </View>
     </View>
   );
 };
@@ -268,6 +280,9 @@ export default function TabOneScreen() {
           <Item
             recipe_name={item.recipe_name}
             added_by={item.added_by}
+              onRemove={(name) => {
+              setData(prev => prev.filter(r => r.recipe_name !== name));
+            }}
           />
         )}
         keyExtractor={(item) => item.id.toString()}
@@ -369,6 +384,9 @@ const styles = StyleSheet.create({
   },
     heartButton: {
     paddingLeft: 10,
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
   },
   redText: {
     color: "#d32f2f",
