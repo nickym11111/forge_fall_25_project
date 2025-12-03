@@ -1,13 +1,27 @@
-import { StyleSheet, View, Text, Image, ImageSourcePropType, Platform, StatusBar } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Image,
+  ImageSourcePropType,
+  Platform,
+  StatusBar,
+} from "react-native";
+import ProfileIcon from "./ProfileIcon";
 
 type CustomHeaderProps = {
   title: string;
   logo?: ImageSourcePropType;
   subtitle?: string;
   noShadow?: boolean;
-}
+};
 
-const CustomHeader = ({ title, logo, subtitle, noShadow = false }: CustomHeaderProps) => {
+const CustomHeader = ({
+  title,
+  logo,
+  subtitle,
+  noShadow = false,
+}: CustomHeaderProps) => {
   return (
     <View style={[styles.header, noShadow && styles.headerNoShadow]}>
       <StatusBar barStyle="light-content" backgroundColor="#14b8a6" />
@@ -17,6 +31,12 @@ const CustomHeader = ({ title, logo, subtitle, noShadow = false }: CustomHeaderP
           <View style={styles.titleContainer}>
             <Text style={styles.headerTitle}>{title}</Text>
             {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+            <ProfileIcon
+              className="profile-icon"
+              style={{
+                marginLeft: 0,
+              }}
+            />
           </View>
         </View>
       </View>
@@ -27,7 +47,7 @@ const CustomHeader = ({ title, logo, subtitle, noShadow = false }: CustomHeaderP
 const styles = StyleSheet.create({
   header: {
     backgroundColor: "#14b8a6",
-    paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight || 20,
+    paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight || 20,
     paddingBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -57,6 +77,10 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+    display: "flex",
+    alignItems: "flex-start",
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   headerTitle: {
     color: "white",

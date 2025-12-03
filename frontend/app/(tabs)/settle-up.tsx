@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { supabase } from "../utils/client";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
 
@@ -145,7 +144,6 @@ export default function SettleUpScreen() {
     return (
       <View style={styles.centerContainer}>
         <CustomHeader title="Settle Up 💰" />
-        <ProfileIcon className="profileIcon" />
         <ActivityIndicator size="large" color="purple" />
         <Text style={styles.loadingText}>Loading balances...</Text>
       </View>
@@ -156,7 +154,6 @@ export default function SettleUpScreen() {
     return (
       <View style={styles.centerContainer}>
         <CustomHeader title="Settle Up 💰" />
-        <ProfileIcon className="profileIcon" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -169,7 +166,6 @@ export default function SettleUpScreen() {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <CustomHeader title="Settle Up 💰" />
-        <ProfileIcon className="profileIcon" />
       </View>
       
       <ScrollView
