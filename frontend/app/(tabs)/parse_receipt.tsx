@@ -16,6 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
+import ProfileIcon from "@/components/ProfileIcon";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import { Modal } from "react-native";

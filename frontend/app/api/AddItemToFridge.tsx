@@ -1,3 +1,5 @@
+import { supabase } from "../utils/client";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function AddItemToFridge(
@@ -23,25 +25,52 @@ export async function AddItemToFridge(
     }),
   });
 
-  return response;
-}
+  if (response.ok) {
+    try {
+      //Get the shopping list item
+      const { data: shoppingItems, error } = await supabase
+        .from("shopping_list")
+        .select("*")
+        .ilike("name", name.trim())
+        .limit(1)
+        .single();
 
-export async function PredictExpiryDate(itemName: string) {
-  const url = `${API_URL}/expiry/predict-expiry`;
-  console.log("📡 Calling:", url);
+      if (error) {
+        console.error("Error fetching shopping list:", error);
+        return response;
+      }
 
-  const controller = new AbortController();
+      if (shoppingItems) {
+        const currentQty = shoppingItems.quantity;
+        const addedQuantity = Number(quantity);
+        const fullName =
+          sharedByUserIds.length === 0 ? "Someone" : sharedByUserIds.join(", ");
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      item_name: itemName,
-    }),
-    signal: controller.signal,
-  });
+        if (addedQuantity >= currentQty) {
+          await supabase
+            .from("shopping_list")
+            .update({
+              checked: true,
+              bought_by: fullName,
+            })
+            .eq("id", shoppingItems.id);
+        } else {
+          // just reduce quantity if not already checked
+          await supabase
+            .from("shopping_list")
+            .update({
+              checked: false,
+              quantity: currentQty - addedQuantity,
+            })
+            .eq("id", shoppingItems.id)
+        }
+
+      }
+    } catch (err) {
+      console.error("Error updating shopping list:", err);
+    }
+  }
+
 
   return response;
 }

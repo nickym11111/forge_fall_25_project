@@ -167,8 +167,10 @@ export default function SettleUpScreen() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Settle Up 💰" />
-      <ProfileIcon className="profileIcon" />
+      <View style={styles.headerContainer}>
+        <CustomHeader title="Settle Up 💰" />
+        <ProfileIcon className="profileIcon" />
+      </View>
       
       <ScrollView
         style={styles.scrollView}
@@ -299,7 +301,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F9FF",
   },
+  headerContainer: {
+    position: "relative",
+  },
   centerContainer: {
+    width: "100%",
     flex: 1,
     backgroundColor: "#F8F9FF",
     justifyContent: "center",
