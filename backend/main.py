@@ -29,6 +29,7 @@ load_dotenv()
 app = FastAPI()
 app.include_router(users_router)
 app.include_router(recipes_router)
+app.include_router(favorite_recipes_router)
 app.include_router(recipe_gen_router)
 #app.include_router(ai_expiration_router, tags=["ai"])
 

@@ -6,6 +6,7 @@ from service import get_current_user, generate_invite_code, get_current_user_wit
 import ast
 import base64
 import uuid
+from typing import List, Optional, Union
 
 app = APIRouter()
 #TEMPLATE to get started :)
@@ -56,7 +57,7 @@ async def create_user(user: UserCreate):
     except Exception as e:
         return {"error": str(e)}
 
-@app.get("/userInfo/")
+@app.get("/userInfo")
 async def get_current_user_info(current_user = Depends(get_current_user)):
     try:
         user_data = current_user if isinstance(current_user, dict) else {
