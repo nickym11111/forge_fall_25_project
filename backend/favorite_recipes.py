@@ -35,7 +35,6 @@ def add_item(recipe: Recipe, user: User):
         print("Error adding recipe:", e)
         return {"error": str(e)}
 
-#Get All Current fav recipes
 @app.get("/get-favorite-recipes/")
 def get_items(current_user = Depends(get_current_user)):
     try:
@@ -125,7 +124,7 @@ def get_items(current_user = Depends(get_current_user)):
 
 class RecipeDelete(BaseModel):
     recipe_name: str
-    
+
 @app.delete("/delete-recipe/")
 def delete_item(payload: RecipeDelete):
     response = (
