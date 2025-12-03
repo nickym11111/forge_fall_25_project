@@ -12,6 +12,7 @@ import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
+import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
 
 interface ItemProps {
@@ -142,7 +143,7 @@ const RecipeItem = ({
         
         try {
             if (newState) {
-                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/add-favorite-recipe/`, {
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/favorite-recipes/add-favorite-recipe/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dataToSend),
@@ -246,6 +247,7 @@ return (
       title="Share Recipes!  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
+      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentSection}>
           <View style={styles.boxContainer}>
@@ -263,8 +265,6 @@ return (
             <CustomButton
               title= {isLoading1 ? "Getting Ingredients..." : "Get Ingredients"}
               onPress={handleSubmit}
-              selectedValue={selectedIngredientsPrompt}
-              setSelectedValue={setSelectedIngredientsPrompt}
               className=""
               disabled={isLoading1}
             />
@@ -283,8 +283,6 @@ return (
             <CustomButton
               title={isLoading2 ? "Getting Recipes..." : "Get Recipes"}
               onPress={handleFindRecipe}
-              selectedValue={selectedRecipePrompt}
-              setSelectedValue={setSelectedRecipePrompt}
               className=""
               disabled={isLoading2}
             />
@@ -295,6 +293,7 @@ return (
                   item={item} 
                   currentUserId={currentUserId} 
                   currentFridgeId={currentFridgeId}
+                  currentUserName={user?.email || 'User'}
                 />
               )} 
               keyExtractor={(item, index) => item.recipe_name || index.toString()}

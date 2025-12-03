@@ -9,7 +9,6 @@ app = APIRouter()
 class ShoppingItem(BaseModel):
     name: str
     quantity: Optional[int]
-    price: Optional[float] = 0.0
     requested_by: Optional[str]
     bought_by: Optional[str] = None
     checked: Optional[bool] = False
@@ -28,7 +27,6 @@ def add_item(item: ShoppingItem):
     .insert({
         "name": item.name,
         "quantity": item.quantity,
-        "price": item.price,
         "requested_by": item.requested_by,
         "bought_by": item.bought_by,
         "checked": item.checked,
@@ -39,7 +37,7 @@ def add_item(item: ShoppingItem):
 )
     print("Supabase insert response:", response)
     
-    if response.error:
+    if not response.data:
         raise HTTPException(status_code=400, detail=f"Supabase error: {response.error.message}")
 
     return {"data": response.data, "status": "Item added successfully"}
@@ -66,7 +64,6 @@ def update_item(item_id: str, item: ShoppingItem):
         .update({
             "name": item.name,
             "quantity": item.quantity,
-            "price": item.price,
             "requested_by": item.requested_by,
             "bought_by": item.bought_by,
             "checked": item.checked,   # fixed

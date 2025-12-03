@@ -4,6 +4,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from "react-native";
 import { router } from 'expo-router';
 import { Text, View } from "@/components/Themed";
@@ -23,6 +24,7 @@ interface FridgeMate {
   last_name?: string;
   name?: string;
   email?: string;
+  profile_photo_url?: string;
 }
 
 // Updated to match backend response
@@ -95,6 +97,17 @@ const handleHeartPress = () => {
   };
 
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
+  
+  // Get initials for default profile icon
+  const getInitials = (mate: FridgeMate) => {
+    if (mate.first_name && mate.last_name) {
+      return `${mate.first_name[0]}${mate.last_name[0]}`.toUpperCase();
+    }
+    if (mate.first_name) return mate.first_name[0].toUpperCase();
+    if (mate.last_name) return mate.last_name[0].toUpperCase();
+    if (mate.email) return mate.email[0].toUpperCase();
+    return "?";
+  };
 
   return (
     <View style={styles.item}>
@@ -103,18 +116,21 @@ const handleHeartPress = () => {
       <Text style={[styles.itemText]}>
         <Text style={{ fontWeight: "bold", fontSize: 25 }}>{recipe_name}</Text>
       </Text>
-      <Text style={[{ fontSize: 15 }]}>
-        |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+        {added_by?.profile_photo_url ? (
+          <Image
+            source={{ uri: added_by.profile_photo_url }}
+            style={styles.profilePhoto}
+          />
+        ) : added_by ? (
+          <View style={[styles.profilePhoto, styles.defaultProfileIcon]}>
+            <Text style={styles.profileInitials}>{getInitials(added_by)}</Text>
+          </View>
+        ) : null}
+        <Text style={[styles.itemText, { fontSize: 10, marginLeft: added_by ? 8 : 0 }]}>
+          |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
+        </Text>
       </View>
-      <TouchableOpacity onPress={handleHeartPress} style={styles.heartButton}>
-      <Ionicons 
-          name={isFavorite ? "heart" : "heart-outline"} 
-          size={28} 
-          color={isFavorite ? "#E91E63" : "#888"} 
-      />
-  </TouchableOpacity>
-    </View>
     </View>
   );
 };
@@ -164,6 +180,7 @@ export default function TabOneScreen() {
 
       const result = await response.json();
       console.log("API Response:", result);
+      console.log("Added by data:", result.data.map((item: RecipeItem) => item.added_by));
 
       if (result.message === "User has no fridge assigned") {
         setData([]);
@@ -390,6 +407,22 @@ const styles = StyleSheet.create({
   },
   redText: {
     color: "#d32f2f",
+    fontWeight: "bold",
+  },
+  profilePhoto: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "#ddd",
+  },
+  defaultProfileIcon: {
+    backgroundColor: "purple",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileInitials: {
+    color: "white",
+    fontSize: 10,
     fontWeight: "bold",
   },
 });
