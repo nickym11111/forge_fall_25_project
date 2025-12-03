@@ -20,7 +20,6 @@ import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 import { useFocusEffect } from "@react-navigation/native";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
@@ -348,7 +347,6 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
-        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
@@ -390,7 +388,6 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
-        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!

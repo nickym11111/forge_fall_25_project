@@ -77,6 +77,7 @@ export const clearUserCache = () => {
 
 export const refreshUserCache = async () => {
   try {
+
     console.log("DEBUG: refreshUserCache called");
     const {
       data: { session },

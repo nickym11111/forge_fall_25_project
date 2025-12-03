@@ -16,7 +16,6 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
-import ProfileIcon from "@/components/ProfileIcon";
 import { supabase } from "../utils/client";
 import { useUser } from "../hooks/useUser";
 import { useIsFocused } from "@react-navigation/native";
@@ -290,7 +289,6 @@ export default function SharedListScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <CustomHeader title="Shared Shopping List 🛒" />
-      <ProfileIcon className="profileIcon" />
       
       {/* Search */}
       <TextInput
