@@ -5,6 +5,7 @@ import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import CustomHeader from "@/components/CustomHeader";
 import { useAuth } from "../context/authContext";
+import ProfileIcon from "@/components/ProfileIcon";
 
 export default function TabOneScreen() {
   const [email, setEmail] = useState("");
@@ -26,6 +27,7 @@ export default function TabOneScreen() {
       <CustomHeader 
       title="Food Flow  " 
       logo={require('../../assets/images/FridgeIcon.png')}/>
+      <ProfileIcon className="profileIcon" />
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView 
