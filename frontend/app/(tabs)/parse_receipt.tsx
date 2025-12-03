@@ -18,7 +18,6 @@ import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
-import ToastMessage from "@/components/ToastMessage";
 import { Modal } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/authContext";
@@ -28,10 +27,9 @@ export default function ParseReceiptScreen() {
   const [responseText, setResponseText] = useState("");
   const [parsedItems, setParsedItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isToastVisible, setIsToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
   const [addingItemIndex, setAddingItemIndex] = useState<number[]>([]);
-  const [isAddingItems, setIsAddingItems] = useState(false);
+  const [isAddingAll, setIsAddingAll] = useState(false);
+  const [isAddingSelected, setIsAddingSelected] = useState(false);
   const [sharingWith, setSharingWith] = useState<string[]>([]);
   const [isShareModalVisible, setIsShareModalVisible] = useState(false);
   const [fridgeMates, setFridgeMates] = useState<
@@ -61,16 +59,18 @@ export default function ParseReceiptScreen() {
 
   // fetches the user's fridge mates
   const fetchFridgeMates = async () => {
-    if (!user) return;
+    if (!user || !user.fridgeMates) return;
 
     try {
-      const mates = user.fridgeMates.map((mate) => ({
-        id: mate.id,
-        name: `${mate.first_name} ${mate.last_name}` || "Unknown User",
-      }));
+      const mates =
+        user.fridgeMates?.map((mate) => ({
+          id: mate.id,
+          name: `${mate.first_name} ${mate.last_name}` || "Unknown User",
+        })) || [];
       setFridgeMates(mates);
     } catch (error) {
       console.error("Error fetching fridge mates:", error);
+      setFridgeMates([]);
     }
   };
 
@@ -164,7 +164,6 @@ export default function ParseReceiptScreen() {
         "Error",
         data.detail || data.message || "Failed to add item."
       );
-      setToastMessage("Failed to add item.");
     }
 
     setAddingItemIndex((prev) => prev.filter((i) => i !== item.index));
@@ -220,394 +219,399 @@ export default function ParseReceiptScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <CustomHeader 
-        title="Scan Receipt" 
+      <CustomHeader
+        title="Scan Receipt"
         subtitle="Take a photo or upload a receipt to automatically add items"
         noShadow={true}
       />
-      <View style={{ position: "fixed", zIndex: 999, left: 0, right: 20 }}>
-        <ToastMessage message={toastMessage} visible={isToastVisible} />
-      </View>
-      <ScrollView 
+      <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-      <View style={styles.uploadSection}>
-        <View style={styles.imageContainer}>
-          <TouchableOpacity
-            onPress={pickImage}
-            activeOpacity={0.8}
-            style={styles.imageTouchable}
-          >
-            {imageUri ? (
-              <View style={styles.imageWrapper}>
-                <Image source={{ uri: imageUri }} style={styles.image} />
-                <View style={styles.imageOverlay}>
-                  <View style={styles.overlayContent}>
-                    <View style={styles.overlayIconCircle}>
-                      <Ionicons
-                        name="camera-outline"
-                        size={28}
-                        color="#14b8a6"
-                      />
+        <View style={styles.uploadSection}>
+          <View style={styles.imageContainer}>
+            <TouchableOpacity
+              onPress={pickImage}
+              activeOpacity={0.8}
+              style={styles.imageTouchable}
+            >
+              {imageUri ? (
+                <View style={styles.imageWrapper}>
+                  <Image source={{ uri: imageUri }} style={styles.image} />
+                  <View style={styles.imageOverlay}>
+                    <View style={styles.overlayContent}>
+                      <View style={styles.overlayIconCircle}>
+                        <Ionicons
+                          name="camera-outline"
+                          size={28}
+                          color="#14b8a6"
+                        />
+                      </View>
+                      <Text style={styles.imageOverlayText}>
+                        Tap to change image
+                      </Text>
                     </View>
-                    <Text style={styles.imageOverlayText}>
-                      Tap to change image
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.imageSkeleton}>
+                  <View style={styles.imageTextContainer}>
+                    <View style={styles.iconCircle}>
+                      <Ionicons name="camera" size={36} color="#14b8a6" />
+                    </View>
+                    <Text style={styles.skeletonTitle}>
+                      Scan Receipt or Take Photo
                     </Text>
+                    <Text style={styles.skeletonSubtitle}>
+                      AI will automatically detect items and expiry dates
+                    </Text>
+                    <View style={styles.hintBadge}>
+                      <Ionicons name="sparkles" size={16} color="#14b8a6" />
+                      <Text style={styles.hintText}>Powered by AI</Text>
+                    </View>
                   </View>
                 </View>
+              )}
+            </TouchableOpacity>
+          </View>
+          {!imageUri && (
+            <View style={styles.tipsCard}>
+              <View style={styles.tipsHeader}>
+                <Ionicons name="bulb-outline" size={20} color="#14b8a6" />
+                <Text style={styles.tipsTitle}>Tips for best results</Text>
               </View>
-            ) : (
-              <View style={styles.imageSkeleton}>
-                <View style={styles.imageTextContainer}>
-                  <View style={styles.iconCircle}>
-                    <Ionicons name="camera" size={36} color="#14b8a6" />
-                  </View>
-                  <Text style={styles.skeletonTitle}>
-                    Scan Receipt or Take Photo
+              <View style={styles.tipsList}>
+                <View style={styles.tipItem}>
+                  <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+                  <Text style={styles.tipText}>Ensure good lighting</Text>
+                </View>
+                <View style={styles.tipItem}>
+                  <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+                  <Text style={styles.tipText}>
+                    Keep receipt flat and in focus
                   </Text>
-                  <Text style={styles.skeletonSubtitle}>
-                    AI will automatically detect items and expiry dates
+                </View>
+                <View style={styles.tipItem}>
+                  <Ionicons name="checkmark-circle" size={16} color="#10b981" />
+                  <Text style={styles.tipText}>
+                    Include all items in the frame
                   </Text>
-                  <View style={styles.hintBadge}>
-                    <Ionicons name="sparkles" size={16} color="#14b8a6" />
-                    <Text style={styles.hintText}>Powered by AI</Text>
-                  </View>
                 </View>
               </View>
-            )}
-          </TouchableOpacity>
+            </View>
+          )}
         </View>
-        {!imageUri && (
-          <View style={styles.tipsCard}>
-            <View style={styles.tipsHeader}>
-              <Ionicons name="bulb-outline" size={20} color="#14b8a6" />
-              <Text style={styles.tipsTitle}>Tips for best results</Text>
-            </View>
-            <View style={styles.tipsList}>
-              <View style={styles.tipItem}>
-                <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                <Text style={styles.tipText}>Ensure good lighting</Text>
-              </View>
-              <View style={styles.tipItem}>
-                <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                <Text style={styles.tipText}>
-                  Keep receipt flat and in focus
-                </Text>
-              </View>
-              <View style={styles.tipItem}>
-                <Ionicons name="checkmark-circle" size={16} color="#10b981" />
-                <Text style={styles.tipText}>
-                  Include all items in the frame
-                </Text>
-              </View>
-            </View>
+
+        {isLoading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#14b8a6" />
+            <Text style={styles.loadingText}>Parsing receipt...</Text>
           </View>
         )}
-      </View>
 
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#14b8a6" />
-          <Text style={styles.loadingText}>Parsing receipt...</Text>
-        </View>
-      )}
-
-      <Modal
-        visible={isShareModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsShareModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                Share {selectedItems.length}{" "}
-                {selectedItems.length === 1 ? "Item" : "Items"}
-              </Text>
-              <TouchableOpacity
-                onPress={() => setIsShareModalVisible(false)}
-                style={styles.modalCloseButton}
-              >
-                <Ionicons name="close" size={24} color="#64748b" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={{ marginBottom: 16, color: "#64748b" }}>
-              Select who you want to share these items with:
-            </Text>
-
-            <ScrollView style={{ maxHeight: 300 }}>
-              {fridgeMates.map((mate) => (
+        <Modal
+          visible={isShareModalVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setIsShareModalVisible(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  Share {selectedItems.length}{" "}
+                  {selectedItems.length === 1 ? "Item" : "Items"}
+                </Text>
                 <TouchableOpacity
-                  key={mate.id}
-                  style={styles.fridgeMateItem}
-                  onPress={() => toggleFridgeMate(mate.id)}
+                  onPress={() => setIsShareModalVisible(false)}
+                  style={styles.modalCloseButton}
                 >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      sharingWith.includes(mate.id) && styles.checkboxChecked,
-                    ]}
-                  >
-                    {sharingWith.includes(mate.id) && (
-                      <Ionicons name="checkmark" size={16} color="white" />
-                    )}
-                  </View>
-                  <Text style={styles.fridgeMateName}>{mate.name}</Text>
+                  <Ionicons name="close" size={24} color="#64748b" />
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
+              </View>
 
-      {parsedItems && parsedItems.length > 0 && (
-        <View style={styles.itemsContainer}>
-          <View style={styles.headerRow}>
-            <Text style={styles.sectionTitle}>Detected Items</Text>
-          </View>
-          <View style={styles.buttonGroup}>
-            <TouchableOpacity
-              style={[styles.shareButton]}
-              onPress={() => setIsShareModalVisible(true)}
-            >
-              <Ionicons name="people" size={18} color="#14b8a6" />
-              <Text style={styles.shareButtonText}>
-                {sharingWith.length > 0
-                  ? `Sharing (${sharingWith.length})`
-                  : "Share"}
+              <Text style={{ marginBottom: 16, color: "#64748b" }}>
+                Select who you want to share these items with:
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.addButton, styles.addAllButton]}
-              onPress={async () => {
-                if (!parsedItems || parsedItems.length === 0 || isAddingItems)
-                  return;
 
-                try {
-                  setIsAddingItems(true);
+              <ScrollView style={{ maxHeight: 300 }}>
+                {fridgeMates.map((mate) => (
+                  <TouchableOpacity
+                    key={mate.id}
+                    style={styles.fridgeMateItem}
+                    onPress={() => toggleFridgeMate(mate.id)}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        sharingWith.includes(mate.id) && styles.checkboxChecked,
+                      ]}
+                    >
+                      {sharingWith.includes(mate.id) && (
+                        <Ionicons name="checkmark" size={16} color="white" />
+                      )}
+                    </View>
+                    <Text style={styles.fridgeMateName}>{mate.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          </View>
+        </Modal>
 
-                  // Process all items in parallel
-                  const results = await Promise.all(
-                    parsedItems.map(async (item, index) => {
-                      const itemName = Object.keys(item)[0];
-                      const itemData = item[itemName];
+        {parsedItems && parsedItems.length > 0 && (
+          <View style={styles.itemsContainer}>
+            <View style={styles.headerRow}>
+              <Text style={styles.sectionTitle}>Detected Items</Text>
+            </View>
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity
+                style={[styles.shareButton]}
+                onPress={() => setIsShareModalVisible(true)}
+              >
+                <Ionicons name="people" size={18} color="#14b8a6" />
+                <Text style={styles.shareButtonText}>
+                  {sharingWith.length > 0
+                    ? `Sharing (${sharingWith.length})`
+                    : "Share"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.addButton, styles.addAllButton]}
+                onPress={async () => {
+                  if (
+                    !parsedItems ||
+                    parsedItems.length === 0 ||
+                    isAddingAll ||
+                    isAddingSelected
+                  )
+                    return;
 
-                      try {
-                        await sendItemToFridge({
-                          name: itemName,
-                          quantity: Math.ceil(itemData.quantity),
-                          price: itemData.price,
-                          index,
-                          sharedWith: [...sharingWith],
-                        });
-                        return { success: true, index, name: itemName };
-                      } catch (error) {
-                        console.error(`Error adding item ${itemName}:`, error);
-                        return { success: false, index, name: itemName, error };
-                      }
-                    })
-                  );
+                  try {
+                    setIsAddingAll(true);
 
-                  // Count successes and failures
-                  const successCount = results.filter((r) => r.success).length;
-                  const failedItems = results.filter((r) => !r.success);
+                    // Process all items in parallel
+                    const results = await Promise.all(
+                      parsedItems.map(async (item, index) => {
+                        const itemName = Object.keys(item)[0];
+                        const itemData = item[itemName];
 
-                  // If all succeeded, clear everything
-                  if (successCount === parsedItems.length) {
-                    setParsedItems([]);
-                    setSelectedItems([]);
-                    setAddingItemIndex([]);
+                        try {
+                          await sendItemToFridge({
+                            name: itemName,
+                            quantity: Math.ceil(itemData.quantity),
+                            price: itemData.price,
+                            index,
+                            sharedWith: [...sharingWith],
+                          });
+                          return { success: true, index, name: itemName };
+                        } catch (error) {
+                          console.error(
+                            `Error adding item ${itemName}:`,
+                            error
+                          );
+                          return {
+                            success: false,
+                            index,
+                            name: itemName,
+                            error,
+                          };
+                        }
+                      })
+                    );
 
+                    // Count successes and failures
+                    const successCount = results.filter(
+                      (r) => r.success
+                    ).length;
+                    const failedItems = results.filter((r) => !r.success);
+
+                    // If all succeeded, clear everything
+                    if (successCount === parsedItems.length) {
+                      setParsedItems([]);
+                      setSelectedItems([]);
+                      setAddingItemIndex([]);
+
+                      Alert.alert(
+                        "Success",
+                        `Successfully added all ${successCount} items to your fridge!`
+                      );
+                    }
+                    // If some failed, only remove successful ones
+                    else {
+                      const successfulIndices = results
+                        .filter((r) => r.success)
+                        .map((r) => r.index);
+
+                      setParsedItems((prev) =>
+                        prev.filter(
+                          (_, idx) => !successfulIndices.includes(idx)
+                        )
+                      );
+
+                      setSelectedItems([]);
+                      setAddingItemIndex([]);
+
+                      Alert.alert(
+                        "Partial Success",
+                        `Added ${successCount} of ${parsedItems.length} 
+                      items.\n${failedItems.length} item(s) failed and remain in the list.`
+                      );
+                    }
+                  } catch (error) {
+                    console.error("Unexpected error:", error);
                     Alert.alert(
-                      "Success",
-                      `Successfully added all ${successCount} items to your fridge!`
+                      "Error",
+                      "An unexpected error occurred while processing your request."
                     );
-                    setToastMessage(
-                      `Successfully added all ${successCount} items to your fridge!`
-                    );
-                    setIsToastVisible(true);
-                    setTimeout(() => setIsToastVisible(false), 3000);
+                  } finally {
+                    setIsAddingAll(false);
                   }
-                  // If some failed, only remove successful ones
-                  else {
-                    const successfulIndices = results
+                }}
+              >
+                {isAddingAll ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.addButtonText}>Add All</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.addButton,
+                  styles.addSelectedButton,
+                  selectedItems.length === 0 && styles.buttonDisabled,
+                ]}
+                onPress={async () => {
+                  if (selectedItems.length === 0 || isAddingSelected) return;
+
+                  try {
+                    setIsAddingSelected(true);
+
+                    // Process all items in parallel
+                    const results = await Promise.all(
+                      selectedItems.map(async (index) => {
+                        const item = parsedItems[index];
+                        const itemName = Object.keys(item)[0];
+                        const itemData = item[itemName];
+
+                        try {
+                          await sendItemToFridge({
+                            name: itemName,
+                            quantity: Math.ceil(itemData.quantity),
+                            price: itemData.price,
+                            index,
+                            sharedWith: [...sharingWith],
+                          });
+                          return { success: true, index };
+                        } catch (error) {
+                          console.error(
+                            `Error adding item ${itemName}:`,
+                            error
+                          );
+                          return { success: false, index, error };
+                        }
+                      })
+                    );
+
+                    // Update UI for all successfully added items
+                    const successfulItems = results
                       .filter((r) => r.success)
                       .map((r) => r.index);
 
+                    // Remove all processed items from the list
                     setParsedItems((prev) =>
-                      prev.filter((_, idx) => !successfulIndices.includes(idx))
+                      prev.filter((_, idx) => !selectedItems.includes(idx))
                     );
+
+                    // Show success message
+                    const successCount = successfulItems.length;
+                    if (successCount > 0) {
+                      Alert.alert(
+                        "Success",
+                        `Successfully added ${successCount} item(s) to your fridge!`
+                      );
+                    }
+
+                    // If some items failed, show a warning
+                    if (successCount < selectedItems.length) {
+                      Alert.alert(
+                        "Partial Success",
+                        `Added ${successCount} of ${selectedItems.length} items. Some items may not have been added.`
+                      );
+                    }
 
                     setSelectedItems([]);
-                    setAddingItemIndex([]);
-
+                  } catch (error) {
+                    console.error("Unexpected error:", error);
                     Alert.alert(
-                      "Partial Success",
-                      `Added ${successCount} of ${parsedItems.length} 
-                      items.\n${failedItems.length} item(s) failed and remain in the list.`
+                      "Error",
+                      "An unexpected error occurred while processing your request."
                     );
-
-                    setToastMessage(
-                      `Added ${successCount} items. ${failedItems.length} failed.`
-                    );
-                    setIsToastVisible(true);
-                    setTimeout(() => setIsToastVisible(false), 3000);
+                  } finally {
+                    setIsAddingSelected(false);
                   }
-                } catch (error) {
-                  console.error("Unexpected error:", error);
-                  Alert.alert(
-                    "Error",
-                    "An unexpected error occurred while processing your request."
-                  );
-                } finally {
-                  setIsAddingItems(false);
+                }}
+                disabled={
+                  selectedItems.length === 0 || isAddingAll || isAddingSelected
                 }
-              }}
-            >
-              {isAddingItems ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.addButtonText}>Add All</Text>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.addButton,
-                styles.addSelectedButton,
-                selectedItems.length === 0 && styles.buttonDisabled,
-              ]}
-              onPress={async () => {
-                if (selectedItems.length === 0 || isAddingItems) return;
+              >
+                {isAddingSelected ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.addButtonText}>
+                    Add Selected{" "}
+                    {selectedItems.length > 0
+                      ? `(${selectedItems.length})`
+                      : ""}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
 
-                try {
-                  setIsAddingItems(true);
-
-                  // Process all items in parallel
-                  const results = await Promise.all(
-                    selectedItems.map(async (index) => {
-                      const item = parsedItems[index];
-                      const itemName = Object.keys(item)[0];
-                      const itemData = item[itemName];
-
-                      try {
-                        await sendItemToFridge({
-                          name: itemName,
-                          quantity: Math.ceil(itemData.quantity),
-                          price: itemData.price,
-                          index,
-                          sharedWith: [...sharingWith],
-                        });
-                        return { success: true, index };
-                      } catch (error) {
-                        console.error(`Error adding item ${itemName}:`, error);
-                        return { success: false, index, error };
-                      }
-                    })
-                  );
-
-                  // Update UI for all successfully added items
-                  const successfulItems = results
-                    .filter((r) => r.success)
-                    .map((r) => r.index);
-
-                  // Remove all processed items from the list
-                  setParsedItems((prev) =>
-                    prev.filter((_, idx) => !selectedItems.includes(idx))
-                  );
-
-                  // Show success message
-                  const successCount = successfulItems.length;
-                  if (successCount > 0) {
-                    Alert.alert(
-                      "Success",
-                      `Successfully added ${successCount} item(s) to your fridge!`
-                    );
-                    setToastMessage(
-                      `Successfully added ${successCount} item(s) to your fridge!`
-                    );
-                    setIsToastVisible(true);
-                    setTimeout(() => setIsToastVisible(false), 3000);
-                  }
-
-                  // If some items failed, show a warning
-                  if (successCount < selectedItems.length) {
-                    Alert.alert(
-                      "Partial Success",
-                      `Added ${successCount} of ${selectedItems.length} items. Some items may not have been added.`
-                    );
-                  }
-
-                  setSelectedItems([]);
-                } catch (error) {
-                  console.error("Unexpected error:", error);
-                  Alert.alert(
-                    "Error",
-                    "An unexpected error occurred while processing your request."
-                  );
-                } finally {
-                  setIsAddingItems(false);
-                }
-              }}
-              disabled={selectedItems.length === 0 || isAddingItems}
-            >
-              {isAddingItems ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.addButtonText}>
-                  Add Selected{" "}
-                  {selectedItems.length > 0 ? `(${selectedItems.length})` : ""}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {parsedItems.map((item, index) => {
-            const itemName = Object.keys(item)[0];
-            const itemData = item[itemName];
-            const isAdding = addingItemIndex.includes(index);
-            return (
-              <View key={index} style={styles.itemCard}>
-                <View style={styles.itemInfo}>
-                  <Text style={styles.itemName}>{itemName}</Text>
-                  <View style={styles.itemMeta}>
-                    <Text style={styles.itemMetaText}>
-                      Qty: {itemData.quantity}
-                    </Text>
-                    {itemData.price && (
-                      <>
-                        <Text style={styles.itemMetaDivider}>•</Text>
-                        <Text style={styles.itemMetaText}>
-                          ${itemData.price.toFixed(2)}
-                        </Text>
-                      </>
-                    )}
+            {parsedItems.map((item, index) => {
+              const itemName = Object.keys(item)[0];
+              const itemData = item[itemName];
+              const isAdding = addingItemIndex.includes(index);
+              return (
+                <View key={index} style={styles.itemCard}>
+                  <View style={styles.itemInfo}>
+                    <Text style={styles.itemName}>{itemName}</Text>
+                    <View style={styles.itemMeta}>
+                      <Text style={styles.itemMetaText}>
+                        Qty: {itemData.quantity}
+                      </Text>
+                      {itemData.price && (
+                        <>
+                          <Text style={styles.itemMetaDivider}>•</Text>
+                          <Text style={styles.itemMetaText}>
+                            ${itemData.price.toFixed(2)}
+                          </Text>
+                        </>
+                      )}
+                    </View>
+                  </View>
+                  <View style={styles.buttonGroup}>
+                    <TouchableOpacity
+                      style={[
+                        styles.checkboxButton,
+                        selectedItems.includes(index) &&
+                          styles.checkboxButtonSelected,
+                        isAdding && styles.buttonDisabled,
+                      ]}
+                      onPress={() => !isAdding && toggleItemSelection(index)}
+                      disabled={isAdding}
+                    >
+                      {selectedItems.includes(index) && (
+                        <Ionicons name="checkmark" size={16} color="white" />
+                      )}
+                    </TouchableOpacity>
                   </View>
                 </View>
-                <View style={styles.buttonGroup}>
-                  <TouchableOpacity
-                    style={[
-                      styles.checkboxButton,
-                      selectedItems.includes(index) &&
-                        styles.checkboxButtonSelected,
-                      isAdding && styles.buttonDisabled,
-                    ]}
-                    onPress={() => !isAdding && toggleItemSelection(index)}
-                    disabled={isAdding}
-                  >
-                    {selectedItems.includes(index) && (
-                      <Ionicons name="checkmark" size={16} color="white" />
-                    )}
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      )}
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -765,10 +769,7 @@ const styles = StyleSheet.create({
     color: "#0f172a",
   },
   addAllButton: {
-    backgroundColor: "#14b8a6",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 12,
+    // Inherits from addButton
   },
   addAllText: {
     color: "#ffffff",
@@ -814,10 +815,11 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: "#14b8a6",
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
     paddingVertical: 10,
     borderRadius: 12,
-    minWidth: 80,
+    width: 120,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -828,6 +830,8 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontWeight: "600",
     fontSize: 14,
+    textAlign: "center",
+    width: "100%",
   },
   buttonGroup: {
     flexDirection: "row",
@@ -838,13 +842,16 @@ const styles = StyleSheet.create({
   shareButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     backgroundColor: "#ffffff",
+    width: 120,
+    height: 44,
   },
   shareButtonText: {
     color: "#14b8a6",
@@ -852,7 +859,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   addSelectedButton: {
-    minWidth: 120,
+    // Inherits from addButton
   },
   checkboxButton: {
     width: 22,
