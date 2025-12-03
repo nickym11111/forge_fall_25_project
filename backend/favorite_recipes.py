@@ -4,6 +4,7 @@ from typing import Optional, List
 from database import supabase
 from fastapi import FastAPI, HTTPException, Depends, Header
 from service import get_current_user, generate_invite_code
+from pydantic import BaseModel
 
 app = APIRouter()
 
@@ -111,12 +112,15 @@ def get_items(current_user = Depends(get_current_user)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get recipe items: {str(e)}")
 
+class RecipeDelete(BaseModel):
+    recipe_name: str
+    
 @app.delete("/delete-recipe/")
-def delete_item(recipe_name: str):
+def delete_item(payload: RecipeDelete):
     response = (
         supabase.table("favorite_recipes")
         .delete()
-        .eq("recipe_name", recipe_name)
+        .eq("recipe_name", payload.recipe_name)
         .execute()
     )
     return {"data": response.data}
