@@ -13,6 +13,7 @@ import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import ProfileIcon from "@/components/ProfileIcon";
 import { useFocusEffect } from "@react-navigation/native";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -41,6 +42,35 @@ const Item = ({
   recipe_name,
   added_by
 }: ItemProps) => {
+  const [isFavorite, setIsFavorite] = useState(true);
+      const handleHeartPress = async () => {
+        const newState = !isFavorite;
+        setIsFavorite(newState);
+        console.log(`Attempting to remove '${recipe_name}'`);
+        
+        try {
+            if (newState) {
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/delete-recipe/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) {
+                    setIsFavorite(false);
+                    throw new Error('Failed to remove recipe from favorites.');
+                }
+                const result = await response.json();
+                console.log("Favorite removed successfully:", result);
+
+            } else {
+                console.warn("Unfavoriting needs the unique DB record ID. Skipping DELETE API call.");
+            }
+        } catch (error) {
+            console.error('Error in API call:', error);
+            setIsFavorite(!newState); 
+            alert(`Could not ${newState ? 'add' : 'remove'} favorite. Please check your connection.`);
+        }
+    };
   // Handle different name formats from backend
   const getDisplayName = (mate: FridgeMate) => {
     if (mate.first_name && mate.last_name) {
@@ -59,13 +89,20 @@ const Item = ({
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
 
   return (
-    <View style={styles.item}>
+    <View style={styles.itemContainer}>
       <Text style={[styles.itemText]}>
         <Text style={{ fontWeight: "bold" }}>{recipe_name}</Text>
       </Text>
       <Text style={[styles.itemText, { fontSize: 10 }]}>
         |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
       </Text>
+      <TouchableOpacity onPress={handleHeartPress} style={styles.heartButton}>
+      <Ionicons 
+          name={isFavorite ? "heart" : "heart-outline"} 
+          size={28} 
+          color={isFavorite ? "#E91E63" : "#888"} 
+      />
+  </TouchableOpacity>
     </View>
   );
 };
@@ -280,6 +317,17 @@ const styles = StyleSheet.create({
   selectedLabel: {
     color: "white",
   },
+    itemContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    backgroundColor: "#f0f0f0",
+    padding: 15,
+    marginVertical: 5,
+    marginHorizontal: 0,
+    borderRadius: 8,
+    width: "100%", 
+  },
   label: {
     textAlign: "center",
     marginBottom: 10,
@@ -318,6 +366,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 10,
     width: 350,
+  },
+    heartButton: {
+    paddingLeft: 10,
   },
   redText: {
     color: "#d32f2f",
