@@ -304,8 +304,6 @@ const styles = StyleSheet.create({
     width: "100%",
     flex: 1,
     backgroundColor: "#F8F9FF",
-    justifyContent: "center",
-    alignItems: "center",
   },
   scrollView: {
     flex: 1,
@@ -317,6 +315,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: "#666",
+    marginLeft: "auto",
+    marginRight: "auto",
   },
   errorText: {
     color: "#F44336",
