@@ -57,7 +57,7 @@ async def create_user(user: UserCreate):
         return {"error": str(e)}
 
 @app.get("/userInfo")
-async def get_current_user_info(current_user = Depends(get_current_user)):
+async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
     try:
         user_data = current_user if isinstance(current_user, dict) else {
             "id": current_user.id,
