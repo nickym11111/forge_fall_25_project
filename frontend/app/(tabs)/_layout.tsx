@@ -35,6 +35,7 @@ export default function TabLayout() {
       const hasSingleFridge = (user.fridge_count || 0) === 1;
       const needsSelection = (user.fridge_count || 0) > 0 && !user.active_fridge_id; */
 
+
       const hasActiveFridge =
         user.active_fridge_id !== null && user.active_fridge_id !== undefined;
       const hasFridges = (user.fridge_count || 0) > 0;
@@ -98,6 +99,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          href: null,
           // start of ploy change being merged in on 11/26
           tabBarIcon: ({ color, focused }) => (
             <TabBarIcon
@@ -106,7 +108,6 @@ export default function TabLayout() {
               focused={focused}
             />
           ),
-          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
