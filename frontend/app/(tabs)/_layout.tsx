@@ -116,7 +116,7 @@ export default function TabLayout() {
               focused={focused}
             />
           ),
-          tabBarButton: () => null,
+          //tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
