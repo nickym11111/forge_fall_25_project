@@ -624,7 +624,7 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginTop: -32,
+    marginTop: 16,
   },
   scrollContent: {
     flexGrow: 1,
