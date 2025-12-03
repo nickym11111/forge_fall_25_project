@@ -35,10 +35,20 @@ export default function TabLayout() {
       const hasSingleFridge = (user.fridge_count || 0) === 1;
       const needsSelection = (user.fridge_count || 0) > 0 && !user.active_fridge_id; */
 
+      console.log("🔍 Redirect Debug:");
+      console.log("  - user.active_fridge_id:", user.active_fridge_id);
+      console.log("  - user.fridge_count:", user.fridge_count);
+      console.log("  - user.fridge_id:", user.fridge_id);
+
       const hasActiveFridge =
         user.active_fridge_id !== null && user.active_fridge_id !== undefined;
       const hasFridges = (user.fridge_count || 0) > 0;
       const needsSelection = hasFridges && !hasActiveFridge;
+
+      console.log("  - hasActiveFridge:", hasActiveFridge);
+      console.log("  - hasFridges:", hasFridges);
+      console.log("  - needsSelection:", needsSelection);
+      console.log("  - Will redirect to:", needsSelection ? "select_fridge" : hasActiveFridge ? "fridge items" : "create_fridge");
 
       if (needsSelection) {
         router.replace("/(tabs)/select_fridge");
