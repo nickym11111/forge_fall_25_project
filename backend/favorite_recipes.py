@@ -1,10 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Depends, Header
 from pydantic import BaseModel
 from typing import Optional, List
 from database import supabase
-from fastapi import FastAPI, HTTPException, Depends, Header
 from service import get_current_user, generate_invite_code
-from pydantic import BaseModel
 
 app = APIRouter()
 

@@ -10,14 +10,10 @@ from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
 from CostSplitting import app as cost_splitting_router
-from typing import List, Optional, Any
 from receiptParsing.chatGPTParse import app as receipt_router
 from recipes import app as recipes_router
 from RecipeGen2 import app as recipe_gen_router
-from ai_expiration import app as ai_expiration_router
-from recipes import app as recipes_router
 from favorite_recipes import app as favorite_recipes_router
-#from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
 
 

@@ -402,7 +402,7 @@ export default function TabOneScreen() {
         </Text>
         <TouchableOpacity
           style={styles.filter_button}
-          onPress={fetchFridgeItems}
+          onPress={() => fetchFridgeItems(true)}
         >
           <Text style={styles.buttonLabel}>Retry</Text>
         </TouchableOpacity>
