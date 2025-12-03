@@ -43,9 +43,13 @@ def get_items():
     print("Retrieved recipes:", response.data)
     return {"data": response.data}
 
+
+class RecipeDelete(BaseModel):
+    recipe_name: str
+
 #Delete Item
-@app.delete("/delete-recipe/{recipe_id}")
-def delete_item(recipe_id: str):
+@app.delete("/delete-recipe/")
+def delete_item(payload: RecipeDelete):
     response = (
         supabase.table("favorite_recipes")
         .delete()

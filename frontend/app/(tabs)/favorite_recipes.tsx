@@ -42,94 +42,83 @@ interface ItemProps {
 }
 
 // Individual item component
-const Item = ({
-  recipe_name,
-  added_by,
-  onRemove
-}: ItemProps) => {
+const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
   const [isFavorite, setIsFavorite] = useState(true);
-const handleHeartPress = () => {
-  Alert.alert(
-    "Remove Recipe",
-    `Are you sure you want to remove "${recipe_name}" from favorites?`,
-    [{text: "No", onPress: () => console.log("Cancelled"), style: "cancel"},
-      {
-        text: "Yes",
-        onPress: async () => {
-          try {
-            setIsFavorite(false); // update UI immediately
-            const { data: { session } } = await supabase.auth.getSession();
-            const response = await fetch(`${API_URL}/delete-recipe/`, {
-              method: "DELETE",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${session?.access_token}`
-              },
-              body: JSON.stringify({ recipe_name })
-            });
-
-            if (!response.ok) throw new Error("Failed to remove recipe");
-            onRemove(recipe_name);
-          } catch (err) {
-            console.error(err);
-            setIsFavorite(true); 
+  const handleHeartPress = () => {
+    Alert.alert(
+      "Remove Recipe",
+      `Are you sure you want to remove "${recipe_name}" from favorites?`,
+      [
+        { text: "No", onPress: () => console.log("Cancelled"), style: "cancel" },
+        {
+          text: "Yes",
+          onPress: async () => {
+            try {
+              setIsFavorite(false); // optimistically update UI
+              const { data: { session } } = await supabase.auth.getSession();
+              const response = await fetch(`${API_URL}/delete-recipe/`, {
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": `Bearer ${session?.access_token}`
+                },
+                body: JSON.stringify({ recipe_name })
+              });
+              if (!response.ok) throw new Error("Failed to remove recipe");
+              onRemove(recipe_name); 
+            } catch (err) {
+              console.error(err);
+              setIsFavorite(true); 
+            }
           }
         }
-      }
-    ],
-    { cancelable: true }
-  );
-};
-
-  // Handle different name formats from backend
+      ],
+      { cancelable: true }
+    );
+  };
   const getDisplayName = (mate: FridgeMate) => {
-    if (mate.first_name && mate.last_name) {
-      return `${mate.first_name} ${mate.last_name}`;
-    }
+    if (!mate) return "Unknown";
+    if (mate.first_name && mate.last_name) return `${mate.first_name} ${mate.last_name}`;
     if (mate.first_name) return mate.first_name;
     if (mate.last_name) return mate.last_name;
     if (mate.name) return mate.name;
-    if (mate.email) {
-      // Use email prefix as fallback
-      return mate.email.split('@')[0];
-    }
+    if (mate.email) return mate.email.split("@")[0];
     return "Unknown";
   };
-
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
-  
-  // Get initials for default profile icon
   const getInitials = (mate: FridgeMate) => {
-    if (mate.first_name && mate.last_name) {
-      return `${mate.first_name[0]}${mate.last_name[0]}`.toUpperCase();
-    }
+    if (!mate) return "?";
+    if (mate.first_name && mate.last_name) return `${mate.first_name[0]}${mate.last_name[0]}`.toUpperCase();
     if (mate.first_name) return mate.first_name[0].toUpperCase();
     if (mate.last_name) return mate.last_name[0].toUpperCase();
     if (mate.email) return mate.email[0].toUpperCase();
     return "?";
   };
-
   return (
     <View style={styles.item}>
-    <View style={styles.itemContainer}>
-      <View style={{ backgroundColor: "transparent", flex:1 }}>
-      <Text style={[styles.itemText]}>
-        <Text style={{ fontWeight: "bold", fontSize: 25 }}>{recipe_name}</Text>
-      </Text>
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-        {added_by?.profile_photo_url ? (
-          <Image
-            source={{ uri: added_by.profile_photo_url }}
-            style={styles.profilePhoto}
-          />
-        ) : added_by ? (
-          <View style={[styles.profilePhoto, styles.defaultProfileIcon]}>
-            <Text style={styles.profileInitials}>{getInitials(added_by)}</Text>
+      <View style={styles.itemContainer}>
+        <View style={{ flex: 1, backgroundColor: "transparent" }}>
+          <Text style={[styles.itemText, { fontWeight: "bold", fontSize: 25 }]}>{recipe_name}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+            {added_by?.profile_photo_url ? (
+              <Image source={{ uri: added_by.profile_photo_url }} style={styles.profilePhoto} />
+            ) : added_by ? (
+              <View style={[styles.profilePhoto, styles.defaultProfileIcon]}>
+                <Text style={styles.profileInitials}>{getInitials(added_by)}</Text>
+              </View>
+            ) : null}
+            <Text style={[styles.itemText, { fontSize: 10, marginLeft: added_by ? 8 : 0 }]}>
+              |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
+            </Text>
           </View>
-        ) : null}
-        <Text style={[styles.itemText, { fontSize: 10, marginLeft: added_by ? 8 : 0 }]}>
-          |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
-        </Text>
+        </View>
+        <TouchableOpacity onPress={handleHeartPress} style={styles.heartButton}>
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={28}
+            color={isFavorite ? "#E91E63" : "#888"}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
