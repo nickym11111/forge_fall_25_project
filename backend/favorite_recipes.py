@@ -124,12 +124,12 @@ def get_items(current_user = Depends(get_current_user)):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to get recipe items: {str(e)}")
 
-@app.delete("/delete-recipe/{recipe_id}")
-def delete_item(recipe_id: str):
+@app.delete("/delete-recipe/")
+def delete_item(recipe_name: str):
     response = (
         supabase.table("favorite_recipes")
         .delete()
-        .eq("id", recipe_id)
+        .eq("recipe_name", recipe_name)
         .execute()
     )
     return {"data": response.data}
