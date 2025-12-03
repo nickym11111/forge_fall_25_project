@@ -290,21 +290,25 @@ export default function SharedListScreen() {
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <CustomHeader title="Shared Shopping List 🛒" />
+      <CustomHeader title="Shopping List" />
       <ProfileIcon className="profileIcon" />
-      
-      {/* Search */}
-      <TextInput
-        style={styles.search_bar}
-        value={searchValue}
-        placeholder="Search items..."
-      />
+    
 
       {/* Add Item Quick Box */}
       <View style={styles.topCard}>
-          <Text style={styles.cardTitle}>Add Item</Text>
+          <Text style={styles.cardTitle}>Add Item
+          </Text>
+          
+          {/* Search */}
+          <TextInput
+                  style={styles.search_bar}
+                  value={searchValue}
+                  placeholder="Search food items..."
+                  placeholderTextColor="#999"
+                />
 
           {/* Item Name */}
+          <Text style={styles.inputLabel}>Item Name:</Text>
           <TextInput
             style={styles.input}
             placeholder="Item name..."
@@ -370,17 +374,23 @@ export default function SharedListScreen() {
 
 // Styles
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7F8FC" },
+  screen: { flex: 1, backgroundColor: "#F7F8FC"},
   search_bar: {
     height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
+    marginTop: -25,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    padding: 12,
+    width: "100%",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    fontSize: 16,
   },
 
   topCard: {
     margin: 18,
+    marginTop: 5,
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 14,
@@ -389,7 +399,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  cardTitle: { fontSize: 18, fontWeight: "600", marginBottom: 8 },
+  cardTitle: { fontSize: 18, fontWeight: "600", marginBottom: 30},
   topRow: { flexDirection: "row", alignItems: "center" },
   topInput: {
     flex: 1,
