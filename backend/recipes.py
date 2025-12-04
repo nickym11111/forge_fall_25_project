@@ -62,12 +62,12 @@ async def add_to_grocery_list(grocery_item: GroceryItem):
         print(f"Adding '{grocery_item.ingredient}' to grocery list for user {grocery_item.userId}")
         
         # Insert into grocery_list table
-        result = supabase.table("grocery_list").insert({
-            "item_name": grocery_item.ingredient,
-            "user_id": grocery_item.userId,
+        result = supabase.table("shopping_list").insert({
+            "name": grocery_item.ingredient,
+            "requested_by": grocery_item.userId,
             "fridge_id": grocery_item.fridgeId,
-            "added_at": datetime.now().isoformat(),
-            "is_purchased": False
+            "created_at": datetime.now().isoformat(),
+            "checked": False
         }).execute()
         
         print(f"Successfully added: {result.data}")

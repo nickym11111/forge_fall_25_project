@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -10,10 +10,12 @@ import {
   View,
   Keyboard,
   TouchableWithoutFeedback,
+  RefreshControl,
 } from "react-native";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from '@react-navigation/native';
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import { supabase } from "../utils/client";
@@ -34,7 +36,13 @@ interface ShoppingItem {
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/shopping`;
 
-// Helper Functions
+const onRefresh = async () => {
+  setRefreshing(true);
+  await fetchShoppingList();
+  setRefreshing(false);
+};
+
+//Helper Functions
 const formatShortDate = (d: Date) => {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   const dd = String(d.getDate()).padStart(2, "0");
@@ -55,6 +63,9 @@ export default function SharedListScreen() {
   const { user } = useUser();
   const isFocused = useIsFocused();
 
+  const [refreshing, setRefreshing] = useState(false);
+
+  // ---------- State ----------
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [searchValue, setSearchValue] = useState("");
 
@@ -281,8 +292,37 @@ export default function SharedListScreen() {
     );
   };
 
+useFocusEffect(
+  useCallback(() => {
+    fetchShoppingList();
+  }, [user?.fridge_id])
+);
 
-  // Main Render
+  const fetchShoppingList = async () => {
+    try {
+      const fridge_id = user?.fridge_id;
+      if (!fridge_id) {
+        console.error("Cannot fetch items: user does not have a fridge_id!");
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("shopping_list")
+        .select("*")
+        .eq("fridge_id", fridge_id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+
+      if (data) {
+        setItems(data);
+      }
+    } catch (err) {
+      console.error("fetchShoppingList error:", err);
+    }
+  };
+
+  //Main Render
   return (
     <KeyboardAvoidingView
       style={styles.screen}

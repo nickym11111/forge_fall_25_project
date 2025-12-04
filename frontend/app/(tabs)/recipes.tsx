@@ -18,7 +18,7 @@ import { useAuth } from "../context/authContext";
 
 interface ItemProps {
   title: string;
-  onAdd?: () => viod;
+  onAdd?: () => void;
 }
 
 const Item = ({ title, onAdd }: ItemProps) => {
@@ -35,7 +35,7 @@ const Item = ({ title, onAdd }: ItemProps) => {
 };
 
 export default function recipes() {
-  const [activeTab, setActiveTab] = useState<'ingredients' | 'recipes' | 'saved'>('ingredients');
+  const [activeTab, setActiveTab] = useState<'ingredients' | 'recipes' | 'favorites'>('ingredients');
 
   const [inputValue, setInputValue] = useState<string>('');
   const [responseMessage, setResponseMessage] = useState<string[]>([]);
@@ -68,10 +68,7 @@ export default function recipes() {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/find_ingredients`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({ 
-          dataToSend.recipe,
-          dataToSend.user
-        }), 
+        body: JSON.stringify({ recipe: inputValue }), 
       });
 
       if (!response.ok) {
@@ -129,69 +126,56 @@ export default function recipes() {
   };
 
   const handleAddToGroceryList = async (ingredient: string, retryCount = 0) => {
-    const MAX_RETRIES = 1; // Will try twice total
+  const MAX_RETRIES = 1;
+  
+  if (!ingredient.trim()) {
+    alert("Invalid ingredient");
+    return;
+  }
+
+  try {
+    console.log(`Attempting to add "${ingredient}" to grocery list (attempt ${retryCount + 1})`);
     
-    if (!ingredient.trim()) {
-      alert("Invalid ingredient");
-      return;
+    // Simplified - no auth needed, just like add-items.tsx
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/add_to_grocery_list`, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ 
+        ingredient: ingredient.trim(),
+        userId: currentUserId,
+        fridgeId: currentFridgeId
+      }),
+    });
+    
+    const data = await response.json();
+    console.log('Response:', data);
+    
+    if (response.ok) {
+      alert(`✓ ${ingredient} added to grocery list!`);
+      setResponseMessage(prev => prev.filter(item => item !== ingredient));
+    } else {
+      throw new Error(data.detail || data.message || 'Failed to add item');
     }
-
-    try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
-      if (error || !session) {
-        alert("You must be logged in to add items");
-        return;
-      }
-
-      console.log(`Attempting to add "${ingredient}" to grocery list (attempt ${retryCount + 1})`);
-      
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/add_to_grocery_list`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({ 
-          ingredient: ingredient.trim(),
-          userId: currentUserId,
-          fridgeId: currentFridgeId
-        }),
-      });
-      
-      const data = await response.json();
-      console.log('Response:', data);
-      
-      if (response.ok) {
-        // Success!
-        alert(`✓ ${ingredient} added to grocery list!`);
-        
-        setResponseMessage(prev => prev.filter(item => item !== ingredient));
-      } else {
-        throw new Error(data.detail || data.message || 'Failed to add item');
-      }
-      
-    } catch (error) {
-      console.error(`Failed to add to grocery list (attempt ${retryCount + 1}):`, error);
-      
-      if (retryCount < MAX_RETRIES) {
-        console.log(`🔄 Retrying...`);
-        alert(`Connection issue. Retrying...`);
-
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        return handleAddToGroceryList(ingredient, retryCount + 1);
-      } else {
-        alert(
-          error instanceof Error 
-            ? error.message 
-            : "Could not add to grocery list. Please check your internet connection."
-        );
-      }
+    
+  } catch (error) {
+    console.error(`Failed to add to grocery list (attempt ${retryCount + 1}):`, error);
+    
+    if (retryCount < MAX_RETRIES) {
+      console.log(`🔄 Retrying...`);
+      alert(`Connection issue. Retrying...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return handleAddToGroceryList(ingredient, retryCount + 1);
+    } else {
+      alert(
+        error instanceof Error 
+          ? error.message 
+          : "Could not add to grocery list. Please check your internet connection."
+      );
     }
-  };
+  }
+};
 
 const RecipeItem = ({ 
     item, 
@@ -201,7 +185,6 @@ const RecipeItem = ({
     item: any, 
     currentUserId: string, 
     currentFridgeId: string,
-    currentUserName: string
 }) => { 
     const [isFavorite, setIsFavorite] = useState(false);
 
@@ -359,16 +342,16 @@ return (
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'saved' && styles.activeIconTab]}
-            onPress={() => setActiveTab('saved')}
+            style={[styles.tabButton, activeTab === 'favorites' && styles.activeIconTab]}
+            onPress={() => setActiveTab('favorites')}
           >
             <Ionicons 
-              name={activeTab === 'saved' ? "heart" : "heart-outline"}
+              name={activeTab === 'favorites' ? "heart" : "heart-outline"}
               size={28} 
-              color={activeTab === 'saved' ? '#666' : 'white'} 
+              color={activeTab === 'favorites' ? '#666' : 'white'} 
             />
-            <Text style={[styles.tabText, activeTab === 'saved' && styles.activeTabText]}>
-              Saved
+            <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>
+              Favorites
             </Text>
           </TouchableOpacity>
         </View>
@@ -429,7 +412,14 @@ return (
                 ) : (
                   <FlatList
                     data={recipes}
-                    renderItem={({ item }) => <RecipeItem item={item} />}
+                    renderItem={({ item }) => (
+                      <RecipeItem 
+                        item={item}
+                        currentUserId={currentUserId}
+                        currentFridgeId={currentFridgeId}
+                        currentUserName={user?.name || ''} 
+                      />
+                    )}
                     keyExtractor={(item, index) => item.recipe_name || index.toString()}
                     scrollEnabled={false}
                   />
@@ -438,13 +428,13 @@ return (
             </View>
           )}
 
-          {activeTab === 'saved' && (
+          {activeTab === 'favorites' && (
             <View style={styles.contentSection}>
               <View style={styles.boxContainer}>
                 <Text style={styles.instructionText}>
-                  Your saved recipes will appear here
+                  Your favorites recipes will appear here
                 </Text>
-                {/* TODO: Load saved recipes from database */}
+                {/* TODO: Load favorite recipes from database */}
               </View>
             </View>
           )}
@@ -493,7 +483,6 @@ const styles = StyleSheet.create({
 
   tabContainer: {
     flexDirection: 'row',
-    flexWrap: "warp",
     justifyContent: "center",
   },
 
