@@ -92,7 +92,7 @@ export const refreshUserCache = async () => {
 
     console.log("DEBUG: Session found, fetching userInfo from backend");
     const response = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/userInfo/`,
+      `${process.env.EXPO_PUBLIC_API_URL}/userInfo`,
       {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
