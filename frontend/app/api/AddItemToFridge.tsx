@@ -33,15 +33,15 @@ export async function AddItemToFridge(
         .select("*")
         .ilike("name", name.trim())
         .limit(1)
-        .single();
 
       if (error) {
         console.error("Error fetching shopping list:", error);
         return response;
       }
 
-      if (shoppingItems) {
-        const currentQty = shoppingItems.quantity;
+      if (shoppingItems && shoppingItems.length) {
+        const shoppingItem = shoppingItems[0]; 
+        const currentQty = shoppingItem.quantity;
         const addedQuantity = Number(quantity);
         const fullName =
           sharedByUserIds.length === 0 ? "Someone" : sharedByUserIds.join(", ");
@@ -53,7 +53,7 @@ export async function AddItemToFridge(
               checked: true,
               bought_by: fullName,
             })
-            .eq("id", shoppingItems.id);
+            .eq("id", shoppingItem.id);
         } else {
           // just reduce quantity if not already checked
           await supabase
@@ -62,7 +62,7 @@ export async function AddItemToFridge(
               checked: false,
               quantity: currentQty - addedQuantity,
             })
-            .eq("id", shoppingItems.id)
+            .eq("id", shoppingItem.id)
         }
 
       }
@@ -94,7 +94,6 @@ export async function PredictExpiryDate(itemName: string) {
 
   return response;
 }
-
 
 export async function UpdateFridgeItem(
   access_token: string,
