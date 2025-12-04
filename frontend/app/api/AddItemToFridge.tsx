@@ -75,26 +75,6 @@ export async function AddItemToFridge(
   return response;
 }
 
-export async function PredictExpiryDate(itemName: string) {
-  const url = `${API_URL}/expiry/predict-expiry`;
-  console.log("📡 Calling:", url);
-
-  const controller = new AbortController();
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      item_name: itemName,
-    }),
-    signal: controller.signal,
-  });
-
-  return response;
-}
-
 export async function UpdateFridgeItem(
   access_token: string,
   itemId: number,

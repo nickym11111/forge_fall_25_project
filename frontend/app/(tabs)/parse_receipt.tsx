@@ -1750,7 +1750,8 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#1e293b",
+  },
   buttonDisabled: {
     opacity: 0.6,
-  },
+  }
 });
