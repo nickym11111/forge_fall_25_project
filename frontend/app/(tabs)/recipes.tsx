@@ -437,11 +437,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   favoriteRecipesIcon: {
-    position: "absolute",
-    left: 10,
-    top: 108,
-    zIndex: 1000,
-    alignItems: "center",
-    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
 });
