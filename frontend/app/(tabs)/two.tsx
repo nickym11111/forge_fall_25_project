@@ -30,6 +30,7 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 // --- Type Definitions ---
 
 interface FridgeMate {
+  id: string;
   first_name?: string;
   last_name?: string;
   name?: string;
@@ -40,6 +41,7 @@ interface FridgeMate {
 interface FoodItem {
   id: number;
   name: string;
+  price?: number
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -157,7 +159,7 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
 };
 
 export default function TabOneScreen() {
-  const{ user } = useAuth();
+  /*const{ user } = useAuth();
   const [data, setData] = useState<FoodItem[]>([]); 
   const [searchValue, setSearchValue] = useState<string>("");
   // NEW: Handler functions for delete and quantity change
@@ -445,7 +447,369 @@ export default function TabOneScreen() {
       />
     </View>
   </View>
-);
+); */
+
+  const { user } = useAuth();
+  const [data, setData] = useState<FoodItem[]>([]); 
+  const [searchValue, setSearchValue] = useState<string>("");
+  const originalHolder = useRef<FoodItem[]>([]);
+  const [selectedFilters, setSelectedFilters] = useState<string[]>([
+    "All Items",
+  ]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  const handleDelete = async (item: FoodItem) => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        Alert.alert("Error", "Please log in to delete items");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/items/${item.id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete item");
+      }
+
+      // Update local state after successful backend delete
+      setData((prev) => prev.filter((i) => i.id !== item.id));
+      originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
+      
+    } catch (err) {
+      console.error("Error deleting item:", err);
+      Alert.alert("Error", "Could not delete item. Please try again.");
+      // Refresh to sync with backend
+      fetchFridgeItems();
+    }
+  };
+
+
+  const handleQuantityChange = async (item: FoodItem, delta: number) => {
+    const newQty = Math.max(1, (item.quantity || 1) + delta);
+    const updated = { ...item, quantity: newQty };
+
+    const getExpiryDateString = (days: number | undefined) => {
+      const date = new Date();
+      // Default to 0 (today) if days is missing
+      date.setDate(date.getDate() + (days || 0)); 
+      return date.toISOString().split('T')[0]; 
+  };
+
+
+    const getSharedByIds = (mates: FridgeMate[] | null | undefined): string[] | null => {
+      if (!mates || mates.length === 0) return null;
+      
+      return mates.map((mate) => mate.id);
+    };
+
+    
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        Alert.alert("Error", "Please log in to update items");
+        return;
+      }
+
+      // Note: You'll need to create a PUT endpoint for fridge_items if you don't have one
+      const response = await fetch(`${API_URL}/fridge_items/${item.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          name: item.name,
+          quantity: newQty,
+          expiry_date: getExpiryDateString(item.days_till_expiration),
+          shared_by: getSharedByIds(item.shared_by),
+          price: item.price ?? 0
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update quantity");
+      }
+
+      // Update local state after successful backend update
+      setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
+      originalHolder.current = originalHolder.current.map((it) =>
+        it.id === item.id ? updated : it
+      );
+      
+    } catch (err) {
+      console.error("Error updating quantity:", err);
+      Alert.alert("Error", "Could not update quantity");
+      fetchFridgeItems();  // Refresh to sync with backend
+    }
+  };
+
+
+
+  // Auto-refresh when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      fetchFridgeItems();
+    }, [user?.active_fridge_id])
+  );
+
+  const fetchFridgeItems = async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching data from:", `${API_URL}/fridge_items/`);
+
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error || !session) {
+        setData([]);
+        originalHolder.current = [];
+        setError("");
+        throw new Error("You must be logged in to view fridge items");
+      }
+
+      console.log("User ID:", user?.id);
+
+      const response = await fetch(`${API_URL}/fridge_items/`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log("API Response:", result);
+
+      if (result.message === "User has no fridge assigned") {
+        setData([]);
+        originalHolder.current = [];
+        setError("NO_FRIDGE");
+        return;
+      }
+
+      // Transform backend data to match frontend format
+      const transformedData = result.data
+        .map((item: any) => ({
+          ...item,
+          days_until_expiration: item.days_till_expiration, // Map backend field name
+        }))
+        .sort((a: FoodItem, b: FoodItem) => {
+          // Sort by days_till_expiration ascending (soonest first)
+          const aDays = a.days_till_expiration || 999;
+          const bDays = b.days_till_expiration || 999;
+          return aDays - bDays;
+        });
+
+      setData(transformedData);
+      originalHolder.current = transformedData;
+      setError("");
+    } catch (err) {
+      console.error("Error fetching items:", err);
+      setError(`${err}`);
+      setData([]);
+      originalHolder.current = [];
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }; 
+
+  // Manual refresh handler
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchFridgeItems();
+  }; 
+
+  const filterData = (data: FoodItem[], selectedFilters: string[]) => {
+    // Current user
+
+    const username = "John Doe";
+    let temp_data = data;
+
+    // If user presses 'expiring soon'
+    if (selectedFilters.includes("Expiring Soon")) {
+      temp_data = temp_data.filter(
+        (item) => (item.days_till_expiration || 0) <= 7
+      );
+    }
+
+    // If user presses 'my items'
+    if (selectedFilters.includes("My Items")) {
+      temp_data = temp_data.filter((item) => {
+        if (!item.shared_by || item.shared_by.length !== 1) return false;
+        const mate = item.shared_by[0];
+        const fullName =
+          mate.first_name && mate.last_name
+            ? `${mate.first_name} ${mate.last_name}`
+            : mate.name || "";
+        return fullName === username;
+      });
+    }
+
+    // If user presses 'shared'
+    if (selectedFilters.includes("Shared")) {
+      temp_data = temp_data.filter((item) => {
+        if (!item.shared_by || item.shared_by.length <= 1) return false;
+        return item.shared_by.some((mate) => {
+          const fullName =
+            mate.first_name && mate.last_name
+              ? `${mate.first_name} ${mate.last_name}`
+              : mate.name || "";
+          return fullName === username;
+        });
+      });
+    }
+
+    return temp_data;
+  };
+
+  // Get the data array based on the selected filter
+  const filtered_data = filterData(originalHolder.current, selectedFilters);
+
+  // Apply the search filter and SORT BY EXPIRATION
+  const finalListData = filtered_data
+    .filter((item) => {
+      if (!searchValue) return true;
+      const itemData = item.name.toUpperCase();
+      const textData = searchValue.toUpperCase();
+      return itemData.includes(textData);
+    })
+    .sort((a, b) => {
+      // NEW: Sort by days_till_expiration ascending (soonest expiration first)
+      const aDays = a.days_till_expiration || 999;
+      const bDays = b.days_till_expiration || 999;
+      return aDays - bDays;
+    });
+
+  const searchFunction = (text: string) => {
+    setSearchValue(text);
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color="#14b8a6" />
+        <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
+      </View>
+    );
+  }
+
+  if (error === "NO_FRIDGE") {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            You haven't joined a fridge yet!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Create or join a fridge to start tracking your food items.
+          </Text>
+          <TouchableOpacity
+            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
+            onPress={() => {
+              router.push("/(tabs)/create_fridge");
+            }}
+          >
+            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
+          {error}
+        </Text>
+        <TouchableOpacity
+          style={styles.filter_button}
+          onPress={fetchFridgeItems}
+        >
+          <Text style={styles.buttonLabel}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge?" />
+        <ProfileIcon className="profileIcon" />
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+            Your fridge is empty!
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+            Add some items to get started.
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={{
+      width: '100%', height: '100%',
+    }}>
+      <CustomHeader title="What's In Our Kitchen?" />
+      <View style={styles.container}>
+        
+        <TextInput
+          style={styles.search_bar}
+          onChangeText={searchFunction}
+          value={searchValue}
+          placeholder="Search food items..."
+          placeholderTextColor="#999"
+        />
+        
+        <PreviewLayout
+          values={["All Items", "Expiring Soon", "My Items", "Shared"]}
+          selectedValue={selectedFilters}
+          setSelectedValue={setSelectedFilters}
+        />
+        
+        <FlatList
+          data={finalListData}
+          renderItem={({ item }) => (
+            <Item
+              item={item}
+              onDelete={handleDelete}
+              onQuantityChange={handleQuantityChange}
+            />
+          )}
+          keyExtractor={(item) => item.id.toString()}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["purple"]}
+              tintColor="purple"
+            />
+          }
+        />
+      </View>
+    </View>
+  );
 }
 
 type PreviewLayoutProps = PropsWithChildren<{
