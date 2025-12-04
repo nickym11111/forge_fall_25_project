@@ -146,7 +146,6 @@ export default function SettleUpScreen() {
         <View style={styles.centerContainer}>
         <CustomHeader title="Settle Up"/>
         </View>
-        <ProfileIcon className="profileIcon" />
         <ActivityIndicator size="large" color="purple" />
         <Text style={styles.loadingText}>Loading balances...</Text>
       </View>
@@ -159,7 +158,6 @@ export default function SettleUpScreen() {
         <View style={{ width: "100%", alignItems: "center" }}>
         <CustomHeader title="Settle Up" />
         </View>
-        <ProfileIcon className="profileIcon" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -172,7 +170,6 @@ export default function SettleUpScreen() {
     <View style={styles.container}>
       <View>
         <CustomHeader title="Settle Up" />
-        <ProfileIcon className="profileIcon" />
       </View>
       
       <ScrollView

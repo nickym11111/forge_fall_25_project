@@ -289,7 +289,6 @@ export default function SharedListScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <CustomHeader title="Shared Shopping List" />
-      <ProfileIcon className="profileIcon" />
       
       {/* Search */}
       <TextInput
