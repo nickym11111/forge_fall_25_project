@@ -455,9 +455,8 @@ export default function SharedListScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7F8FC"},
   search_bar: {
-    height: 45,
-    marginTop: 10,
-    marginBottom: 10,
+    margin: 18,
+    paddingHorizontal: 20,
     borderWidth: 2,
     borderColor: "#14b8a6",
     padding: 12,
