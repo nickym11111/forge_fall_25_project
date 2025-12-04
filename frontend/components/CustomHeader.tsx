@@ -29,8 +29,10 @@ const CustomHeader = ({
         <View style={styles.titleRow}>
           {logo && <Image source={logo} style={styles.logo} />}
           <View style={styles.titleContainer}>
+            <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>{title}</Text>
             {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+            </View>
             <ProfileIcon
               className="profile-icon"
               style={{
