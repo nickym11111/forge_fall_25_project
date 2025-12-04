@@ -111,7 +111,7 @@ def _simplify_debts(balances: Dict[str, float], users_map: Dict[str, dict]) -> L
 
 def _calculate_fridge_balances(fridge_id: str) -> Dict[str, Any]:
     memberships_response = supabase.table("fridge_memberships").select(
-        "users(id, email, first_name, last_name)"
+        "users(id, email, first_name, last_name, profile_photo)"
     ).eq("fridge_id", fridge_id).execute()
 
     all_users: List[dict] = []
@@ -130,9 +130,15 @@ def _calculate_fridge_balances(fridge_id: str) -> Dict[str, Any]:
             "latest_clears": {},
         }
 
-    users_map: Dict[str, dict] = {
-        user["id"]: user for user in all_users if user.get("id")
-    }
+    users_map: Dict[str, dict] = {}
+    for user in all_users:
+        user_id = user.get("id")
+        if not user_id:
+            continue
+        users_map[user_id] = {
+            **user,
+            "profile_photo": user.get("profile_photo"),
+        }
     user_ids = list(users_map.keys())
 
     if not user_ids:
@@ -488,7 +494,7 @@ async def clear_user_balance(user_id: str, current_user=Depends(get_current_user
         if not settlements_to_insert:
             return {
                 "status": "success",
-                "message": "Balance is already clear for this user.",
+                "message": "Balance is already paid for this user.",
                 "balances": calculation["balances"],
                 "cleared_user_id": user_id,
             }
@@ -502,7 +508,7 @@ async def clear_user_balance(user_id: str, current_user=Depends(get_current_user
 
         return {
             "status": "success",
-            "message": f"Cleared balance for user {user_id}",
+            "message": f"Marked balance as paid for user {user_id}",
             "balances": updated["balances"],
             "cleared_user_id": user_id,
             "cleared_at": timestamp,
@@ -514,4 +520,4 @@ async def clear_user_balance(user_id: str, current_user=Depends(get_current_user
         print(f"Error clearing balance for user {user_id}: {exc}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to clear balance: {exc}")
+    raise HTTPException(status_code=500, detail=f"Failed to mark balance as paid: {exc}")

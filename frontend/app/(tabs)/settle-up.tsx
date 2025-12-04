@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
+  Image,
 } from "react-native";
 import { supabase } from "../utils/client";
 import CustomHeader from "@/components/CustomHeader";
@@ -44,6 +45,7 @@ interface Balance {
   breakdown: BreakdownItem[];
   items: ContributingItem[];
   last_cleared_at?: string;
+  profile_photo?: string;
 }
 
 interface BalanceResponse {
@@ -58,7 +60,7 @@ export default function SettleUpScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string>("");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [clearingUserId, setClearingUserId] = useState<string | null>(null);
+  const [payingUserId, setPayingUserId] = useState<string | null>(null);
 
   const toggleItemsExpanded = (userId: string) => {
     setExpandedItems((prev) => {
@@ -121,9 +123,9 @@ export default function SettleUpScreen() {
     fetchBalances();
   };
 
-  const clearBalance = async (userId: string) => {
+  const payBalance = async (userId: string) => {
     try {
-      setClearingUserId(userId);
+      setPayingUserId(userId);
 
       const {
         data: { session },
@@ -131,7 +133,7 @@ export default function SettleUpScreen() {
       } = await supabase.auth.getSession();
 
       if (sessionError || !session) {
-        throw new Error("You must be logged in to clear balances");
+        throw new Error("You must be logged in to pay balances");
       }
 
       const response = await fetch(
@@ -149,7 +151,7 @@ export default function SettleUpScreen() {
       try {
         result = await response.json();
       } catch (parseErr) {
-        console.warn("Failed to parse clear balance response", parseErr);
+        console.warn("Failed to parse pay balance response", parseErr);
       }
 
       if (!response.ok) {
@@ -164,9 +166,9 @@ export default function SettleUpScreen() {
         fetchBalances();
       }
     } catch (err: any) {
-      console.error("Error clearing balance:", err);
+      console.error("Error paying balance:", err);
     } finally {
-      setClearingUserId(null);
+      setPayingUserId(null);
     }
   };
 
@@ -212,6 +214,32 @@ export default function SettleUpScreen() {
       console.warn("Unable to format date", err);
       return value;
     }
+  };
+
+  const fixProfilePhotoUrl = (url?: string | null): string => {
+    if (!url) return "";
+    if (url.includes("/object/") && !url.includes("/object/public/")) {
+      return url.replace("/object/", "/object/public/");
+    }
+    return url;
+  };
+
+  const getInitials = (user: { first_name?: string; last_name?: string; email?: string }): string => {
+    const first = user.first_name?.trim();
+    const last = user.last_name?.trim();
+    if (first && last) {
+      return `${first[0]}${last[0]}`.toUpperCase();
+    }
+    if (first) {
+      return first[0].toUpperCase();
+    }
+    if (last) {
+      return last[0].toUpperCase();
+    }
+    if (user.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "?";
   };
 
   if (loading && !refreshing) {
@@ -267,7 +295,28 @@ export default function SettleUpScreen() {
             {balances.map((balance) => (
               <View key={balance.user_id} style={styles.balanceCard}>
                 <View style={styles.balanceCardHeader}>
-                  <Text style={styles.userName}>{getDisplayName(balance)}</Text>
+                  <View style={styles.userIdentity}>
+                    {(() => {
+                      const avatarUri = fixProfilePhotoUrl(balance.profile_photo);
+                      if (avatarUri) {
+                        return (
+                          <Image
+                            source={{ uri: avatarUri }}
+                            style={styles.userAvatar}
+                            accessibilityLabel={`${getDisplayName(balance)} profile photo`}
+                          />
+                        );
+                      }
+                      return (
+                        <View style={styles.userAvatarFallback}>
+                          <Text style={styles.userAvatarFallbackText}>
+                            {getInitials(balance)}
+                          </Text>
+                        </View>
+                      );
+                    })()}
+                    <Text style={styles.userName}>{getDisplayName(balance)}</Text>
+                  </View>
                   <View style={styles.headerActions}>
                     <View
                       style={[
@@ -281,24 +330,24 @@ export default function SettleUpScreen() {
                     </View>
                     <TouchableOpacity
                       style={[
-                        styles.clearButton,
-                        clearingUserId === balance.user_id && styles.clearButtonDisabled,
+                        styles.payButton,
+                        payingUserId === balance.user_id && styles.payButtonDisabled,
                       ]}
-                      onPress={() => clearBalance(balance.user_id)}
-                      disabled={clearingUserId === balance.user_id}
+                      onPress={() => payBalance(balance.user_id)}
+                      disabled={payingUserId === balance.user_id}
                     >
-                      {clearingUserId === balance.user_id ? (
+                      {payingUserId === balance.user_id ? (
                         <ActivityIndicator size="small" color="#ffffff" />
                       ) : (
-                        <Text style={styles.clearButtonText}>Clear</Text>
+                        <Text style={styles.payButtonText}>Pay</Text>
                       )}
                     </TouchableOpacity>
                   </View>
                 </View>
 
                 {balance.last_cleared_at && (
-                  <Text style={styles.lastClearedText}>
-                    Last cleared {formatDateTime(balance.last_cleared_at)}
+                  <Text style={styles.lastPaidText}>
+                    Last paid {formatDateTime(balance.last_cleared_at)}
                   </Text>
                 )}
                 
@@ -493,7 +542,34 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
+    flexShrink: 1,
+  },
+  userIdentity: {
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
+    marginRight: 12,
+  },
+  userAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: "#d1fae5",
+  },
+  userAvatarFallback: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: "#14b8a6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  userAvatarFallbackText: {
+    color: "white",
+    fontWeight: "700",
+    fontSize: 16,
   },
   balanceBadge: {
     paddingHorizontal: 12,
@@ -505,7 +581,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "white",
   },
-  clearButton: {
+  payButton: {
     marginLeft: 10,
     paddingHorizontal: 16,
     paddingVertical: 8,
@@ -517,14 +593,14 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
-  clearButtonDisabled: {
+  payButtonDisabled: {
     opacity: 0.5,
   },
-  clearButtonText: {
+  payButtonText: {
     color: "#ffffff",
     fontWeight: "700",
   },
-  lastClearedText: {
+  lastPaidText: {
     fontSize: 12,
     color: "#888",
     marginBottom: 8,

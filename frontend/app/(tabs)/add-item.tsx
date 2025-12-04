@@ -14,7 +14,7 @@ import {
   TouchableWithoutFeedback,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
@@ -37,6 +37,7 @@ interface User {
     first_name?: string;
     last_name?: string;
   };
+  profile_photo?: string;
 }
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
@@ -286,6 +287,18 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 
+  emptyUserList: {
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  emptyUserListText: {
+    fontSize: 15,
+    color: "#64748b",
+    textAlign: "center",
+  },
+
   checkbox: {
     width: 24,
     height: 24,
@@ -365,9 +378,106 @@ export default function AddItemManual() {
 
   const currentUserId = user?.id;
 
+  const fetchUsers = useCallback(async () => {
+    const formatUserFromContext = (): User | null => {
+      if (!user?.id) return null;
+      const userRecord: any = user;
+      const formatted: User = {
+        id: userRecord.id,
+        email: userRecord.email,
+      };
+
+      if (userRecord.first_name || userRecord.user_metadata?.first_name) {
+        formatted.first_name = userRecord.first_name ?? userRecord.user_metadata?.first_name;
+      }
+
+      if (userRecord.last_name || userRecord.user_metadata?.last_name) {
+        formatted.last_name = userRecord.last_name ?? userRecord.user_metadata?.last_name;
+      }
+
+      if (userRecord.user_metadata) {
+        formatted.user_metadata = userRecord.user_metadata;
+      }
+
+      if (userRecord.profile_photo) {
+        formatted.profile_photo = userRecord.profile_photo;
+      }
+
+      return formatted;
+    };
+
+    if (!user) {
+      setUsers([]);
+      return;
+    }
+
+    const self = formatUserFromContext();
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        setUsers(self ? [self] : []);
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/users/fridge-members/`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch fridge members: ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const members: User[] = Array.isArray(payload?.members)
+        ? payload.members
+        : [];
+
+      if (members.length === 0 && self) {
+        setUsers([self]);
+        return;
+      }
+
+      const normalizedMembers = members.map((member) => ({
+        id: member.id,
+        email: member.email,
+        first_name: member.first_name,
+        last_name: member.last_name,
+        profile_photo: member.profile_photo,
+      }));
+
+      const deduped = new Map<string, User>();
+      normalizedMembers.forEach((member) => {
+        if (member.id) {
+          deduped.set(member.id, member);
+        }
+      });
+
+      if (self && !deduped.has(self.id)) {
+        deduped.set(self.id, self);
+      }
+
+      const sortedMembers = Array.from(deduped.values()).sort((a, b) => {
+        const nameA = getUserDisplayName(a).toLowerCase();
+        const nameB = getUserDisplayName(b).toLowerCase();
+        return nameA.localeCompare(nameB);
+      });
+
+      setUsers(sortedMembers);
+    } catch (error) {
+      console.error("Error fetching fridge members:", error);
+      setUsers(self ? [self] : []);
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
 
   // AI Expiry Date Prediction
@@ -484,70 +594,6 @@ export default function AddItemManual() {
     console.log("🏁 AI prediction finished");
   };
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch(`${API_URL}/users/`);
-      const data = await response.json();
-      if (data.data && data.data.length > 0) {
-        setUsers(data.data);
-      } else {
-        setUsers([
-          {
-            id: "1",
-            first_name: "Alice",
-            last_name: "Johnson",
-            email: "alice@example.com",
-          },
-          {
-            id: "2",
-            first_name: "Bob",
-            last_name: "Smith",
-            email: "bob@example.com",
-          },
-          {
-            id: "3",
-            first_name: "Charlie",
-            last_name: "Brown",
-            email: "charlie@example.com",
-          },
-          {
-            id: "4",
-            first_name: "Diana",
-            last_name: "Lee",
-            email: "diana@example.com",
-          },
-        ]);
-      }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([
-        {
-          id: "1",
-          first_name: "Alice",
-          last_name: "Johnson",
-          email: "alice@example.com",
-        },
-        {
-          id: "2",
-          first_name: "Bob",
-          last_name: "Smith",
-          email: "bob@example.com",
-        },
-        {
-          id: "3",
-          first_name: "Charlie",
-          last_name: "Brown",
-          email: "charlie@example.com",
-        },
-        {
-          id: "4",
-          first_name: "Diana",
-          last_name: "Lee",
-          email: "diana@example.com",
-        },
-      ]);
-    }
-  };
 
   const getUserDisplayName = (user: User) => {
     // Check for first_name/last_name directly (from database)
@@ -910,28 +956,38 @@ export default function AddItemManual() {
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.userListContainer}>
-              {users.map((user) => (
-                <TouchableOpacity
-                  key={user.id}
-                  style={styles.userOption}
-                  onPress={() => toggleUserSelection(user.id)}
-                >
-                  <View
-                    style={[
-                      styles.checkbox,
-                      sharedByUserIds.includes(user.id) &&
-                        styles.checkboxSelected,
-                    ]}
-                  >
-                    {sharedByUserIds.includes(user.id) && (
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    )}
-                  </View>
-                  <Text style={styles.userOptionText}>
-                    {getUserDisplayName(user)}
+              {users.length === 0 ? (
+                <View style={styles.emptyUserList}>
+                  <Text style={styles.emptyUserListText}>
+                    {user?.fridge_id
+                      ? "No fridge members found yet. Invite friends to share items."
+                      : "Join or create a fridge to select who shares this item."}
                   </Text>
-                </TouchableOpacity>
-              ))}
+                </View>
+              ) : (
+                users.map((member) => (
+                  <TouchableOpacity
+                    key={member.id}
+                    style={styles.userOption}
+                    onPress={() => toggleUserSelection(member.id)}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        sharedByUserIds.includes(member.id) &&
+                          styles.checkboxSelected,
+                      ]}
+                    >
+                      {sharedByUserIds.includes(member.id) && (
+                        <Text style={styles.checkmarkText}>✓</Text>
+                      )}
+                    </View>
+                    <Text style={styles.userOptionText}>
+                      {getUserDisplayName(member)}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
             </ScrollView>
           </View>
         </View>
