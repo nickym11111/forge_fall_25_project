@@ -29,16 +29,11 @@ const styles = StyleSheet.create({
   joinForm: 
   {
     alignItems: "center",
-    width: "100%",
+    width: 280,
   },
 
-<<<<<<< Updated upstream
   joinInput: 
   {
-=======
-  joinInput: {
-    alignItems: "center",
->>>>>>> Stashed changes
     width: "100%",
     marginVertical: 10,
     padding: 12,
@@ -51,18 +46,6 @@ const styles = StyleSheet.create({
   joinButton: 
   {
     width: 217,
-  },
-    boxContainer: {
-    width: "80%", 
-    maxWidth: 400, 
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 24, 
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
 
   createFridgeButton: 
@@ -121,7 +104,6 @@ export default function JoinFridgeScreen()
       logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ProfileIcon className="profileIcon" />
-<<<<<<< Updated upstream
       <View style = {styles.joinContainer}>
         <View style = {styles.joinForm}>
           <TextInput
@@ -145,32 +127,6 @@ export default function JoinFridgeScreen()
           >
             Create a fridge instead
           </Text>
-=======
-      <View style={styles.joinContainer}>
-        <View style={styles.boxContainer}>
-          <View style={styles.joinForm}>
-            <TextInput
-              onChangeText={setjCode}
-              placeholder="abc-123"
-              value={jCode}
-              style={styles.joinInput}
-              editable={!isLoading}
-            />
-            <CustomButton
-              title={isLoading ? "Joining..." : "Join"}
-              onPress={() => handleJoinFridge()}
-              style={styles.joinButton}
-              className=""
-              disabled={isLoading}
-            />
-            <Text
-              style={styles.createFridgeButton}
-              onPress={() => !isLoading && navigate("/(tabs)/create_fridge")} // connect to "create fridge" page
-            >
-              Create a kitchen instead
-            </Text>
-          </View>
->>>>>>> Stashed changes
         </View>
       </View>
     </View>

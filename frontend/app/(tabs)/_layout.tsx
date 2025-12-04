@@ -153,7 +153,6 @@ export default function TabLayout() {
         }}
       />
 
-<<<<<<< Updated upstream
       <Tabs.Screen
         name="shop"
         options={{
@@ -171,78 +170,4 @@ export default function TabLayout() {
       />
     </Tabs>
   );
-=======
-    <Tabs.Screen
-            name="select_fridge"
-            options={{
-              title: "Select Fridge",
-              href: null
-            }}
-          />
-          
-    <Tabs.Screen
-      name="create_fridge"
-      options={{
-        href: null,
-      }}
-    />
-    <Tabs.Screen
-      name="Join-Fridge"
-      options={{
-        href: null,
-      }}
-    />
-    <Tabs.Screen
-    name="settle-up"
-    options={{
-      title: "Settle Up",
-      tabBarIcon: ({ color, focused }) => (
-        <TabBarIcon name="link" color={color} focused={focused} /> // reassign to dollar logo
-      ),
-    }}
-    />
-    <Tabs.Screen
-    name="requests"
-    options={{
-      href: null,
-      title: "Requests",
-      tabBarIcon: ({ color, focused }) => (
-        <TabBarIcon
-          name={focused ? "plus" : "plus-outline"}
-          color={color}
-          focused={focused}
-    />
-  ),
-}}
-/>
-    <Tabs.Screen
-    name="recipes"
-    options={{
-      title: "Recipes",
-      tabBarIcon: ({ color, focused }) => (
-        <TabBarIcon
-          name={"chef-hat"}
-          color={color}
-          focused={focused}
-    />
-  ),
-}}
-/>
-    <Tabs.Screen
-    name="favorite_recipes"
-    options={{
-      title: "Favorite Recipes",
-      tabBarIcon: ({ color, focused }) => (
-        <TabBarIcon
-          name={focused ? "heart-circle" : "heart-circle-outline"}
-          color={color}
-          focused={focused}
-    />
-  ),
-}}
-    />
-        </Tabs>
-        
-      );
->>>>>>> Stashed changes
 }

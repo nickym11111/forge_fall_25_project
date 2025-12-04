@@ -113,14 +113,13 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
                 continue  # Skip items with no price or no owner
             
             # Determine who shares this item
-            if shared_by is None:
-                # Receipt items: shared by ALL fridge mates (None means not explicitly set)
+            if shared_by is None or len(shared_by) == 0:
+                # Receipt items: shared by ALL fridge mates
                 sharers = user_ids
             else:
-                # Manual items: shared by selected users (could be empty list = nobody shares)
+                # Manual items: shared by selected users
                 sharers = shared_by
             
-            # Skip if no one is sharing this item
             if len(sharers) == 0:
                 continue
             
@@ -133,8 +132,8 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
             # Calculate remainder (extra cents due to rounding)
             remainder = round(price - total_after_rounding, 2)
             
-            # The person who added the item is owed money (only track if there are actual sharers)
-            if added_by in balances and len(sharers) > 0:
+            # The person who added the item is owed money
+            if added_by in balances:
                 balances[added_by] += price
                 # Track that this user paid for this item
                 user_items[added_by].append({
@@ -205,12 +204,6 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
             # Sort breakdown: owed_by first (what they're owed), then owes (what they owe)
             breakdown.sort(key=lambda x: (x["type"] == "owes", x["amount"]), reverse=False)
             
-            # Filter out "paid" items if user's balance is zero (no sharers left)
-            filtered_items = []
-            for item in user_items.get(user_id, []):
-                if item["type"] == "shared" or (item["type"] == "paid" and round(balances[user_id], 2) != 0):
-                    filtered_items.append(item)
-            
             balance_list.append({
                 "user_id": user_id,
                 "email": user["email"],
@@ -218,7 +211,7 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
                 "last_name": user.get("last_name"),
                 "balance": round(balances[user_id], 2),
                 "breakdown": breakdown,
-                "items": filtered_items
+                "items": user_items.get(user_id, [])
             })
         
         # Sort by balance (highest to lowest)
@@ -237,120 +230,3 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to calculate balances: {str(e)}")
-
-
-@app.post("/clear-balance/{other_user_id}")
-async def clear_balance(other_user_id: str, current_user=Depends(get_current_user)):
-    """
-    Clear a user's balance by removing them from the shared_by list of items.
-    If an item has no more sharers, delete it entirely.
-    This removes their debt without affecting other sharers' balances.
-    """
-    try:
-        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
-        
-        if not fridge_id:
-            raise HTTPException(status_code=403, detail="User has no fridge assigned")
-        
-        print(f"\n🔄 CLEAR BALANCE REQUEST")
-        print(f"   User to clear: {other_user_id}")
-        print(f"   Fridge: {fridge_id}\n")
-        
-        # Get all items in the fridge
-        items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
-        
-        print(f"   Total items in fridge: {len(items_response.data)}")
-        
-        items_to_update = []
-        items_to_delete = []
-        
-        # Find items where this user is a sharer and remove them from shared_by
-        for item in items_response.data:
-            added_by = item.get("added_by")
-            shared_by = item.get("shared_by")
-            price = item.get("price", 0.0)
-            item_id = item.get("id")
-            title = item.get("title")
-            
-            # Only consider items with prices
-            if price <= 0:
-                continue
-            
-            # Skip if this user paid for it (don't remove money they're owed)
-            if added_by == other_user_id:
-                print(f"   ⏭️  Skip: {title} - user paid for this")
-                continue
-            
-            # Check if user is a sharer on this item
-            is_sharer = False
-            new_shared_by = None
-            
-            if shared_by is None or len(shared_by) == 0:
-                # Shared with all - user is implicitly a sharer
-                # We need to make it explicit: get all users in fridge except this one
-                memberships_response = supabase.table("fridge_memberships").select(
-                    "users(id)"
-                ).eq("fridge_id", fridge_id).execute()
-                
-                all_user_ids = []
-                if memberships_response.data:
-                    for membership in memberships_response.data:
-                        if membership.get("users"):
-                            all_user_ids.append(membership["users"]["id"])
-                
-                # Remove the user from the list
-                new_shared_by = [uid for uid in all_user_ids if uid != other_user_id]
-                is_sharer = other_user_id in all_user_ids
-            elif other_user_id in shared_by:
-                # Explicitly in shared_by list - remove them
-                new_shared_by = [uid for uid in shared_by if uid != other_user_id]
-                is_sharer = True
-            
-            if is_sharer and new_shared_by is not None:
-                # If no sharers left, delete the item entirely
-                if len(new_shared_by) == 0:
-                    items_to_delete.append(item_id)
-                    print(f"   🗑️  Delete: {title} (ID: {item_id}) - no sharers left")
-                else:
-                    items_to_update.append({
-                        "id": item_id,
-                        "title": title,
-                        "new_shared_by": new_shared_by
-                    })
-                    print(f"   ✅ Update: {title} (ID: {item_id}) - remove user from shared_by")
-        
-        print(f"\n   Items to update: {len(items_to_update)}")
-        print(f"   Items to delete: {len(items_to_delete)}\n")
-        
-        # Update the items
-        updated_count = 0
-        if items_to_update:
-            for item_data in items_to_update:
-                supabase.table("fridge_items").update({"shared_by": item_data["new_shared_by"]}).eq("id", item_data["id"]).execute()
-                updated_count += 1
-                print(f"   ✅ Updated item {item_data['id']}")
-        
-        # Delete items with no sharers
-        deleted_count = 0
-        if items_to_delete:
-            for item_id in items_to_delete:
-                supabase.table("fridge_items").delete().eq("id", item_id).execute()
-                deleted_count += 1
-                print(f"   ✅ Deleted item {item_id}")
-        
-        print(f"✅ Balance clear complete - updated {updated_count}, deleted {deleted_count} items\n")
-        
-        return {
-            "status": "success",
-            "message": f"Balance cleared for user",
-            "items_updated": updated_count,
-            "items_deleted": deleted_count
-        }
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        print(f"\n❌ ERROR clearing balance: {str(e)}\n")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to clear balance: {str(e)}")

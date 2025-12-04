@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   RefreshControl,
-  Alert,
 } from "react-native";
 import { supabase } from "../utils/client";
 import CustomHeader from "@/components/CustomHeader";
@@ -55,7 +54,6 @@ export default function SettleUpScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string>("");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
-  const [clearingBalance, setClearingBalance] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBalances();
@@ -75,10 +73,7 @@ export default function SettleUpScreen() {
 
   const fetchBalances = async () => {
     try {
-      // Only show loading screen if this is the initial load (not a refresh)
-      if (!refreshing) {
-        setLoading(true);
-      }
+      setLoading(true);
       setError("");
 
       const {
@@ -119,61 +114,6 @@ export default function SettleUpScreen() {
     fetchBalances();
   };
 
-  const clearBalance = async (otherUserId: string) => {
-    try {
-      setClearingBalance(otherUserId);
-
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        throw new Error("You must be logged in to clear balances");
-      }
-
-      const response = await fetch(
-        `${API_URL}/cost-splitting/clear-balance/${otherUserId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
-        throw new Error(
-          errorData.detail || `HTTP error! status: ${response.status}`
-        );
-      }
-
-      const result = await response.json();
-      console.log("Balance cleared successfully:", result);
-      
-      // Immediately update the balance to 0 for this user in the UI
-      setBalances((prevBalances) =>
-        prevBalances.map((balance) =>
-          balance.user_id === otherUserId
-            ? { ...balance, balance: 0, breakdown: [], items: [] }
-            : balance
-        )
-      );
-      
-      // Refresh the data from the backend to ensure everything is in sync
-      await fetchBalances();
-    } catch (err) {
-      console.error("Error clearing balance:", err);
-      Alert.alert("Error", `Failed to clear balance: ${err}`);
-      setClearingBalance(null);
-    } finally {
-      setClearingBalance(null);
-    }
-  };
-
   const getDisplayName = (balance: Balance | BreakdownItem): string => {
     if (balance.first_name && balance.last_name) {
       return `${balance.first_name} ${balance.last_name}`;
@@ -203,28 +143,24 @@ export default function SettleUpScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centerContainer}>
         <CustomHeader title="Settle Up 💰" />
         <ProfileIcon className="profileIcon" />
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="purple" />
-          <Text style={styles.loadingText}>Loading balances...</Text>
-        </View>
+        <ActivityIndicator size="large" color="purple" />
+        <Text style={styles.loadingText}>Loading balances...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centerContainer}>
         <CustomHeader title="Settle Up 💰" />
         <ProfileIcon className="profileIcon" />
-        <View style={styles.loadingContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -255,9 +191,7 @@ export default function SettleUpScreen() {
             {balances.map((balance) => (
               <View key={balance.user_id} style={styles.balanceCard}>
                 <View style={styles.balanceCardHeader}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.userName}>{getDisplayName(balance)}</Text>
-                  </View>
+                  <Text style={styles.userName}>{getDisplayName(balance)}</Text>
                   <View
                     style={[
                       styles.balanceBadge,
@@ -268,21 +202,6 @@ export default function SettleUpScreen() {
                       {formatBalance(balance.balance)}
                     </Text>
                   </View>
-                  {balance.balance < 0 && (
-                    <TouchableOpacity
-                      style={styles.clearButton}
-                      onPress={() => {
-                        clearBalance(balance.user_id);
-                      }}
-                      disabled={clearingBalance === balance.user_id}
-                    >
-                      {clearingBalance === balance.user_id ? (
-                        <ActivityIndicator size="small" color="white" />
-                      ) : (
-                        <Text style={styles.clearButtonText}>Clear</Text>
-                      )}
-                    </TouchableOpacity>
-                  )}
                 </View>
                 
                 {/* Detailed Breakdown */}
@@ -386,12 +305,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 16,
-  },
   scrollView: {
     flex: 1,
   },
@@ -464,21 +377,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
     flex: 1,
-  },
-  clearButton: {
-    backgroundColor: "#FF6B6B",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    marginLeft: 8,
-    minWidth: 60,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  clearButtonText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "white",
   },
   balanceBadge: {
     paddingHorizontal: 12,
