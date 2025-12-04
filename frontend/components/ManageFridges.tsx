@@ -107,29 +107,35 @@ const FridgeCard = ({
       </View>
 
       <View style={styles.buttonRow}>
-        <CustomButton
-          className="View Requests"
+        <TouchableOpacity
           onPress={() => onViewRequests(fridge.id, fridge.name)}
-          title="View Requests"
           style={styles.viewRequestsButton}
-        />
+        >
+          <Ionicons name="list-outline" size={18} color="#14b8a6" style={styles.buttonIcon} />
+          <Text style={styles.viewRequestsButtonText}>View Requests</Text>
+        </TouchableOpacity>
       </View>
       
-      <View style={[styles.buttonRow, { marginTop: 12 }]}>
-        {!isActive && (
-          <CustomButton
-            className="Switch Fridge"
+      {!isActive && (
+        <View style={[styles.buttonRow, { marginTop: 12 }]}>
+          <TouchableOpacity
             onPress={() => onSwitchFridge(fridge.id)}
-            title="Switch to This"
             style={styles.switchButton}
-          />
-        )}
-        <CustomButton
-          className="Leave Fridge"
+          >
+            <Ionicons name="swap-horizontal-outline" size={18} color="#14b8a6" style={styles.buttonIcon} />
+            <Text style={styles.switchButtonText}>Switch to This</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      
+      <View style={[styles.buttonRow, { marginTop: 12 }]}>
+        <TouchableOpacity
           onPress={() => onLeaveFridge(fridge.id)}
-          title="Leave Fridge"
-          style={[styles.leaveButton, !isActive && styles.leaveButtonSmall]}
-        />
+          style={styles.leaveButton}
+        >
+          <Ionicons name="log-out-outline" size={18} color="#ef4444" style={styles.leaveButtonIcon} />
+          <Text style={styles.leaveButtonText}>Leave Kitchen</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -227,10 +233,10 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
     const isActiveFridge = fridgeId === user?.active_fridge_id;
 
     Alert.alert(
-      "Leave Fridge?",
+      "Leave Kitchen?",
       isActiveFridge
-        ? "This is your active fridge. Are you sure you want to leave?"
-        : "Are you sure you want to leave this fridge?",
+        ? "This is your active kitchen. Are you sure you want to leave?"
+        : "Are you sure you want to leave this kitchen?",
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -261,7 +267,7 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
               const data = await response.json();
 
               if (!response.ok || data.status !== "success") {
-                throw new Error(data.message || "Failed to leave fridge");
+                throw new Error(data.message || "Failed to leave kitchen");
               }
 
               await refreshUser();
@@ -273,11 +279,11 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
                 await fetchAllFridges();
               }
 
-              Alert.alert("Success", "Left fridge successfully");
+              Alert.alert("Success", "Left kitchen successfully");
 
             } catch (err) {
-              console.error("Error leaving fridge:", err);
-              Alert.alert("Error", err instanceof Error ? err.message : "Could not leave fridge");
+              console.error("Error leaving kitchen:", err);
+              Alert.alert("Error", err instanceof Error ? err.message : "Could not leave kitchen");
             } finally {
               setSwitching(false);
             }
@@ -291,8 +297,8 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#7C3AED" />
-          <Text style={styles.loadingText}>Loading your fridges...</Text>
+          <ActivityIndicator size="large" color="#14b8a6" />
+          <Text style={styles.loadingText}>Loading your kitchens...</Text>
         </View>
       </View>
     );
@@ -301,25 +307,31 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Fridges</Text>
+        <Text style={styles.headerTitle}>Manage Kitchens</Text>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <Ionicons name="close-circle" size={36} color="#333" />
+          <Ionicons name="close" size={28} color="#64748b" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.actionButtons}>
-        <CustomButton
-          className="Create Fridge"
+        <TouchableOpacity
+          style={styles.actionButton}
           onPress={() => setShowCreateModal(true)}
-          title="Create Fridge"
+        >
+          <View style={styles.buttonContent}>
+            <Ionicons name="add-circle-outline" size={22} color="#14b8a6" style={styles.buttonIcon} />
+            <Text style={styles.actionButtonText}>Create Kitchen</Text>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={styles.actionButton}
-        />
-        <CustomButton
-          className="Join Fridge"
           onPress={() => setShowJoinModal(true)}
-          title="Join Fridge"
-          style={styles.actionButton}
-        />
+        >
+          <View style={styles.buttonContent}>
+            <Ionicons name="key-outline" size={22} color="#14b8a6" style={styles.buttonIcon} />
+            <Text style={styles.actionButtonText}>Join Kitchen</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
@@ -352,7 +364,7 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
         </View>
       )}
 
-      {/* Create Fridge Modal */}
+      {/* Create Kitchen Modal */}
       <Modal
         visible={showCreateModal}
         animationType="slide"
@@ -367,7 +379,7 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
         />
       </Modal>
 
-      {/* Join Fridge Modal */}
+      {/* Join Kitchen Modal */}
       <Modal
         visible={showJoinModal}
         animationType="slide"
@@ -403,28 +415,35 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 24,
     paddingHorizontal: 20,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#e2e8f0",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#333",
+    color: "#1e293b",
   },
   closeButton: {
     position: "absolute",
     right: 20,
-    top: 60,
+    top: 58,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
   },
   actionButtons: {
     flexDirection: "row",
@@ -432,14 +451,41 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 20,
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 12,
   },
   actionButton: {
-    width: 150,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "white",
+    borderRadius: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  buttonIcon: {
+    marginRight: 8,
+  },
+  actionButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#1e293b",
   },
   content: {
     flex: 1,
     padding: 20,
+    paddingTop: 8,
   },
   emptyState: {
     flex: 1,
@@ -449,7 +495,8 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: "#999",
+    color: "#64748b",
+    fontWeight: "500",
   },
   loadingContainer: {
     flex: 1,
@@ -459,22 +506,27 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: "#666",
+    color: "#64748b",
+    fontWeight: "500",
   },
   fridgeCard: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
   },
   activeFridgeCard: {
-    borderWidth: 2,
-    borderColor: "#7C3AED",
+    borderWidth: 2.5,
+    borderColor: "#14b8a6",
+    shadowColor: "#14b8a6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   fridgeInfo: {
     marginBottom: 16,
@@ -486,48 +538,53 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   fridgeName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#333",
+    color: "#1e293b",
     flex: 1,
   },
   activeBadge: {
-    backgroundColor: "#7C3AED",
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
+    backgroundColor: "#14b8a6",
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   activeBadgeText: {
     color: "#fff",
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   fridgeId: {
-    fontSize: 14,
-    color: "#666",
+    fontSize: 13,
+    color: "#64748b",
     marginBottom: 12,
+    fontWeight: "500",
   },
   fridgeMatesSection: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: "#e2e8f0",
   },
   fridgeMatesTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
+    color: "#64748b",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   fridgeMateName: {
     fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
+    color: "#475569",
+    marginBottom: 6,
     marginLeft: 8,
+    fontWeight: "500",
   },
   showMoreText: {
     fontSize: 14,
-    color: "#7C3AED",
+    color: "#14b8a6",
     fontWeight: "600",
     marginTop: 6,
     marginLeft: 8,
@@ -537,16 +594,58 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   switchButton: {
-    flex: 1,
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0fdfa",
+    borderWidth: 1.5,
+    borderColor: "#99f6e4",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  switchButtonText: {
+    color: "#14b8a6",
+    fontSize: 15,
+    fontWeight: "600",
   },
   viewRequestsButton: {
     width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f0fdfa",
+    borderWidth: 1.5,
+    borderColor: "#99f6e4",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+  },
+  viewRequestsButtonText: {
+    color: "#14b8a6",
+    fontSize: 15,
+    fontWeight: "600",
   },
   leaveButton: {
     width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fef2f2",
+    borderWidth: 1.5,
+    borderColor: "#fecaca",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
   },
-  leaveButtonSmall: {
-    flex: 1,
+  leaveButtonIcon: {
+    marginRight: 10,
+  },
+  leaveButtonText: {
+    color: "#ef4444",
+    fontSize: 15,
+    fontWeight: "600",
   },
   switchingOverlay: {
     position: "absolute",

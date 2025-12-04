@@ -13,6 +13,8 @@ import type { PropsWithChildren } from "react";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import { useAuth } from "../context/authContext";
+import { router } from "expo-router";
+
 
 interface ItemProps {
   title: string;
@@ -242,9 +244,16 @@ const PreviewLayout = ({
 
 return (
     <View style={styles.container}>
-    <CustomHeader 
-      title="Share Recipes!  "
-      />
+      <CustomHeader 
+      title="Share Recipes! " 
+      logo={require('../../assets/images/FridgeIcon.png')}/>
+      
+      <TouchableOpacity
+        style={styles.favoriteRecipesIcon}
+        onPress={() => router.push("/(tabs)/favorite_recipes")}
+      >
+        <Ionicons name="heart" size={30} color="#E91E63" />
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentSection}>
           <View style={styles.boxContainer}>
@@ -426,5 +435,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  }
+  },
+  favoriteRecipesIcon: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+  },
 });

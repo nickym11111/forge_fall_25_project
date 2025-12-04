@@ -112,8 +112,8 @@ const RequestCard = ({
         {request.user?.first_name || "Unknown User"}
       </Text>
       <Text style={styles.cardText}>
-        <Text style={styles.cardLabel}>Fridge:</Text>{" "}
-        {request.fridge?.name || "Unknown Fridge"}
+        <Text style={styles.cardLabel}>Kitchen:</Text>{" "}
+        {request.fridge?.name || "Unknown Kitchen"}
       </Text>
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -251,7 +251,7 @@ export default function RequestsScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Pending Join Requests</Text>
           <Text style={styles.headerSubtitle}>
-            Review and manage fridge join requests
+            Review and manage kitchen join requests
           </Text>
         </View>
 

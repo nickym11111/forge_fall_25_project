@@ -194,7 +194,7 @@ export default function SelectFridgeScreen() {
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#7C3AED" />
-          <Text style={styles.loadingText}>Loading your fridges...</Text>
+          <Text style={styles.loadingText}>Loading your kitchens...</Text>
         </View>
       </View>
     );
