@@ -441,13 +441,9 @@ async def clear_user_balance(user_id: str, current_user=Depends(get_current_user
 @app.get("/balances")
 async def get_fridge_balances(current_user=Depends(get_current_user)):
     """
-    Calculate the balance for each user in the fridge with detailed breakdown.
+    Calculate the balance for each user in the fridge with simplified settlement plan.
     
-    Logic:
-    - Items added via receipt are shared equally among ALL fridge mates
-    - Manually added items are shared among selected users (shared_by field)
-    - Each user's balance shows how much they owe (negative) or are owed (positive)
-    - Includes detailed breakdown of transactions between users
+    Returns minimized transactions using greedy debt simplification algorithm.
     """
     try:
         fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
@@ -455,114 +451,27 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
 
-        memberships_response = supabase.table("fridge_memberships").select(
-            "users(id, email, first_name, last_name)"
-        ).eq("fridge_id", fridge_id).execute()
+        # Use the helper function to get accurate balances with settlements applied
+        calculation = _calculate_fridge_balances(fridge_id)
+        balances_map = calculation["balances_map"]
+        users_map = calculation["users_map"]
         
-        all_users = []
-        if memberships_response.data:
-            for membership in memberships_response.data:
-                if membership.get("users"):
-                    all_users.append(membership["users"])
-        
-        if not all_users:
+        if not users_map:
             return {
                 "status": "success",
                 "fridge_id": fridge_id,
                 "balances": []
             }
         
-        user_ids = [user["id"] for user in all_users]
+        # Use the simplified debt algorithm to minimize transactions
+        simplified_transactions = _simplify_debts(balances_map, users_map)
         
-        # Create user lookup
-        users_map = {user["id"]: user for user in all_users}
-        
-        # Get all fridge items with their metadata
-        items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
-        
-        # Initialize balances for each user
-        balances: Dict[str, float] = {user["id"]: 0.0 for user in all_users}
-        
-        # Track detailed transactions: transactions[debtor][creditor] = amount
-        transactions: Dict[str, Dict[str, float]] = {user_id: {} for user_id in user_ids}
-        
-        # Track items contributing to each user's balance
-        user_items: Dict[str, List[dict]] = {user_id: [] for user_id in user_ids}
-        
-        # Process each item
-        for item in items_response.data:
-            price = item.get("price", 0.0)
-            added_by = item.get("added_by")
-            shared_by = item.get("shared_by")  # List of user IDs or None
-            
-            if price <= 0 or not added_by:
-                continue  # Skip items with no price or no owner
-            
-            # Determine who shares this item
-            if shared_by is None or len(shared_by) == 0:
-                # Receipt items: shared by ALL fridge mates
-                sharers = user_ids
-            else:
-                # Manual items: shared by selected users
-                sharers = shared_by
-            
-            if len(sharers) == 0:
-                continue
-            
-            # Calculate cost per person (rounded down to 2 decimals)
-            cost_per_person = round(price / len(sharers), 2)
-            
-            # Calculate total after rounding
-            total_after_rounding = cost_per_person * len(sharers)
-            
-            # Calculate remainder (extra cents due to rounding)
-            remainder = round(price - total_after_rounding, 2)
-            
-            # The person who added the item is owed money
-            if added_by in balances:
-                balances[added_by] += price
-                # Track that this user paid for this item
-                user_items[added_by].append({
-                    "item_title": item.get("title"),
-                    "price": price,
-                    "type": "paid",
-                    "split_with": len(sharers)
-                })
-            
-            # Each sharer owes their portion
-            for idx, sharer_id in enumerate(sharers):
-                if sharer_id in balances:
-                    # First person gets the extra cents
-                    amount_to_pay = cost_per_person + (remainder if idx == 0 else 0)
-                    balances[sharer_id] -= amount_to_pay
-                    
-                    # Track that this user owes for this item (only if they didn't pay for it)
-                    if sharer_id != added_by:
-                        user_items[sharer_id].append({
-                            "item_title": item.get("title"),
-                            "price": price,
-                            "amount_owed": amount_to_pay,
-                            "type": "shared",
-                            "added_by": users_map.get(added_by, {}).get("email", "Unknown")
-                        })
-                    
-                    # Track individual transaction (sharer owes added_by)
-                    if sharer_id != added_by:  # Don't track self-transactions
-                        if added_by not in transactions[sharer_id]:
-                            transactions[sharer_id][added_by] = 0.0
-                        transactions[sharer_id][added_by] += amount_to_pay
-        
-        # Format response with user details and transaction breakdown
+        # Build response with simplified breakdown for each user
         balance_list = []
-        
-        # Create a simplified settlement plan using greedy algorithm
-        # This shows who should pay whom to settle all debts with minimum transactions
-        simplified_transactions = _simplify_debts(balances, users_map)
-        
-        for user in all_users:
-            user_id = user["id"]
+        for user_id, user_data in users_map.items():
+            balance_value = balances_map.get(user_id, 0.0)
             
-            # Build breakdown list from simplified transactions
+            # Build breakdown list from simplified transactions only
             breakdown = []
             
             for transaction in simplified_transactions:
@@ -592,12 +501,12 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
             
             balance_list.append({
                 "user_id": user_id,
-                "email": user["email"],
-                "first_name": user.get("first_name"),
-                "last_name": user.get("last_name"),
-                "balance": round(balances[user_id], 2),
-                "breakdown": breakdown,
-                "items": user_items.get(user_id, [])
+                "email": user_data.get("email"),
+                "first_name": user_data.get("first_name"),
+                "last_name": user_data.get("last_name"),
+                "profile_photo": user_data.get("profile_photo"),
+                "balance": round(balance_value, 2),
+                "breakdown": breakdown
             })
         
         # Sort by balance (highest to lowest)
