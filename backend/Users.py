@@ -6,6 +6,7 @@ from service import get_current_user, generate_invite_code, get_current_user_wit
 import ast
 import base64
 import uuid
+from typing import List, Optional, Union
 
 app = APIRouter()
 #TEMPLATE to get started :)
@@ -56,7 +57,7 @@ async def create_user(user: UserCreate):
     except Exception as e:
         return {"error": str(e)}
 
-@app.get("/userInfo")
+@app.get("/userInfo/")
 async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
     try:
         user_data = current_user if isinstance(current_user, dict) else {
@@ -69,6 +70,8 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
             "fridgeMates": []
         }
         
+        print(f"DEBUG: /userInfo/ endpoint called for user {user_data.get('id')}")
+        
         fridge_count_response = supabase.table("fridge_memberships").select(
             "fridge_id", count="exact"
         ).eq("user_id", user_data["id"]).execute()
@@ -76,14 +79,20 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
         fridge_count = fridge_count_response.count if fridge_count_response.count else 0
         user_data["fridge_count"] = fridge_count
         
+        # Include active_fridge_id explicitly for frontend routing logic
+        user_data["active_fridge_id"] = user_data.get("fridge_id")
+        
         if user_data.get("fridge_id"):
+            print(f"DEBUG: Fetching details for fridge {user_data.get('fridge_id')}")
             fridge_response = supabase.table("fridges").select("*").eq("id", user_data["fridge_id"]).execute()
             
             if fridge_response.data and len(fridge_response.data) > 0:
                 user_data["fridge"] = fridge_response.data[0]
             else:
+                print(f"DEBUG: Fridge {user_data.get('fridge_id')} not found")
                 user_data["fridge"] = None
         else:
+            print("DEBUG: User has no active fridge_id")
             user_data["fridge"] = None
         
         return user_data

@@ -12,7 +12,6 @@ import { router } from "expo-router";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomButton from "@/components/CustomButton";
-import ProfileIcon from "@/components/ProfileIcon";
 
 interface FridgeMate {
   id: string;
@@ -222,7 +221,6 @@ export default function SelectFridgeScreen() {
 
   return (
     <View style={styles.container}>
-      <ProfileIcon className="profileIcon" />
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Select Your Fridge</Text>
