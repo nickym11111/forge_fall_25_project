@@ -292,152 +292,69 @@ def _calculate_fridge_balances(fridge_id: str) -> Dict[str, Any]:
             current_remaining = _round_currency(contribution.get("amount_remaining", 0.0))
             if current_remaining <= AMOUNT_TOLERANCE:
                 continue
-            
-            # Calculate cost per person (rounded down to 2 decimals)
-            cost_per_person = round(price / len(sharers), 2)
-            
-            # Calculate total after rounding
-            total_after_rounding = cost_per_person * len(sharers)
-            
-            # Calculate remainder (extra cents due to rounding)
-            remainder = round(price - total_after_rounding, 2)
-            
-            # The person who added the item is owed money
-            if added_by in balances:
-                balances[added_by] += price
-                # Track that this user paid for this item
-                user_items[added_by].append({
-                    "item_title": item.get("title"),
-                    "price": price,
-                    "type": "paid",
-                    "split_with": len(sharers)
-                })
-            else:
-                print(f"WARNING: Item {item.get('title')} added by user {added_by} who is not in the fridge. Adding to balances anyway.")
-                balances[added_by] = balances.get(added_by, 0.0) + price
-                # We need to add them to users_map so we don't crash later
-                if added_by not in users_map:
-                    # Try to fetch this user info
-                    try:
-                        user_resp = supabase.table("users").select("id, email, first_name, last_name").eq("id", added_by).execute()
-                        if user_resp.data:
-                            users_map[added_by] = user_resp.data[0]
-                            all_users.append(user_resp.data[0])
-                            user_ids.append(added_by)
-                            user_items[added_by] = []
-                            transactions[added_by] = {}
-                    except Exception as e:
-                        print(f"Error fetching missing user {added_by}: {e}")
-                        users_map[added_by] = {"id": added_by, "email": "Unknown", "first_name": "Unknown"}
-            
-            # Each sharer owes their portion
-            for idx, sharer_id in enumerate(sharers):
-                # Handle missing sharers (e.g. ex-members)
-                if sharer_id not in balances:
-                    print(f"WARNING: Sharer {sharer_id} for item {item.get('title')} is not in the fridge. Adding to balances.")
-                    balances[sharer_id] = 0.0
-                    # Add to users_map and other structures
-                    if sharer_id not in users_map:
-                        try:
-                            user_resp = supabase.table("users").select("id, email, first_name, last_name").eq("id", sharer_id).execute()
-                            if user_resp.data:
-                                users_map[sharer_id] = user_resp.data[0]
-                                all_users.append(user_resp.data[0])
-                                user_ids.append(sharer_id)
-                                user_items[sharer_id] = []
-                                transactions[sharer_id] = {}
-                        except Exception as e:
-                            print(f"Error fetching missing sharer {sharer_id}: {e}")
-                            users_map[sharer_id] = {"id": sharer_id, "email": "Unknown", "first_name": "Unknown"}
-                            # Ensure structures exist even if fetch fails
-                            if sharer_id not in user_items: user_items[sharer_id] = []
-                            if sharer_id not in transactions: transactions[sharer_id] = {}
 
-                if sharer_id in balances:
-                    # First person gets the extra cents
-                    amount_to_pay = cost_per_person + (remainder if idx == 0 else 0)
-                    balances[sharer_id] -= amount_to_pay
-                    
-                    # Track that this user owes for this item (only if they didn't pay for it)
-                    if sharer_id != added_by:
-                        user_items[sharer_id].append({
-                            "item_title": item.get("title"),
-                            "price": price,
-                            "amount_owed": amount_to_pay,
-                            "type": "shared",
-                            "added_by": users_map.get(added_by, {}).get("email", "Unknown")
-                        })
-                    
-                    # Track individual transaction (sharer owes added_by)
-                    if sharer_id != added_by:  # Don't track self-transactions
-                        if added_by not in transactions[sharer_id]:
-                            transactions[sharer_id][added_by] = 0.0
-                        transactions[sharer_id][added_by] += amount_to_pay
-        
-        # Format response with user details and transaction breakdown
-        balance_list = []
-        
-        # Create a simplified settlement plan using greedy algorithm
-        # This shows who should pay whom to settle all debts with minimum transactions
-        simplified_transactions = _simplify_debts(balances, users_map)
-        
-        for user in all_users:
-            user_id = user["id"]
-            
-            # Build breakdown list from simplified transactions
-            breakdown = []
-            
-            for transaction in simplified_transactions:
-                if transaction["from_user_id"] == user_id:
-                    # This user needs to pay someone
-                    breakdown.append({
-                        "type": "owes",
-                        "user_id": transaction["to_user_id"],
-                        "email": transaction["to_user"]["email"],
-                        "first_name": transaction["to_user"].get("first_name"),
-                        "last_name": transaction["to_user"].get("last_name"),
-                        "amount": transaction["amount"]
-                    })
-                elif transaction["to_user_id"] == user_id:
-                    # Someone needs to pay this user
-                    breakdown.append({
-                        "type": "owed_by",
-                        "user_id": transaction["from_user_id"],
-                        "email": transaction["from_user"]["email"],
-                        "first_name": transaction["from_user"].get("first_name"),
-                        "last_name": transaction["from_user"].get("last_name"),
-                        "amount": transaction["amount"]
-                    })
-            
-            # Sort breakdown: owed_by first (what they're owed), then owes (what they owe)
-            breakdown.sort(key=lambda x: (x["type"] == "owes", x["amount"]), reverse=False)
-            
-            balance_list.append({
-                "user_id": user_id,
-                "email": user["email"],
-                "first_name": user.get("first_name"),
-                "last_name": user.get("last_name"),
-                "balance": round(balances[user_id], 2),
-                "breakdown": breakdown,
-                "items": user_items.get(user_id, [])
-            })
-        
-        # Sort by balance (highest to lowest)
-        balance_list.sort(key=lambda x: x["balance"], reverse=True)
-        
-        return {
-            "status": "success",
-            "fridge_id": fridge_id,
-            "balances": result["balances"],
-        }
+            deduct_amount = min(remaining_amount, current_remaining)
+            deduct_amount = _round_currency(deduct_amount)
 
-    except HTTPException:
-        raise
-    except Exception as exc:
-        print(f"Error calculating balances: {exc}")
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to calculate balances: {exc}")
+            contribution["amount_remaining"] = _round_currency(current_remaining - deduct_amount)
+            remaining_amount = _round_currency(remaining_amount - deduct_amount)
+
+    balances_map: Dict[str, float] = {}
+    for debtor_id, creditors_map in pair_contributions.items():
+        if debtor_id not in balances_map:
+            balances_map[debtor_id] = 0.0
+        for creditor_id, contributions_list in creditors_map.items():
+            if creditor_id not in balances_map:
+                balances_map[creditor_id] = 0.0
+            total_owed = sum(
+                _round_currency(contrib.get("amount_remaining", 0.0))
+                for contrib in contributions_list
+            )
+            total_owed = _round_currency(total_owed)
+            if total_owed > AMOUNT_TOLERANCE:
+                balances_map[debtor_id] -= total_owed
+                balances_map[creditor_id] += total_owed
+
+    pair_totals: Dict[str, Dict[str, float]] = {}
+    for debtor_id, creditors_map in pair_contributions.items():
+        for creditor_id, contributions_list in creditors_map.items():
+            total_remaining = sum(
+                _round_currency(contrib.get("amount_remaining", 0.0))
+                for contrib in contributions_list
+            )
+            total_remaining = _round_currency(total_remaining)
+            if total_remaining > AMOUNT_TOLERANCE:
+                if debtor_id not in pair_totals:
+                    pair_totals[debtor_id] = {}
+                pair_totals[debtor_id][creditor_id] = total_remaining
+
+    balances_list: List[dict] = []
+    for user_id, user_data in users_map.items():
+        balance_value = balances_map.get(user_id, 0.0)
+        balance_value = _round_currency(balance_value)
+
+        user_clear_ts = latest_clears.get(user_id)
+        user_clear_str = _format_iso_datetime(user_clear_ts) if user_clear_ts else None
+
+        balances_list.append({
+            "user_id": user_id,
+            "email": user_data.get("email"),
+            "first_name": user_data.get("first_name"),
+            "last_name": user_data.get("last_name"),
+            "profile_photo": user_data.get("profile_photo"),
+            "balance": balance_value,
+            "last_clear": user_clear_str,
+        })
+
+    return {
+        "balances": balances_list,
+        "users_map": users_map,
+        "pair_totals": pair_totals,
+        "balances_map": balances_map,
+        "latest_clears": {
+            uid: _format_iso_datetime(dt) for uid, dt in latest_clears.items()
+        },
+    }
 
 
 @app.post("/balances/{user_id}/clear")
