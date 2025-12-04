@@ -77,9 +77,8 @@ export const clearUserCache = () => {
 
 export const refreshUserCache = async () => {
   try {
-
     console.log("DEBUG: refreshUserCache called");
-    const {
+    let {
       data: { session },
     } = await supabase.auth.getSession();
 
@@ -91,14 +90,38 @@ export const refreshUserCache = async () => {
     }
 
     console.log("DEBUG: Session found, fetching userInfo from backend");
-    const response = await fetch(
-      `${process.env.EXPO_PUBLIC_API_URL}/userInfo/`,
+    let response = await fetch(
+      `${process.env.EXPO_PUBLIC_API_URL}/userInfo`,
       {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       }
     );
+
+    // If 401, try to refresh token and retry
+    if (response.status === 401) {
+      console.log("DEBUG: Token expired or invalid, attempting to refresh...");
+      const { data: { session: newSession }, error } = await supabase.auth.refreshSession();
+      
+      if (error || !newSession) {
+        console.error("DEBUG: Session refresh failed:", error);
+        cachedUser = null;
+        notifyListeners();
+        return null;
+      }
+      
+      console.log("DEBUG: Session refreshed, retrying userInfo fetch");
+      // Retry with new token
+      response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/userInfo`,
+        {
+          headers: {
+            Authorization: `Bearer ${newSession.access_token}`,
+          },
+        }
+      );
+    }
 
     if (response.ok) {
       const userData = await response.json();
@@ -115,9 +138,13 @@ export const refreshUserCache = async () => {
       console.log("DEBUG: Failed to fetch userInfo. Status:", response.status);
       const errorText = await response.text();
       console.log("DEBUG: Error response:", errorText);
+      cachedUser = null;
+      notifyListeners();
     }
   } catch (error) {
     console.error("Error refreshing user:", error);
+    cachedUser = null;
+    notifyListeners();
   }
   return null;
 };

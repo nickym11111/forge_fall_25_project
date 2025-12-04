@@ -21,7 +21,7 @@ export async function fetchUserDetails() {
       if (!session) return null;
 
       // Fetch user info from your API
-      let response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo/`, {
+      let response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -38,7 +38,7 @@ export async function fetchUserDetails() {
         }
         
         // Retry with new token
-        response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo/`, {
+        response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
           headers: {
             Authorization: `Bearer ${newSession.access_token}`,
           },
