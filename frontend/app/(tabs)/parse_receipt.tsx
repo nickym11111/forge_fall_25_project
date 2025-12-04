@@ -169,7 +169,7 @@ export default function ParseReceiptScreen() {
     setAddingItemIndex((prev) => prev.filter((i) => i !== item.index));
   };
 
-  const parseReceipt = async () => {
+  const parseReceipt = async (retryCount = 0) => {
     if (!imageUri) {
       alert("Please select an image first!");
       return;
@@ -177,7 +177,7 @@ export default function ParseReceiptScreen() {
 
     try {
       setIsLoading(true);
-      setResponseText("Parsing receipt...");
+      setResponseText(retryCount === 0 ? "Parsing receipt..." : "Retrying...");
       setSelectedItems([]);
       setAddingItemIndex([]);
       setSharingWith([]);
@@ -208,7 +208,20 @@ export default function ParseReceiptScreen() {
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
       console.error(error);
-      setResponseText("Error parsing receipt");
+      
+      // Retry once if this is the first attempt
+      if (retryCount === 0) {
+        console.log("First parsing attempt failed, retrying...");
+        await parseReceipt(1);
+      } else {
+        // Second attempt failed, warn the user
+        setResponseText("");
+        Alert.alert(
+          "Parsing Failed",
+          "Unable to parse the receipt. Please try with a clearer image or ensure the receipt is fully visible.",
+          [{ text: "OK" }]
+        );
+      }
     } finally {
       setIsLoading(false);
     }
