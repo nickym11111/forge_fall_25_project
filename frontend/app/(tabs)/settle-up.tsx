@@ -144,7 +144,9 @@ export default function SettleUpScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.centerContainer}>
-        <CustomHeader title="Settle Up 💰" />
+        <View style={styles.centerContainer}>
+        <CustomHeader title="Settle Up"/>
+        </View>
         <ProfileIcon className="profileIcon" />
         <ActivityIndicator size="large" color="purple" />
         <Text style={styles.loadingText}>Loading balances...</Text>
@@ -155,7 +157,9 @@ export default function SettleUpScreen() {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <CustomHeader title="Settle Up 💰" />
+        <View style={{ width: "100%", alignItems: "center" }}>
+        <CustomHeader title="Settle Up" />
+        </View>
         <ProfileIcon className="profileIcon" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
@@ -167,8 +171,8 @@ export default function SettleUpScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <CustomHeader title="Settle Up 💰" />
+      <View>
+        <CustomHeader title="Settle Up" />
         <ProfileIcon className="profileIcon" />
       </View>
       
@@ -302,7 +306,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FF",
   },
   headerContainer: {
-    position: "relative",
+    textAlign: "center"
   },
   centerContainer: {
     width: "100%",
@@ -310,6 +314,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FF",
     justifyContent: "center",
     alignItems: "center",
+    textAlign: "center"
   },
   scrollView: {
     flex: 1,
