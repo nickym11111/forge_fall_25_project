@@ -80,7 +80,7 @@ const styles = StyleSheet.create({
   titleContainer: {
     flex: 1,
     display: "flex",
-    alignItems: "flex-start",
+    alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },

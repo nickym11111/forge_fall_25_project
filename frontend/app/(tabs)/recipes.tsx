@@ -244,9 +244,9 @@ const PreviewLayout = ({
 
 return (
     <View style={styles.container}>
-    <CustomHeader 
-      title="Share Recipes!  "
-      />
+      <CustomHeader 
+      title="Share Recipes! " 
+      logo={require('../../assets/images/FridgeIcon.png')}/>
       
       <TouchableOpacity
         style={styles.favoriteRecipesIcon}
