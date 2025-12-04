@@ -98,7 +98,7 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
       <View style={styles.itemContainer}>
         <View style={{ flex: 1, backgroundColor: "transparent" }}>
           <Text style={[styles.itemText, { fontWeight: "bold", fontSize: 25 }]}>{recipe_name}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "transparent", marginTop: 8 }}>
             {added_by?.profile_photo_url ? (
               <Image source={{ uri: added_by.profile_photo_url }} style={styles.profilePhoto} />
             ) : added_by ? (
@@ -106,7 +106,7 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
                 <Text style={styles.profileInitials}>{getInitials(added_by)}</Text>
               </View>
             ) : null}
-            <Text style={[styles.itemText, { fontSize: 10, marginLeft: added_by ? 8 : 0 }]}>
+            <Text style={[styles.itemText, { fontSize: 10, backgroundColor: "transparent", marginLeft: added_by ? 8 : 0 }]}>
               |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
             </Text>
           </View>
