@@ -244,7 +244,6 @@ return (
     <View style={styles.container}>
     <CustomHeader 
       title="Share Recipes!  "
-      logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentSection}>
