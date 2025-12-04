@@ -245,35 +245,33 @@ export default function SettleUpScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View style={styles.centerContainer}>
+      <View style={styles.container}>
+        <CustomHeader title="Settle Up" />
         <View style={styles.centerContainer}>
-        <CustomHeader title="Settle Up"/>
+          <ActivityIndicator size="large" color="#14b8a6" />
+          <Text style={styles.loadingText}>Loading balances...</Text>
         </View>
-        <ActivityIndicator size="large" color="purple" />
-        <Text style={styles.loadingText}>Loading balances...</Text>
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centerContainer}>
-        <View style={{ width: "100%", alignItems: "center" }}>
+      <View style={styles.container}>
         <CustomHeader title="Settle Up" />
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View>
-        <CustomHeader title="Settle Up" />
-      </View>
+      <CustomHeader title="Settle Up" />
       {loading && !refreshing && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="small" color="#14b8a6" />
@@ -464,12 +462,9 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   centerContainer: {
-    width: "100%",
     flex: 1,
-    backgroundColor: "#F8F9FF",
     justifyContent: "center",
     alignItems: "center",
-    textAlign: "center"
   },
   loadingOverlay: {
     position: "absolute",

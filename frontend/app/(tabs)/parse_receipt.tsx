@@ -461,20 +461,24 @@ export default function ParseReceiptScreen() {
         title="Scan Receipt"
         subtitle="Take a photo or upload a receipt to automatically add items"
         noShadow={true}
+        style={{
+          marginBottom: 10
+        }}
       />
       
-      <TouchableOpacity
-        style={styles.addItemButton}
-        onPress={() => setShowAddItemModal(true)}
-      >
-        <Ionicons name="add" size={20} color="white" style={{ marginRight: 6 }} />
-        <Text style={styles.addItemButtonText}>Add Item Manually</Text>
-      </TouchableOpacity>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        <TouchableOpacity
+          style={styles.addItemButton}
+          onPress={() => setShowAddItemModal(true)}
+        >
+          <Ionicons name="add" size={20} color="white" style={{ marginRight: 6 }} />
+          <Text style={styles.addItemButtonText}>Add Item Manually</Text>
+        </TouchableOpacity>
+        
         <View style={styles.uploadSection}>
           <View style={styles.imageContainer}>
             <TouchableOpacity
@@ -1515,10 +1519,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   addItemButton: {
-    position: "absolute",
-    left: 20,
-    top: 117,
-    zIndex: 1000,
+    width: 200,
     backgroundColor: "#14b8a6",
     paddingHorizontal: 18,
     paddingVertical: 9,
@@ -1526,6 +1527,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
+    marginHorizontal: 20,
+    marginBottom: 16,
   },
   addItemButtonText: {
     color: "white",
