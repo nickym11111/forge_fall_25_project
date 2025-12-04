@@ -199,15 +199,30 @@ export default function ParseReceiptScreen() {
         base64Image = file.base64Sync();
       }
       const response = await CreateParseReceiptRequest(base64Image);
-      const parsed = JSON.parse(response);
+      
+      // Log the raw response to debug
+      console.log("Raw API response:", response);
+      
+      // Check if response is already an object or needs parsing
+      let parsed;
+      if (typeof response === 'string') {
+        parsed = JSON.parse(response);
+      } else {
+        parsed = response;
+      }
+
+      // Validate that we got valid data
+      if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error("Invalid response format from receipt parser");
+      }
 
       setParsedItems(parsed);
-      console.log(parsed);
+      console.log("Parsed items:", parsed);
       setResponseText("");
 
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
-      console.error(error);
+      console.error("Parsing error:", error);
       
       // Retry once if this is the first attempt
       if (retryCount === 0) {
