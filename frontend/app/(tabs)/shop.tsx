@@ -10,16 +10,21 @@ import {
   View,
   Keyboard,
   TouchableWithoutFeedback,
+  ScrollView,
+  Modal,
+  Pressable,
 } from "react-native";
 
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
+import ProfileIcon from "@/components/ProfileIcon";
+
 import { supabase } from "../utils/client";
 import { useUser } from "../hooks/useUser";
 import { useIsFocused } from "@react-navigation/native";
-import { useAuth } from "../context/authContext";
+
 
 interface ShoppingItem {
   id?: number;
@@ -58,6 +63,8 @@ export default function SharedListScreen() {
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [searchValue, setSearchValue] = useState("");
 
+  
+  const [modalOpen, setModalOpen] = useState(false);
   const [formName, setFormName] = useState("");
   const [formQuantity, setFormQuantity] = useState(1);
   const [formNeedBy, setFormNeedBy] = useState<Date | null>(null);
@@ -99,7 +106,6 @@ export default function SharedListScreen() {
     if (isFocused) loadItems();
   }, [isFocused]);
 
-  // Add Item
   const resetForm = () => {
     setFormName("");
     setFormQuantity(1);
@@ -107,6 +113,7 @@ export default function SharedListScreen() {
     setShowDatePicker(false);
   };
 
+  // Add Item
   const addItem = async () => {
     if (!formName.trim()) return;
     if (!user?.fridge_id) return;
@@ -236,7 +243,7 @@ export default function SharedListScreen() {
                 </Text>
               )}
               <Text style={styles.itemMeta}>
-                Requested by {item.requested_by ?? "You"}
+                Requested by {item.requested_by}
               </Text>
             </>
           )}
@@ -289,58 +296,77 @@ export default function SharedListScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <CustomHeader title="Shared Shopping List" />
-      
-      {/* Search */}
-      <TextInput
-        style={styles.search_bar}
-        onChangeText={setSearchValue}
-        value={searchValue}
-        placeholder="Search items..."
-      />
+  
 
       {/* Add Item Quick Box */}
       <View style={styles.topCard}>
-          <Text style={styles.cardTitle}>Add Item</Text>
+        {/* <Text style={styles.cardTitle}>Add Item</Text> */}
 
-          {/* Item Name */}
-          <TextInput
-            style={styles.input}
-            placeholder="Item name..."
-            placeholderTextColor="#888"
-            value={formName}
-            onChangeText={setFormName}
-          />
+        <View style={styles.topRow}>
+        {/* Search */}
+        <TextInput
+          style={styles.search_bar}
+          onChangeText={setSearchValue}
+          value={searchValue}
+          placeholder="Search items..."
+        />
+          <TouchableOpacity style={styles.plusBtn} onPress={() => setModalOpen(true)}>
+            <Ionicons name="add" size={28} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-          {/* Quantity */}
-          <View style={styles.row}>
+      {/* Items List */}
+      <FlatList
+        data={filteredItems}
+        keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
+        renderItem={renderItemCard}
+        contentContainerStyle={styles.itemsList}
+      />
+
+      {/* Modal */}
+      <Modal visible={modalOpen} transparent animationType="none">
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setModalOpen(false)}
+        />
+
+        <View style={styles.modalCard}>
+          <ScrollView nestedScrollEnabled>
+            <Text style={styles.modalTitle}>Add Item</Text>
+
+            <Text style={styles.inputLabel}>Item Name *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Milk, Eggs, Bread"
+              value={formName}
+              onChangeText={setFormName}
+            />
+
+            {/* Quantity + Need by */}
+            <View style={styles.row}>
+              {/* Qty */}
               <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>Quantity</Text>
                 <View style={styles.qtyRow}>
                   <TouchableOpacity
-                    onPress={() =>
-                      setFormQuantity(Math.max(1, formQuantity - 1))
-                    }
+                    onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}
                   >
-                    <Ionicons
-                      name="remove-circle-outline"
-                      size={25}
-                      color="#222"
-                    />
+                    <Ionicons name="remove-circle-outline" size={25} color="#222" />
                   </TouchableOpacity>
+
                   <Text style={styles.qtyNumber}>{formQuantity}</Text>
+
                   <TouchableOpacity
                     onPress={() => setFormQuantity(formQuantity + 1)}
                   >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={25}
-                      color="#222"
-                    />
+                    <Ionicons name="add-circle-outline" size={25} color="#222" />
                   </TouchableOpacity>
                 </View>
               </View>
 
-          <View style={{ flex: 1}}>
+              {/* Need by */}
+              <View style={{ flex: 1 }}>
                 <Text style={styles.inputLabel}>Need by</Text>
                 <TouchableOpacity
                   style={styles.dateInput}
@@ -357,47 +383,54 @@ export default function SharedListScreen() {
             </View>
 
             {showDatePicker && (
-              <View style={styles.datePickerContainer}>
-                <DateTimePicker
-                  value={formNeedBy || new Date()}
-                  mode="date"
-                  display={Platform.OS === "ios" ? "inline" : "default"}
-                  onChange={onChangeNeedBy}
-                />
-              </View>
-          )}
+              <DateTimePicker
+                value={formNeedBy || new Date()}
+                mode="date"
+                display={Platform.OS === "ios" ? "inline" : "default"}
+                onChange={(e, d) => {
+                  if (d) setFormNeedBy(d);
+                  if (Platform.OS !== "ios") setShowDatePicker(false);
+                }}
+              />
+            )}
 
-          {/* Add Button */}
+            {/* Button */}
             <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
               <Text style={styles.addItemButtonText}>Add Item</Text>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              onPress={() => setModalOpen(false)}
+              style={{ marginTop: 8, alignSelf: "center" }}
+            >
+              <Text style={{ color: "#666" }}>Cancel</Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
-
-      {/* Items List */}
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
-        renderItem={renderItemCard}
-        contentContainerStyle={styles.itemsList}
-      />
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
 
 // Styles
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7F8FC" },
+  screen: { flex: 1, backgroundColor: "#F7F8FC"},
   search_bar: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
+    height: 45,
+    marginTop: 10,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    padding: 12,
+    width: "90%",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    fontSize: 16,
   },
 
   topCard: {
     margin: 18,
+    marginTop: 5,
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 14,
@@ -406,7 +439,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  cardTitle: { fontSize: 18, fontWeight: "600", marginBottom: 8 },
+  cardTitle: { fontSize: 18, fontWeight: "600", marginBottom: 35},
   topRow: { flexDirection: "row", alignItems: "center" },
   topInput: {
     flex: 1,
@@ -417,6 +450,34 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: "#FAFAFB",
     fontSize: 14,
+  },
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.45)",
+  },
+  modalCard: {
+    position: "absolute",
+    top: "20%",
+    left: "5%",
+    right: "5%",
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    padding: 16,
+    maxHeight: "72%",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+  },
+  modalTitle: { fontSize: 20, fontWeight: "700", marginBottom: 12 },
+
+  plusBtn: {
+    marginLeft: 16,
+    width: 45,
+    height: 45,
+    borderRadius: 23,
+    backgroundColor: "#14b8a6",
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   section: { marginHorizontal: 22, marginTop: 6 },
@@ -497,8 +558,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E8E8E8",
   },
-  dateText: {
-    color: "#333",
+  dateText: { 
+    color: "#333" 
   },
   datePickerContainer: {
     marginTop: 12,
