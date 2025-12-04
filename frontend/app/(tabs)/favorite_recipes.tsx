@@ -197,21 +197,19 @@ export default function TabOneScreen() {
     fetchRecipeItems();
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <View style={[styles.container, { justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color="purple" />
-        <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
-      </View>
-    );
-  }
+  // Remove full screen loading - show header and load in background
 
   if (error === "NO_FRIDGE") {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="Favorite Recipes" />
         <ProfileIcon className="profileIcon" />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/(tabs)/recipes")}
+        >
+          <Ionicons name="arrow-back" size={28} color="#64748b" />
+        </TouchableOpacity>
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
@@ -235,16 +233,26 @@ export default function TabOneScreen() {
   // Error state
   if (error) {
     return (
-      <View style={[styles.container, { justifyContent: "center" }]}>
-        <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
-          {error}
-        </Text>
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="Favorite Recipes" />
+        <ProfileIcon className="profileIcon" />
         <TouchableOpacity
-          style={styles.filter_button}
-          onPress={fetchRecipeItems}
+          style={styles.backButton}
+          onPress={() => router.push("/(tabs)/recipes")}
         >
-          <Text style={styles.buttonLabel}>Retry</Text>
+          <Ionicons name="arrow-back" size={28} color="#64748b" />
         </TouchableOpacity>
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
+            {error}
+          </Text>
+          <TouchableOpacity
+            style={styles.filter_button}
+            onPress={fetchRecipeItems}
+          >
+            <Text style={styles.buttonLabel}>Retry</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -254,6 +262,12 @@ export default function TabOneScreen() {
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="Favorite Recipes" />
         <ProfileIcon className="profileIcon" />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/(tabs)/recipes")}
+        >
+          <Ionicons name="arrow-back" size={28} color="#64748b" />
+        </TouchableOpacity>
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!
@@ -272,6 +286,17 @@ export default function TabOneScreen() {
     }}>
       <CustomHeader title="Favorite Recipes" />
       <ProfileIcon className="profileIcon" />
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.push("/(tabs)/recipes")}
+      >
+        <Ionicons name="arrow-back" size={28} color="#64748b" />
+      </TouchableOpacity>
+      {loading && !refreshing && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="small" color="#14b8a6" />
+        </View>
+      )}
     <View style={styles.container}>
       
       <View
@@ -295,8 +320,8 @@ export default function TabOneScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["purple"]}
-            tintColor="purple"
+            colors={["#14b8a6"]}
+            tintColor="#14b8a6"
           />
         }
       />
@@ -412,6 +437,20 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 10,
     fontWeight: "bold",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 100,
+    right: 20,
+    zIndex: 1000,
+  },
+  backButton: {
+    position: "absolute",
+    left: 10,
+    top: 100,
+    zIndex: 1000,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

@@ -8,8 +8,13 @@ import {
   Alert,
   Keyboard,
   TouchableWithoutFeedback,
-        RefreshControl,
+  RefreshControl,
+  Modal,
+  Platform,
+  ScrollView,
+  Pressable,
 } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { type SetStateAction, type Dispatch } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from 'expo-router';
@@ -52,10 +57,11 @@ interface ItemProps {
   item: FoodItem;
   onDelete: (item: FoodItem) => void;
   onQuantityChange: (item: FoodItem, delta: number) => void;
+  onEdit: (item: FoodItem) => void;
 }
 
 // Individual item component
-const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
+const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
   const getDisplayName = (mate: FridgeMate) => {
     if (mate.first_name && mate.last_name) {
       return `${mate.first_name} ${mate.last_name}`;
@@ -100,7 +106,7 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
               {item.name}
             </Text>
             <TouchableOpacity onPress={handleDelete} style={styles.deleteIcon}>
-              <Ionicons name="trash-outline" size={15} color="#666" />
+              <Ionicons name="trash-outline" size={20} color="#666" />
             </TouchableOpacity>
           </View>
 
@@ -152,6 +158,12 @@ const Item = ({ item, onDelete, onQuantityChange }: ItemProps) => {
           </TouchableOpacity>
         </View>
       </View>
+      <TouchableOpacity 
+        onPress={() => onEdit(item)}
+        style={styles.editButton}
+      >
+        <Ionicons name="create-outline" size={18} color="#666" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -189,7 +201,161 @@ export default function TabOneScreen() {
       it.id === item.id ? updated : it
     );
   };
-  
+
+  const handleEdit = (item: FoodItem) => {
+    setEditItem(item);
+    setEditName(item.name);
+    setEditQuantity(item.quantity?.toString() || "1");
+    
+    // Calculate expiry date from days_till_expiration
+    if (item.days_till_expiration !== undefined) {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + item.days_till_expiration);
+      setEditExpiryDate(expiryDate);
+    } else {
+      setEditExpiryDate(new Date());
+    }
+    
+    // Set shared by user IDs
+    if (item.shared_by && item.shared_by.length > 0) {
+      const userIds = item.shared_by.map((mate: any) => mate.id).filter(Boolean);
+      setEditSharedBy(userIds);
+    } else {
+      setEditSharedBy([]);
+    }
+    
+    setShowEditModal(true);
+  };
+
+  // Fetch users for the shared by picker
+  useEffect(() => {
+    if (showUserPicker && users.length === 0) {
+      fetchUsers();
+    }
+  }, [showUserPicker]);
+
+  const fetchUsers = async () => {
+    if (isLoadingUsers) return;
+    setIsLoadingUsers(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await fetch(`${API_URL}/fridge-mates/`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.data && Array.isArray(result.data)) {
+          setUsers(result.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  const getUserDisplayName = (user: any) => {
+    if (user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    if (user.first_name) return user.first_name;
+    if (user.name) return user.name;
+    return user.email || "Unknown";
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const toggleUserSelection = (userId: string) => {
+    setEditSharedBy((prev) => {
+      if (prev.includes(userId)) {
+        return prev.filter((id) => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+  };
+
+  const getSelectedUsersDisplayText = () => {
+    if (editSharedBy.length === 0) return "Select who's sharing (optional)...";
+    
+    const selectedUsers = users.filter((u) => editSharedBy.includes(u.id));
+    if (selectedUsers.length === 0) return "Select who's sharing (optional)...";
+    
+    if (selectedUsers.length === 1) {
+      return getUserDisplayName(selectedUsers[0]);
+    }
+    if (selectedUsers.length === 2) {
+      return `${getUserDisplayName(selectedUsers[0])} and ${getUserDisplayName(selectedUsers[1])}`;
+    }
+    return `${getUserDisplayName(selectedUsers[0])}, ${getUserDisplayName(selectedUsers[1])}, and ${selectedUsers.length - 2} more`;
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editItem || !editName.trim()) {
+      Alert.alert("Error", "Please enter an item name.");
+      return;
+    }
+
+    setIsLoadingEdit(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        Alert.alert("Error", "You must be logged in to edit items");
+        setIsLoadingEdit(false);
+        return;
+      }
+
+      // Calculate days till expiration
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const expiry = new Date(editExpiryDate);
+      expiry.setHours(0, 0, 0, 0);
+      const daysTillExpiration = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Note: You'll need to create a PUT endpoint at /fridge_items/{item_id} on the backend
+      const response = await fetch(`${API_URL}/fridge_items/${editItem.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          name: editName.trim(),
+          quantity: editQuantity ? Number(editQuantity) : 1,
+          expiry_date: editExpiryDate.toISOString().split("T")[0],
+          shared_by: editSharedBy.length > 0 ? editSharedBy : null,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update item");
+      }
+
+      // Refresh the items list
+      await fetchFridgeItems(false);
+      
+      setShowEditModal(false);
+      setEditItem(null);
+      Alert.alert("Success", "Item updated successfully!");
+    } catch (error) {
+      console.error("Error updating item:", error);
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to update item");
+    } finally {
+      setIsLoadingEdit(false);
+    }
+  };
 
   const originalHolder = useRef<FoodItem[]>([]);
   const [selectedFilters, setSelectedFilters] = useState<string[]>([
@@ -432,6 +598,7 @@ export default function TabOneScreen() {
     width: '100%', height: '100%',
   }}>
     <CustomHeader title="What's In Our Kitchen?" />
+    <ProfileIcon className="profileIcon" />
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <View style={styles.inputContainer}>
@@ -459,19 +626,234 @@ export default function TabOneScreen() {
             item={item}
             onDelete={handleDelete}
             onQuantityChange={handleQuantityChange}
+            onEdit={handleEdit}
           />
         )}
         keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["purple"]}
-            tintColor="purple"
+            colors={["#14b8a6"]}
+            tintColor="#14b8a6"
           />
         }
       />
     </View>
+
+    {/* Edit Modal */}
+    {showEditModal && editItem && (
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={showEditModal}
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay} 
+          onPress={() => setShowEditModal(false)} 
+        />
+        <View style={styles.editModalCard}>
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Item</Text>
+              <TouchableOpacity
+                onPress={() => setShowEditModal(false)}
+                style={styles.modalCloseButton}
+              >
+                <Ionicons name="close" size={24} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Item Name */}
+            <Text style={styles.modalInputLabel}>Item Name *</Text>
+            <View style={styles.modalInputContainer}>
+              <Ionicons name="cube-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Item name"
+                placeholderTextColor="#94a3b8"
+                value={editName}
+                onChangeText={setEditName}
+                editable={!isLoadingEdit}
+              />
+            </View>
+
+            {/* Quantity */}
+            <Text style={styles.modalInputLabel}>Quantity</Text>
+            <View style={styles.modalInputContainer}>
+              <Ionicons name="calculator-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Quantity"
+                placeholderTextColor="#94a3b8"
+                value={editQuantity}
+                onChangeText={setEditQuantity}
+                keyboardType="numeric"
+                editable={!isLoadingEdit}
+              />
+            </View>
+
+            {/* Expiry Date */}
+            <Text style={styles.modalInputLabel}>Expiry Date</Text>
+            <TouchableOpacity
+              style={styles.modalInputContainer}
+              onPress={() => setShowDatePicker(true)}
+              disabled={isLoadingEdit}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <Text style={[styles.modalInput, { color: editExpiryDate ? "#1e293b" : "#94a3b8" }]}>
+                {formatDate(editExpiryDate)}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Shared By */}
+            <Text style={styles.modalInputLabel}>Shared By</Text>
+            <TouchableOpacity
+              style={styles.modalInputContainer}
+              onPress={() => {
+                if (users.length === 0) fetchUsers();
+                setShowUserPicker(true);
+              }}
+              disabled={isLoadingEdit}
+            >
+              <Ionicons name="people-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <Text style={[styles.modalInput, { color: editSharedBy.length > 0 ? "#1e293b" : "#94a3b8" }]}>
+                {getSelectedUsersDisplayText()}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Save Button */}
+            <TouchableOpacity
+              style={[styles.modalSaveButton, isLoadingEdit && styles.modalSaveButtonDisabled]}
+              onPress={handleSaveEdit}
+              disabled={isLoadingEdit}
+            >
+              <Text style={styles.modalSaveButtonText}>
+                {isLoadingEdit ? "Saving..." : "Save Changes"}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
+    )}
+
+    {/* Date Picker Modal */}
+    {showDatePicker && Platform.OS === "ios" && (
+      <Modal
+        transparent={true}
+        animationType="fade"
+        visible={showDatePicker}
+        onRequestClose={() => setShowDatePicker(false)}
+      >
+        <View style={styles.datePickerModalOverlay}>
+          <View style={styles.datePickerModalCard}>
+            <View style={styles.datePickerModalHeader}>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(false)}
+                style={styles.datePickerModalButton}
+              >
+                <Text style={styles.datePickerModalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <Text style={styles.datePickerModalTitle}>Select Date</Text>
+              <TouchableOpacity
+                onPress={() => setShowDatePicker(false)}
+                style={styles.datePickerModalButton}
+              >
+                <Text style={styles.datePickerModalButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <DateTimePicker
+              value={editExpiryDate}
+              mode="date"
+              display="inline"
+              onChange={(event, date) => {
+                if (date) setEditExpiryDate(date);
+              }}
+              minimumDate={new Date()}
+            />
+          </View>
+        </View>
+      </Modal>
+    )}
+
+    {showDatePicker && Platform.OS === "android" && (
+      <DateTimePicker
+        value={editExpiryDate}
+        mode="date"
+        display="default"
+        onChange={(event, date) => {
+          if (date) setEditExpiryDate(date);
+          setShowDatePicker(false);
+        }}
+        minimumDate={new Date()}
+      />
+    )}
+
+    {/* User Picker Modal */}
+    {showUserPicker && (
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={showUserPicker}
+        onRequestClose={() => setShowUserPicker(false)}
+      >
+        <View style={styles.userPickerModalOverlay}>
+          <View style={styles.userPickerModalCard}>
+            <View style={styles.userPickerModalHeader}>
+              <TouchableOpacity
+                onPress={() => {
+                  setEditSharedBy([]);
+                  setShowUserPicker(false);
+                }}
+                style={styles.userPickerModalButton}
+              >
+                <Text style={styles.userPickerModalButtonText}>Clear All</Text>
+              </TouchableOpacity>
+              <Text style={styles.userPickerModalTitle}>Select Users</Text>
+              <TouchableOpacity
+                onPress={() => setShowUserPicker(false)}
+                style={styles.userPickerModalButton}
+              >
+                <Text style={styles.userPickerModalButtonText}>Done</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.userPickerModalList}>
+              {isLoadingUsers ? (
+                <ActivityIndicator size="large" color="#14b8a6" style={{ marginTop: 20 }} />
+              ) : (
+                users.map((user) => (
+                  <TouchableOpacity
+                    key={user.id}
+                    style={styles.userPickerOption}
+                    onPress={() => toggleUserSelection(user.id)}
+                  >
+                    <View
+                      style={[
+                        styles.userPickerCheckbox,
+                        editSharedBy.includes(user.id) && styles.userPickerCheckboxSelected,
+                      ]}
+                    >
+                      {editSharedBy.includes(user.id) && (
+                        <Ionicons name="checkmark" size={16} color="#fff" />
+                      )}
+                    </View>
+                    <Text style={styles.userPickerOptionText}>
+                      {getUserDisplayName(user)}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    )}
   </View>
 );
 }
@@ -641,10 +1023,10 @@ const styles = StyleSheet.create({
   // Item Card Styles
   item: {
     backgroundColor: "#ffffff",
-    padding: 18,
+    padding: 22,
     marginVertical: 8,
     borderRadius: 16,
-    width: "90%",
+    width: "95%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -715,6 +1097,195 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
+  },
+  editButton: {
+    position: "absolute",
+    bottom: 8,
+    right: 8,
+    padding: 6,
+  },
+  // Edit Modal Styles
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  editModalCard: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "90%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+    zIndex: 1000,
+  },
+  modalScrollContent: {
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 24,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  modalCloseButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalInputLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  modalInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    marginBottom: 4,
+  },
+  modalInputIcon: {
+    marginRight: 12,
+  },
+  modalInput: {
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#1e293b",
+  },
+  modalSaveButton: {
+    backgroundColor: "#14b8a6",
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 24,
+  },
+  modalSaveButtonDisabled: {
+    opacity: 0.6,
+  },
+  modalSaveButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  datePickerModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  datePickerModalCard: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 16,
+    paddingBottom: 24,
+  },
+  datePickerModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  datePickerModalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1e293b",
+  },
+  datePickerModalButton: {
+    padding: 8,
+  },
+  datePickerModalButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#14b8a6",
+  },
+  userPickerModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "flex-end",
+  },
+  userPickerModalCard: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: "80%",
+  },
+  userPickerModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  userPickerModalTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#1e293b",
+  },
+  userPickerModalButton: {
+    padding: 8,
+  },
+  userPickerModalButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#14b8a6",
+  },
+  userPickerModalList: {
+    maxHeight: 400,
+  },
+  userPickerOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  userPickerCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    marginRight: 12,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  userPickerCheckboxSelected: {
+    backgroundColor: "#14b8a6",
+  },
+  userPickerOptionText: {
+    flex: 1,
+    fontSize: 16,
+    color: "#1e293b",
   },
 });
 

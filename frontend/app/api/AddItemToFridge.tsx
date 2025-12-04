@@ -101,3 +101,17 @@ export async function UpdateFridgeItem(
 
   return response;
 }
+
+export async function PredictExpiryDate(itemName: string) {
+  const response = await fetch(`${API_URL}/expiry/predict-expiry`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      item_name: itemName,
+    }),
+  });
+
+  return response;
+}

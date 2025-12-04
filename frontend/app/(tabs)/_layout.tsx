@@ -62,7 +62,7 @@ export default function TabLayout() {
           backgroundColor: "#F8F9FF",
         }}
       >
-        <ActivityIndicator size="large" color="purple" />
+        <ActivityIndicator size="large" color="#14b8a6" />
       </View>
     );
   }
@@ -99,15 +99,6 @@ export default function TabLayout() {
         name="index"
         options={{
           href: null,
-          // start of ploy change being merged in on 11/26
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "home" : "home-outline"}
-              color={color}
-              focused={focused}
-            />
-          ),
-          tabBarButton: () => null,
         }}
       />
       <Tabs.Screen
@@ -146,18 +137,6 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="add-item"
-        options={{
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "plus-circle" : "plus-circle-outline"}
-              color={color}
-              focused={focused}
-            />
-          ),
-        }}
-      />
 
       <Tabs.Screen
         name="select_fridge"
@@ -184,7 +163,7 @@ export default function TabLayout() {
         options={{
           title: "Settle Up",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="link" color={color} focused={focused} /> // reassign to dollar logo
+            <TabBarIcon name="link" color={color} focused={focused} />
           ),
         }}
       />
@@ -193,13 +172,6 @@ export default function TabLayout() {
         options={{
           href: null,
           title: "Requests",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "plus" : "plus-outline"}
-              color={color}
-              focused={focused}
-            />
-          ),
         }}
       />
       <Tabs.Screen
@@ -215,13 +187,7 @@ export default function TabLayout() {
         name="favorite_recipes"
         options={{
           title: "Favorite Recipes",
-          tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon
-              name={focused ? "heart-circle" : "heart-circle-outline"}
-              color={color}
-              focused={focused}
-            />
-          ),
+          href: null,
         }}
       />
     </Tabs>

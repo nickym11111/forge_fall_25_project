@@ -141,16 +141,7 @@ export default function SettleUpScreen() {
     return "settled";
   };
 
-  if (loading && !refreshing) {
-    return (
-      <View style={styles.centerContainer}>
-        <CustomHeader title="Settle Up 💰" />
-        <ProfileIcon className="profileIcon" />
-        <ActivityIndicator size="large" color="purple" />
-        <Text style={styles.loadingText}>Loading balances...</Text>
-      </View>
-    );
-  }
+  // Remove full screen loading - show header and load in background
 
   if (error) {
     return (
@@ -171,6 +162,11 @@ export default function SettleUpScreen() {
         <CustomHeader title="Settle Up 💰" />
         <ProfileIcon className="profileIcon" />
       </View>
+      {loading && !refreshing && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="small" color="#14b8a6" />
+        </View>
+      )}
       
       <ScrollView
         style={styles.scrollView}
@@ -310,6 +306,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8F9FF",
     justifyContent: "center",
     alignItems: "center",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 100,
+    right: 20,
+    zIndex: 1000,
   },
   scrollView: {
     flex: 1,

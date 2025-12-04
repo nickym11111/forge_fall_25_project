@@ -112,10 +112,10 @@ export default function ManageAccount() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Account 🧾</Text>
+        <Text style={styles.headerTitle}>Manage Account</Text>
       </View>
       <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
-        <Ionicons name="close-circle" size={36} color="#333" />
+        <Ionicons name="close" size={28} color="#64748b" />
       </TouchableOpacity>
       
       <View style={styles.content}>
@@ -127,7 +127,7 @@ export default function ManageAccount() {
             disabled={isPhotoloading}
           >
             {isPhotoloading ? (
-              <ActivityIndicator size="large" color="#5D5FEF" />
+              <ActivityIndicator size="large" color="#14b8a6" />
             ) : profileImageUri ? (
               <Image
                 source={{ uri: profileImageUri }}
@@ -164,33 +164,42 @@ export default function ManageAccount() {
 
         {/* Action Buttons */}
         <View style={styles.buttonSection}>
-          <CustomButton
-            className="Reset Password"
-            onPress={() => {
-              navigate("/account/reset-password");
-            }}
-            title="Reset Password"
+          <TouchableOpacity
             style={styles.actionButton}
-          />
-          
-          <CustomButton
-            className="Manage Fridges"
             onPress={() => {
               setShowManageFridges(true);
             }}
-            title="Manage Fridges"
-            style={styles.actionButton}
-          />
+          >
+            <View style={styles.buttonContent}>
+              <Ionicons name="restaurant-outline" size={22} color="#14b8a6" style={styles.buttonIcon} />
+              <Text style={styles.actionButtonText}>Manage Kitchens</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+          </TouchableOpacity>
           
-          <CustomButton
-            className="sign-out-button"
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => {
+              navigate("/account/reset-password");
+            }}
+          >
+            <View style={styles.buttonContent}>
+              <Ionicons name="lock-closed-outline" size={22} color="#14b8a6" style={styles.buttonIcon} />
+              <Text style={styles.actionButtonText}>Reset Password</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.signOutButton}
             onPress={async () => {
               logout();
               setReload(!reload);
             }}
-            title="Sign Out"
-            style={styles.signOutButton}
-          />
+          >
+            <Ionicons name="log-out-outline" size={22} color="#ef4444" style={styles.signOutIcon} />
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -210,87 +219,101 @@ export default function ManageAccount() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 24,
     paddingHorizontal: 20,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#e2e8f0",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#333",
+    color: "#1e293b",
   },
   closeButton: {
     position: "absolute",
     right: 20,
-    top: 110,
+    top: 58,
     zIndex: 1000,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
     padding: 20,
+    paddingTop: 24,
   },
   profileSection: {
     alignItems: "center",
     marginBottom: 30,
     backgroundColor: "white",
-    borderRadius: 12,
-    padding: 20,
+    borderRadius: 24,
+    padding: 32,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   profilePhotoContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "#E8EAFF",
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "#f0fdfa",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 15,
-    borderWidth: 3,
-    borderColor: "#5D5FEF",
+    marginBottom: 20,
+    borderWidth: 4,
+    borderColor: "#14b8a6",
   },
   profilePhoto: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
   },
   nameText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 5,
+    fontSize: 28,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginBottom: 8,
   },
   emailText: {
     fontSize: 16,
-    color: "#666",
-    marginBottom: 15,
+    color: "#64748b",
+    marginBottom: 20,
   },
   fridgeMatesContainer: {
     alignItems: "center",
-    marginTop: 10,
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+    width: "100%",
   },
   fridgeMatesLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#555",
-    marginBottom: 5,
+    color: "#64748b",
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   fridgeMatesText: {
     fontSize: 14,
-    color: "#777",
+    color: "#475569",
     textAlign: "center",
+    lineHeight: 20,
   },
   fridgesSection: {
     marginBottom: 20,
@@ -334,13 +357,57 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   buttonSection: {
-    gap: 15,
+    gap: 16,
   },
   actionButton: {
     width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "white",
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+  },
+  buttonIcon: {
+    marginRight: 12,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#1e293b",
   },
   signOutButton: {
     width: "100%",
-    marginTop: 10,
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fef2f2",
+    borderWidth: 1.5,
+    borderColor: "#fecaca",
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+  },
+  signOutIcon: {
+    marginRight: 10,
+  },
+  signOutText: {
+    color: "#ef4444",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

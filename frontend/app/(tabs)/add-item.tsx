@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingTop: 24,
+    paddingTop: 10,
   },
 
   form: {

@@ -14,6 +14,7 @@ import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
+import { router } from "expo-router";
 
 interface ItemProps {
   title: string;
@@ -248,6 +249,12 @@ return (
       logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ProfileIcon className="profileIcon" />
+      <TouchableOpacity
+        style={styles.favoriteRecipesIcon}
+        onPress={() => router.push("/(tabs)/favorite_recipes")}
+      >
+        <Ionicons name="heart" size={30} color="#E91E63" />
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentSection}>
           <View style={styles.boxContainer}>
@@ -429,5 +436,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-  }
+  },
+  favoriteRecipesIcon: {
+    position: "absolute",
+    left: 10,
+    top: 108,
+    zIndex: 1000,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

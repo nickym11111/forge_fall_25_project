@@ -7,8 +7,9 @@ import {
   ScrollView,
   TouchableOpacity,
   Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
-import { useState, useCallback } from "react";
+import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from "../utils/client";
@@ -17,8 +18,6 @@ import { router } from 'expo-router';
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
-import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 
 //Type for API response
 interface ApiResponse {
@@ -37,35 +36,88 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FAFBFC",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  closeButton: {
+    position: "absolute",
+    right: 20,
+    top: 58,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   formContainer: {
     flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingHorizontal: 24,
     paddingBottom: 100,
+    paddingTop: 20,
   },
   form: {
-    width: 300,
-  },
-  label: {
-    fontSize: 15,
-    color: "#333",
-    marginBottom: 5,
-    marginTop: 10,
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   inputRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 5,
   },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  inputContainerFocused: {
+    borderColor: "#14b8a6",
+    borderWidth: 2.5,
+    backgroundColor: "#ffffff",
+    shadowColor: "#14b8a6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  inputIcon: {
+    marginRight: 12,
+  },
   input: {
     flex: 1,
-    marginVertical: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    fontSize: 15,
-    backgroundColor: "#fff",
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#1e293b",
   },
   removeButton: {
     marginLeft: 6,
@@ -78,14 +130,20 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   createButton: {
-    width: 217,
-    marginTop: 15,
-    alignSelf: "center",
+    width: "100%",
+    marginTop: 8,
+  },
+  label: {
+    fontSize: 15,
+    color: "#333",
+    marginBottom: 8,
+    marginTop: 10,
+    fontWeight: "500",
   },
   joinFridgeText: {
-    marginTop: 10,
+    marginTop: 24,
     fontSize: 14,
-    color: "#666",
+    color: "#64748b",
     textAlign: "center",
   },
 });
@@ -96,6 +154,7 @@ export default function CreateFridgeScreen() {
   const [fridgeName, setFridgeName] = useState(""); // name of the fridge
   const [emails, setEmails] = useState<string[]>([""]); // invited emails
   const [isLoading, setIsLoading] = useState<boolean>(false); // loading indicator
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -236,29 +295,38 @@ export default function CreateFridgeScreen() {
   //Page Setup
   return (
     <View style={styles.container}>
-      {/*Page Header*/}
-      <CustomHeader 
-      title="Create Fridge  "
-      logo={require('../../assets/images/FridgeIcon.png')}
-      />
-<ProfileIcon className="profileIcon" />
-      <ScrollView contentContainerStyle={styles.formContainer}>
-        <View style={styles.form}>
-          {/*Enter Fridge Name*/}
-          <Text style={styles.label}>Kitchen Name:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="example"
-            placeholderTextColor="gray"
-            value={fridgeName}
-            onChangeText={setFridgeName}
-            editable={!isLoading}
-            returnKeyType="default"
-            onSubmitEditing={Keyboard.dismiss}
-            blurOnSubmit={true}
-          />
-
-          {/*Create button*/}
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Create Kitchen</Text>
+      </View>
+      <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+        <Ionicons name="close" size={28} color="#64748b" />
+      </TouchableOpacity>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={styles.formContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.form}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "fridgeName" && styles.inputContainerFocused
+            ]} collapsable={false}>
+              <Ionicons name="restaurant-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Kitchen name"
+                placeholderTextColor="#94a3b8"
+                value={fridgeName}
+                onChangeText={setFridgeName}
+                editable={!isLoading}
+                returnKeyType="default"
+                onSubmitEditing={Keyboard.dismiss}
+                blurOnSubmit={true}
+                onFocus={() => setFocusedInput("fridgeName")}
+                onBlur={() => setFocusedInput(null)}
+              />
+            </View>
+            {/*Create button*/}
           <CustomButton
             title={isLoading ? "Creating..." : "Create Kitchen"}
             onPress={handleCreateFridge}
@@ -274,8 +342,9 @@ export default function CreateFridgeScreen() {
           >
             Join a kitchen instead
           </Text>
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </View>
   );
 }
