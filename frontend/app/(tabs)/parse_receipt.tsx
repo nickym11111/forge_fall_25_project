@@ -989,7 +989,4 @@ const styles = StyleSheet.create({
     color: "#64748b",
     flex: 1,
   },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
 });
