@@ -22,7 +22,7 @@ import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
-import ProfileIcon from "@/components/ProfileIcon";
+
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import { Modal } from "react-native";
@@ -462,7 +462,7 @@ export default function ParseReceiptScreen() {
         subtitle="Take a photo or upload a receipt to automatically add items"
         noShadow={true}
       />
-      <ProfileIcon className="profileIcon" />
+      
       <TouchableOpacity
         style={styles.addItemButton}
         onPress={() => setShowAddItemModal(true)}

@@ -26,7 +26,7 @@ import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import { useFocusEffect } from "@react-navigation/native";
-import ProfileIcon from "@/components/ProfileIcon";
+
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -675,7 +675,7 @@ export default function TabOneScreen() {
     width: '100%', height: '100%',
   }}>
     <CustomHeader title="What's In Our Kitchen?" />
-    <ProfileIcon className="profileIcon" />
+    
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <View style={styles.inputContainer}>

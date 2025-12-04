@@ -15,7 +15,7 @@ import CustomHeader from "@/components/CustomHeader";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Alert } from "react-native";
-import ProfileIcon from "@/components/ProfileIcon";
+
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -203,7 +203,6 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="Favorite Recipes" />
-        <ProfileIcon className="profileIcon" />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(tabs)/recipes")}
@@ -235,7 +234,7 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="Favorite Recipes" />
-        <ProfileIcon className="profileIcon" />
+        
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(tabs)/recipes")}
@@ -261,7 +260,7 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="Favorite Recipes" />
-        <ProfileIcon className="profileIcon" />
+        
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(tabs)/recipes")}
@@ -285,7 +284,7 @@ export default function TabOneScreen() {
       width: '100%', height: '100%',
     }}>
       <CustomHeader title="Favorite Recipes" />
-      <ProfileIcon className="profileIcon" />
+      
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.push("/(tabs)/recipes")}

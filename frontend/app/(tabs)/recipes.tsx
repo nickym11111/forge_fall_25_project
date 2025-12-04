@@ -14,7 +14,7 @@ import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import { useAuth } from "../context/authContext";
 import { router } from "expo-router";
-import ProfileIcon from "@/components/ProfileIcon";
+
 
 interface ItemProps {
   title: string;
@@ -247,7 +247,7 @@ return (
     <CustomHeader 
       title="Share Recipes!  "
       />
-      <ProfileIcon className="profileIcon" />
+      
       <TouchableOpacity
         style={styles.favoriteRecipesIcon}
         onPress={() => router.push("/(tabs)/favorite_recipes")}
