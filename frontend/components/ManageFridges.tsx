@@ -79,7 +79,6 @@ const FridgeCard = ({
             </View>
           )}
         </View>
-        <Text style={styles.fridgeId}>ID: {fridge.id}</Text>
 
         {fridgeMates.length > 0 && (
           <View style={styles.fridgeMatesSection}>
