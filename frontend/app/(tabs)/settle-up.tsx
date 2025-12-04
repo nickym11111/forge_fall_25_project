@@ -24,11 +24,15 @@ interface BreakdownItem {
 
 interface ContributingItem {
   type: "paid" | "shared";
+  item_id?: string;
+  created_at?: string;
   item_title: string;
-  price: number;
+  price?: number;
   split_with?: number;
   amount_owed?: number;
   added_by?: string;
+  added_by_id?: string;
+  outstanding_amount?: number;
 }
 
 interface Balance {
@@ -39,6 +43,7 @@ interface Balance {
   balance: number;
   breakdown: BreakdownItem[];
   items: ContributingItem[];
+  last_cleared_at?: string;
 }
 
 interface BalanceResponse {
@@ -53,6 +58,7 @@ export default function SettleUpScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string>("");
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
+  const [clearingUserId, setClearingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBalances();
@@ -113,6 +119,55 @@ export default function SettleUpScreen() {
     fetchBalances();
   };
 
+  const clearBalance = async (userId: string) => {
+    try {
+      setClearingUserId(userId);
+
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        throw new Error("You must be logged in to clear balances");
+      }
+
+      const response = await fetch(
+        `${API_URL}/cost-splitting/balances/${userId}/clear`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+        }
+      );
+
+      let result: any = null;
+      try {
+        result = await response.json();
+      } catch (parseErr) {
+        console.warn("Failed to parse clear balance response", parseErr);
+      }
+
+      if (!response.ok) {
+        const message =
+          result?.detail || result?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(message);
+      }
+
+      if (result?.balances) {
+        setBalances(result.balances);
+      } else {
+        fetchBalances();
+      }
+    } catch (err: any) {
+      console.error("Error clearing balance:", err);
+    } finally {
+      setClearingUserId(null);
+    }
+  };
+
   const getDisplayName = (balance: Balance | BreakdownItem): string => {
     if (balance.first_name && balance.last_name) {
       return `${balance.first_name} ${balance.last_name}`;
@@ -138,6 +193,23 @@ export default function SettleUpScreen() {
     if (amount > 0) return "is owed";
     if (amount < 0) return "owes";
     return "settled";
+  };
+
+  const formatAmount = (value?: number): string => {
+    if (value === undefined || value === null) {
+      return "0.00";
+    }
+    return Number(value).toFixed(2);
+  };
+
+  const formatDateTime = (value?: string): string => {
+    if (!value) return "";
+    try {
+      return new Date(value).toLocaleString();
+    } catch (err) {
+      console.warn("Unable to format date", err);
+      return value;
+    }
   };
 
   if (loading && !refreshing) {
@@ -194,17 +266,39 @@ export default function SettleUpScreen() {
               <View key={balance.user_id} style={styles.balanceCard}>
                 <View style={styles.balanceCardHeader}>
                   <Text style={styles.userName}>{getDisplayName(balance)}</Text>
-                  <View
-                    style={[
-                      styles.balanceBadge,
-                      { backgroundColor: getBalanceColor(balance.balance) },
-                    ]}
-                  >
-                    <Text style={styles.balanceAmount}>
-                      {formatBalance(balance.balance)}
-                    </Text>
+                  <View style={styles.headerActions}>
+                    <View
+                      style={[
+                        styles.balanceBadge,
+                        { backgroundColor: getBalanceColor(balance.balance) },
+                      ]}
+                    >
+                      <Text style={styles.balanceAmount}>
+                        {formatBalance(balance.balance)}
+                      </Text>
+                    </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.clearButton,
+                        clearingUserId === balance.user_id && styles.clearButtonDisabled,
+                      ]}
+                      onPress={() => clearBalance(balance.user_id)}
+                      disabled={clearingUserId === balance.user_id}
+                    >
+                      {clearingUserId === balance.user_id ? (
+                        <ActivityIndicator size="small" color="#ffffff" />
+                      ) : (
+                        <Text style={styles.clearButtonText}>Clear</Text>
+                      )}
+                    </TouchableOpacity>
                   </View>
                 </View>
+
+                {balance.last_cleared_at && (
+                  <Text style={styles.lastClearedText}>
+                    Last cleared {formatDateTime(balance.last_cleared_at)}
+                  </Text>
+                )}
                 
                 {/* Detailed Breakdown */}
                 {balance.breakdown && balance.breakdown.length > 0 && (
@@ -258,14 +352,22 @@ export default function SettleUpScreen() {
                               </Text>
                               {item.type === "paid" && (
                                 <Text style={styles.itemSubtext}>
-                                  Paid ${item.price.toFixed(2)} • Split with{" "}
-                                  {item.split_with} {item.split_with === 1 ? "person" : "people"}
+                                  Outstanding ${formatAmount(item.outstanding_amount)} of ${
+                                    formatAmount(item.price)
+                                  }
+                                  {item.split_with !== undefined && (
+                                    <Text>
+                                      {" "}
+                                      • Split with {item.split_with}{" "}
+                                      {item.split_with === 1 ? "person" : "people"}
+                                    </Text>
+                                  )}
                                 </Text>
                               )}
                               {item.type === "shared" && (
                                 <Text style={styles.itemSubtext}>
-                                  Shared from {item.added_by} • Your share: $
-                                  {item.amount_owed?.toFixed(2)}
+                                  Shared from {item.added_by ?? "Unknown"} • Your share: $
+                                  {formatAmount(item.amount_owed)}
                                 </Text>
                               )}
                             </View>
@@ -381,6 +483,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   userName: {
     fontSize: 18,
     fontWeight: "600",
@@ -396,6 +502,30 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "white",
+  },
+  clearButton: {
+    marginLeft: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    backgroundColor: "#14b8a6",
+    shadowColor: "#0f766e",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  clearButtonDisabled: {
+    opacity: 0.5,
+  },
+  clearButtonText: {
+    color: "#ffffff",
+    fontWeight: "700",
+  },
+  lastClearedText: {
+    fontSize: 12,
+    color: "#888",
+    marginBottom: 8,
   },
   balanceStatus: {
     fontSize: 14,

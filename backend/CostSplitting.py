@@ -1,9 +1,47 @@
 from fastapi import APIRouter, HTTPException, Depends
 from database import supabase
 from service import get_current_user
-from typing import Dict, List
+from typing import Dict, List, Optional, Any
+from collections import defaultdict
+from datetime import datetime, timezone
 
 app = APIRouter()
+
+SETTLEMENT_TABLE = "cost_balance_settlements"
+AMOUNT_TOLERANCE = 0.01
+
+
+def _round_currency(value: float) -> float:
+    result = round(float(value) + 1e-9, 2)
+    if abs(result) < AMOUNT_TOLERANCE:
+        return 0.0
+    return result
+
+
+def _parse_iso_datetime(value: Optional[str]) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        if isinstance(value, datetime):
+            dt = value
+        else:
+            text = value
+            if text.endswith("Z"):
+                text = text[:-1] + "+00:00"
+            dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
+
+
+def _format_iso_datetime(value: Optional[datetime]) -> Optional[str]:
+    if not value:
+        return None
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat()
 
 
 def _simplify_debts(balances: Dict[str, float], users_map: Dict[str, dict]) -> List[dict]:
@@ -41,18 +79,17 @@ def _simplify_debts(balances: Dict[str, float], users_map: Dict[str, dict]) -> L
         # Find max debtor (most negative) and max creditor (most positive)
         max_debtor = min(working_balances.items(), key=lambda x: x[1])
         max_creditor = max(working_balances.items(), key=lambda x: x[1])
-        
+
         debtor_id, debtor_balance = max_debtor
         creditor_id, creditor_balance = max_creditor
-        
-        # If both are essentially zero, we're done
-        if abs(debtor_balance) < 0.01 and abs(creditor_balance) < 0.01:
+
+        if abs(debtor_balance) <= AMOUNT_TOLERANCE and abs(creditor_balance) <= AMOUNT_TOLERANCE:
             break
-        
-        # Calculate settlement amount (minimum of what debtor owes and creditor is owed)
+
         settlement_amount = min(abs(debtor_balance), abs(creditor_balance))
-        
-        if settlement_amount > 0.01:
+        settlement_amount = _round_currency(settlement_amount)
+
+        if settlement_amount > AMOUNT_TOLERANCE:
             transactions.append({
                 "from_user_id": debtor_id,
                 "to_user_id": creditor_id,
@@ -60,89 +97,194 @@ def _simplify_debts(balances: Dict[str, float], users_map: Dict[str, dict]) -> L
                 "to_user": users_map.get(creditor_id, {"email": "Unknown", "first_name": "Unknown"}),
                 "amount": round(settlement_amount, 2)
             })
-        
-        # Update balances
-        working_balances[debtor_id] += settlement_amount
-        working_balances[creditor_id] -= settlement_amount
-        
-        # Remove users with zero balance
-        if abs(working_balances[debtor_id]) < 0.01:
+
+        working_balances[debtor_id] = working_balances.get(debtor_id, 0.0) + settlement_amount
+        working_balances[creditor_id] = working_balances.get(creditor_id, 0.0) - settlement_amount
+
+        if abs(working_balances.get(debtor_id, 0.0)) <= AMOUNT_TOLERANCE and debtor_id in working_balances:
             del working_balances[debtor_id]
-        if creditor_id in working_balances and abs(working_balances[creditor_id]) < 0.01:
+        if abs(working_balances.get(creditor_id, 0.0)) <= AMOUNT_TOLERANCE and creditor_id in working_balances:
             del working_balances[creditor_id]
-    
+
     return transactions
 
 
-@app.get("/balances")
-async def get_fridge_balances(current_user=Depends(get_current_user)):
-    """
-    Calculate the balance for each user in the fridge with detailed breakdown.
-    
-    Logic:
-    - Items added via receipt are shared equally among ALL fridge mates
-    - Manually added items are shared among selected users (shared_by field)
-    - Each user's balance shows how much they owe (negative) or are owed (positive)
-    - Includes detailed breakdown of transactions between users
-    """
-    try:
-        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
-        
-        if not fridge_id:
-            raise HTTPException(status_code=403, detail="User has no fridge assigned")
+def _calculate_fridge_balances(fridge_id: str) -> Dict[str, Any]:
+    memberships_response = supabase.table("fridge_memberships").select(
+        "users(id, email, first_name, last_name)"
+    ).eq("fridge_id", fridge_id).execute()
 
-        memberships_response = supabase.table("fridge_memberships").select(
-            "users(id, email, first_name, last_name)"
-        ).eq("fridge_id", fridge_id).execute()
-        
-        all_users = []
-        if memberships_response.data:
-            for membership in memberships_response.data:
-                if membership.get("users"):
-                    all_users.append(membership["users"])
-        
-        if not all_users:
-            return {
-                "status": "success",
-                "fridge_id": fridge_id,
-                "balances": []
-            }
-        
-        user_ids = [user["id"] for user in all_users]
-        
-        # Create user lookup
-        users_map = {user["id"]: user for user in all_users}
-        
-        # Get all fridge items with their metadata
-        items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
-        
-        # Initialize balances for each user
-        balances: Dict[str, float] = {user["id"]: 0.0 for user in all_users}
-        
-        # Track detailed transactions: transactions[debtor][creditor] = amount
-        transactions: Dict[str, Dict[str, float]] = {user_id: {} for user_id in user_ids}
-        
-        # Track items contributing to each user's balance
-        user_items: Dict[str, List[dict]] = {user_id: [] for user_id in user_ids}
-        
-        # Process each item
-        for item in items_response.data:
-            price = item.get("price", 0.0)
-            added_by = item.get("added_by")
-            shared_by = item.get("shared_by")  # List of user IDs or None
-            
-            if price <= 0 or not added_by:
-                continue  # Skip items with no price or no owner
-            
-            # Determine who shares this item
-            if shared_by is None or len(shared_by) == 0:
-                # Receipt items: shared by ALL fridge mates
-                sharers = user_ids
-            else:
-                # Manual items: shared by selected users
-                sharers = shared_by
-            
-            if len(sharers) == 0:
+    all_users: List[dict] = []
+    if memberships_response.data:
+        for membership in memberships_response.data:
+            user_data = membership.get("users")
+            if user_data:
+                all_users.append(user_data)
+
+    if not all_users:
+        return {
+            "balances": [],
+            "users_map": {},
+            "pair_totals": {},
+            "balances_map": {},
+            "latest_clears": {},
+        }
+
+    users_map: Dict[str, dict] = {
+        user["id"]: user for user in all_users if user.get("id")
+    }
+    user_ids = list(users_map.keys())
+
+    if not user_ids:
+        return {
+            "balances": [],
+            "users_map": {},
+            "pair_totals": {},
+            "balances_map": {},
+            "latest_clears": {},
+        }
+
+    items_response = supabase.table("fridge_items").select("*").eq("fridge_id", fridge_id).execute()
+    items = items_response.data or []
+
+    settlements: List[dict] = []
+    try:
+        settlements_response = (
+            supabase.table(SETTLEMENT_TABLE)
+            .select("id, fridge_id, from_user_id, to_user_id, amount, cleared_at, created_at")
+            .eq("fridge_id", fridge_id)
+            .order("cleared_at", desc=False)
+            .execute()
+        )
+        settlements = settlements_response.data or []
+    except Exception as exc:
+        print(f"Warning: unable to fetch settlements for fridge {fridge_id}: {exc}")
+        settlements = []
+
+    latest_clears: Dict[str, datetime] = {}
+    for settlement in settlements:
+        timestamp = settlement.get("cleared_at") or settlement.get("created_at")
+        parsed_ts = _parse_iso_datetime(timestamp)
+        if not parsed_ts:
+            continue
+        for key in ("from_user_id", "to_user_id"):
+            uid = settlement.get(key)
+            if not uid:
+                continue
+            existing = latest_clears.get(uid)
+            if not existing or parsed_ts > existing:
+                latest_clears[uid] = parsed_ts
+
+    pair_contributions: Dict[str, Dict[str, List[dict]]] = defaultdict(lambda: defaultdict(list))
+    item_details: Dict[str, dict] = {}
+    valid_user_set = set(user_ids)
+
+    for item in items:
+        try:
+            price = float(item.get("price") or 0.0)
+        except (TypeError, ValueError):
+            price = 0.0
+
+        if price <= AMOUNT_TOLERANCE:
+            continue
+
+        added_by = item.get("added_by")
+        if not added_by or added_by not in valid_user_set:
+            continue
+
+        shared_by_raw = item.get("shared_by")
+        if shared_by_raw in (None, [], {}):
+            potential_sharers = list(user_ids)
+        else:
+            potential_sharers = shared_by_raw
+
+        if isinstance(potential_sharers, str):
+            potential_sharers = [potential_sharers]
+        elif isinstance(potential_sharers, dict):
+            potential_sharers = list(potential_sharers.values())
+        elif not isinstance(potential_sharers, list):
+            potential_sharers = list(potential_sharers)
+
+        valid_sharers = [uid for uid in potential_sharers if uid in valid_user_set]
+        if not valid_sharers:
+            continue
+
+        cost_per_person = round(price / len(valid_sharers), 2)
+        total_after_rounding = cost_per_person * len(valid_sharers)
+        remainder = round(price - total_after_rounding, 2)
+
+        item_id = item.get("id")
+        if not item_id:
+            fallback_created_at = item.get("created_at") or ""
+            item_id = f"{added_by}-{fallback_created_at}"
+
+        item_title = item.get("title") or item.get("name") or "Item"
+        created_at = item.get("created_at")
+        item_details[item_id] = {
+            "title": item_title,
+            "price": _round_currency(price),
+            "split_with": len(valid_sharers),
+            "created_at": created_at,
+            "added_by_id": added_by,
+        }
+
+        remainder_applied = False
+        for sharer_id in valid_sharers:
+            amount_to_pay = cost_per_person
+            if not remainder_applied and abs(remainder) > AMOUNT_TOLERANCE:
+                amount_to_pay = round(amount_to_pay + remainder, 2)
+                remainder_applied = True
+
+            amount_to_pay = round(amount_to_pay, 2)
+            if amount_to_pay <= AMOUNT_TOLERANCE:
+                continue
+
+            if sharer_id == added_by:
+                continue
+
+            pair_contributions[sharer_id][added_by].append({
+                "item_id": item_id,
+                "item_title": item_title,
+                "amount_original": amount_to_pay,
+                "amount_remaining": amount_to_pay,
+                "created_at": created_at,
+                "added_by_id": added_by,
+            })
+
+    fallback_dt = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    for creditors_map in pair_contributions.values():
+        for contributions_list in creditors_map.values():
+            contributions_list.sort(
+                key=lambda entry: _parse_iso_datetime(entry.get("created_at")) or fallback_dt
+            )
+
+    for settlement in settlements:
+        from_id = settlement.get("from_user_id")
+        to_id = settlement.get("to_user_id")
+        try:
+            amount = float(settlement.get("amount") or 0.0)
+        except (TypeError, ValueError):
+            amount = 0.0
+
+        amount = _round_currency(amount)
+        if amount <= AMOUNT_TOLERANCE:
+            continue
+
+        debtor_map = pair_contributions.get(from_id)
+        if not debtor_map:
+            continue
+
+        contributions_list = debtor_map.get(to_id)
+        if not contributions_list:
+            continue
+
+        remaining_amount = amount
+        for contribution in contributions_list:
+            if remaining_amount <= AMOUNT_TOLERANCE:
+                break
+
+            current_remaining = _round_currency(contribution.get("amount_remaining", 0.0))
+            if current_remaining <= AMOUNT_TOLERANCE:
                 continue
             
             # Calculate cost per person (rounded down to 2 decimals)
@@ -280,13 +422,96 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
         return {
             "status": "success",
             "fridge_id": fridge_id,
-            "balances": balance_list
+            "balances": result["balances"],
         }
-        
+
     except HTTPException:
         raise
-    except Exception as e:
-        print(f"Error calculating balances: {str(e)}")
+    except Exception as exc:
+        print(f"Error calculating balances: {exc}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Failed to calculate balances: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to calculate balances: {exc}")
+
+
+@app.post("/balances/{user_id}/clear")
+async def clear_user_balance(user_id: str, current_user=Depends(get_current_user)):
+    try:
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+
+        if not fridge_id:
+            raise HTTPException(status_code=403, detail="User has no fridge assigned")
+
+        calculation = _calculate_fridge_balances(fridge_id)
+        users_map = calculation["users_map"]
+
+        if user_id not in users_map:
+            raise HTTPException(status_code=404, detail="User not found in this fridge")
+
+        pair_totals = calculation["pair_totals"]
+
+        settlements_to_insert: List[dict] = []
+        timestamp = datetime.now(timezone.utc).isoformat()
+        for to_user_id, amount in pair_totals.get(user_id, {}).items():
+            amount = _round_currency(amount)
+            if amount <= AMOUNT_TOLERANCE:
+                continue
+
+            payload = {
+                "fridge_id": fridge_id,
+                "from_user_id": user_id,
+                "to_user_id": to_user_id,
+                "amount": amount,
+                "cleared_at": timestamp,
+            }
+
+            settlements_to_insert.append(payload)
+
+        for debtor_id, creditors in pair_totals.items():
+            if debtor_id == user_id:
+                continue
+
+            amount = creditors.get(user_id)
+            if amount:
+                amount = _round_currency(amount)
+                if amount > AMOUNT_TOLERANCE:
+                    payload = {
+                        "fridge_id": fridge_id,
+                        "from_user_id": debtor_id,
+                        "to_user_id": user_id,
+                        "amount": amount,
+                        "cleared_at": timestamp,
+                    }
+
+                    settlements_to_insert.append(payload)
+
+        if not settlements_to_insert:
+            return {
+                "status": "success",
+                "message": "Balance is already clear for this user.",
+                "balances": calculation["balances"],
+                "cleared_user_id": user_id,
+            }
+
+        try:
+            supabase.table(SETTLEMENT_TABLE).insert(settlements_to_insert).execute()
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Failed to record settlements: {exc}")
+
+        updated = _calculate_fridge_balances(fridge_id)
+
+        return {
+            "status": "success",
+            "message": f"Cleared balance for user {user_id}",
+            "balances": updated["balances"],
+            "cleared_user_id": user_id,
+            "cleared_at": timestamp,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        print(f"Error clearing balance for user {user_id}: {exc}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to clear balance: {exc}")
