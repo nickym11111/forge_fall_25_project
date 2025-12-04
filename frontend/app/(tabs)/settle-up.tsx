@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import {
   StyleSheet,
   ScrollView,
@@ -60,10 +60,6 @@ export default function SettleUpScreen() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [clearingUserId, setClearingUserId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchBalances();
-  }, []);
-
   const toggleItemsExpanded = (userId: string) => {
     setExpandedItems((prev) => {
       const newSet = new Set(prev);
@@ -76,7 +72,7 @@ export default function SettleUpScreen() {
     });
   };
 
-  const fetchBalances = async () => {
+  const fetchBalances = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -112,7 +108,13 @@ export default function SettleUpScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBalances();
+    }, [fetchBalances])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
