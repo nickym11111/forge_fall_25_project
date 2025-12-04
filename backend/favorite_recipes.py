@@ -2,6 +2,9 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Optional, List
 from database import supabase
+from fastapi import FastAPI, HTTPException, Depends, Header
+from service import get_current_user, generate_invite_code
+from pydantic import BaseModel
 
 app = APIRouter()
 
@@ -22,7 +25,7 @@ def add_item(recipe: Recipe, user: User):
             supabase.table("favorite_recipes")
             .insert({
                 "recipe_name": recipe.name,
-                "added by": recipe.added_by,
+                "added_by": recipe.added_by,
                 "fridge_id" : user.fridge_id
             })
             .execute()
@@ -34,20 +37,23 @@ def add_item(recipe: Recipe, user: User):
         print("Error adding recipe:", e)
         return {"error": str(e)}
 
-#Get All Current fav recipes
 @app.get("/get-favorite-recipes/")
 def get_items():
     response = supabase.table("favorite_recipes").select("*").execute()
     print("Retrieved recipes:", response.data)
     return {"data": response.data}
 
+
+class RecipeDelete(BaseModel):
+    recipe_name: str
+
 #Delete Item
-@app.delete("/delete-recipe/{recipe_id}")
-def delete_item(recipe_id: str):
+@app.delete("/delete-recipe/")
+def delete_item(payload: RecipeDelete):
     response = (
-        supabase.table("favorite_recipe")
+        supabase.table("favorite_recipes")
         .delete()
-        .eq("id", recipe_id)
+        .eq("recipe_name", payload.recipe_name)
         .execute()
     )
     return {"data": response.data}

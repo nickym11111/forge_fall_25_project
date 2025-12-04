@@ -31,19 +31,25 @@ async def get_current_user(
     
     try:
         token = authorization.replace("Bearer ", "")
+        # print(f"DEBUG: Processing token: {token[:10]}...")
         response = supabase.auth.get_user(token)
         
         if not response or not response.user:
+            print("DEBUG: No user found in Supabase Auth")
             raise HTTPException(status_code=401, detail="Invalid token")
+            
+        print(f"DEBUG: Auth user found: {response.user.id}")
         
         user_response = supabase.table("users").select(
-            "id, email, active_fridge_id, first_name, last_name"
+            "id, email, active_fridge_id, first_name, last_name, profile_photo"
         ).eq("id", response.user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:
+            print(f"DEBUG: User {response.user.id} not found in public.users table")
             return response.user
         
         user_data = user_response.data[0]
+        print(f"DEBUG: User data retrieved: {user_data.get('email')}, Active Fridge: {user_data.get('active_fridge_id')}")
         
         user_data["fridge_id"] = user_data.get("active_fridge_id")
         
@@ -62,8 +68,10 @@ async def get_current_user_with_fridgeMates(
     """Get user with their fridgeMates from their active/current fridge"""
     try:
         fridge_id = current_user.get("fridge_id")
+        print(f"DEBUG: Getting fridgeMates for fridge {fridge_id}")
         
         if not fridge_id:
+            print("DEBUG: No fridge_id for user, returning empty fridgeMates")
             current_user["fridgeMates"] = []
             return current_user
         
@@ -77,11 +85,13 @@ async def get_current_user_with_fridgeMates(
                 if membership.get("users"):
                     fridgeMates.append(membership["users"])
         
+        print(f"DEBUG: Found {len(fridgeMates)} fridgeMates")
         current_user["fridgeMates"] = fridgeMates
         
         return current_user
         
     except Exception as e:
+        print(f"DEBUG: Error in get_current_user_with_fridgeMates: {e}")
         import traceback
         traceback.print_exc()
         current_user["fridgeMates"] = []

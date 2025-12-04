@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { supabase } from "../utils/client";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
 
@@ -144,8 +143,9 @@ export default function SettleUpScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.centerContainer}>
-        <CustomHeader title="Settle Up 💰" />
-        <ProfileIcon className="profileIcon" />
+        <View style={styles.centerContainer}>
+        <CustomHeader title="Settle Up"/>
+        </View>
         <ActivityIndicator size="large" color="purple" />
         <Text style={styles.loadingText}>Loading balances...</Text>
       </View>
@@ -155,8 +155,9 @@ export default function SettleUpScreen() {
   if (error) {
     return (
       <View style={styles.centerContainer}>
-        <CustomHeader title="Settle Up 💰" />
-        <ProfileIcon className="profileIcon" />
+        <View style={{ width: "100%", alignItems: "center" }}>
+        <CustomHeader title="Settle Up" />
+        </View>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
           <Text style={styles.retryButtonText}>Retry</Text>
@@ -167,8 +168,9 @@ export default function SettleUpScreen() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Settle Up 💰" />
-      <ProfileIcon className="profileIcon" />
+      <View>
+        <CustomHeader title="Settle Up" />
+      </View>
       
       <ScrollView
         style={styles.scrollView}
@@ -299,11 +301,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F9FF",
   },
+  headerContainer: {
+    textAlign: "center"
+  },
   centerContainer: {
+    width: "100%",
     flex: 1,
     backgroundColor: "#F8F9FF",
     justifyContent: "center",
     alignItems: "center",
+    textAlign: "center"
   },
   scrollView: {
     flex: 1,
@@ -315,6 +322,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: "#666",
+    marginLeft: "auto",
+    marginRight: "auto",
   },
   errorText: {
     color: "#F44336",

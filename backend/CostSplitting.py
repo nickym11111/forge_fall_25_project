@@ -19,9 +19,25 @@ def _simplify_debts(balances: Dict[str, float], users_map: Dict[str, dict]) -> L
     # Create a working copy of balances
     working_balances = {k: v for k, v in balances.items() if abs(v) > 0.01}
     
+    print(f"DEBUG: Starting debt simplification. Initial balances: {working_balances}")
+    total_balance = sum(working_balances.values())
+    print(f"DEBUG: Sum of balances: {total_balance}")
+    
+    if abs(total_balance) > 0.1:
+        print(f"WARNING: Balances do not sum to zero (sum={total_balance}). This may cause issues.")
+    
     transactions = []
     
+    loop_count = 0
+    MAX_LOOPS = 100
+    
     while working_balances:
+        loop_count += 1
+        if loop_count > MAX_LOOPS:
+            print(f"CRITICAL: Infinite loop detected in debt simplification. Breaking after {MAX_LOOPS} iterations.")
+            print(f"Current working balances: {working_balances}")
+            break
+            
         # Find max debtor (most negative) and max creditor (most positive)
         max_debtor = min(working_balances.items(), key=lambda x: x[1])
         max_creditor = max(working_balances.items(), key=lambda x: x[1])
@@ -40,8 +56,8 @@ def _simplify_debts(balances: Dict[str, float], users_map: Dict[str, dict]) -> L
             transactions.append({
                 "from_user_id": debtor_id,
                 "to_user_id": creditor_id,
-                "from_user": users_map[debtor_id],
-                "to_user": users_map[creditor_id],
+                "from_user": users_map.get(debtor_id, {"email": "Unknown", "first_name": "Unknown"}),
+                "to_user": users_map.get(creditor_id, {"email": "Unknown", "first_name": "Unknown"}),
                 "amount": round(settlement_amount, 2)
             })
         
@@ -148,9 +164,47 @@ async def get_fridge_balances(current_user=Depends(get_current_user)):
                     "type": "paid",
                     "split_with": len(sharers)
                 })
+            else:
+                print(f"WARNING: Item {item.get('title')} added by user {added_by} who is not in the fridge. Adding to balances anyway.")
+                balances[added_by] = balances.get(added_by, 0.0) + price
+                # We need to add them to users_map so we don't crash later
+                if added_by not in users_map:
+                    # Try to fetch this user info
+                    try:
+                        user_resp = supabase.table("users").select("id, email, first_name, last_name").eq("id", added_by).execute()
+                        if user_resp.data:
+                            users_map[added_by] = user_resp.data[0]
+                            all_users.append(user_resp.data[0])
+                            user_ids.append(added_by)
+                            user_items[added_by] = []
+                            transactions[added_by] = {}
+                    except Exception as e:
+                        print(f"Error fetching missing user {added_by}: {e}")
+                        users_map[added_by] = {"id": added_by, "email": "Unknown", "first_name": "Unknown"}
             
             # Each sharer owes their portion
             for idx, sharer_id in enumerate(sharers):
+                # Handle missing sharers (e.g. ex-members)
+                if sharer_id not in balances:
+                    print(f"WARNING: Sharer {sharer_id} for item {item.get('title')} is not in the fridge. Adding to balances.")
+                    balances[sharer_id] = 0.0
+                    # Add to users_map and other structures
+                    if sharer_id not in users_map:
+                        try:
+                            user_resp = supabase.table("users").select("id, email, first_name, last_name").eq("id", sharer_id).execute()
+                            if user_resp.data:
+                                users_map[sharer_id] = user_resp.data[0]
+                                all_users.append(user_resp.data[0])
+                                user_ids.append(sharer_id)
+                                user_items[sharer_id] = []
+                                transactions[sharer_id] = {}
+                        except Exception as e:
+                            print(f"Error fetching missing sharer {sharer_id}: {e}")
+                            users_map[sharer_id] = {"id": sharer_id, "email": "Unknown", "first_name": "Unknown"}
+                            # Ensure structures exist even if fetch fails
+                            if sharer_id not in user_items: user_items[sharer_id] = []
+                            if sharer_id not in transactions: transactions[sharer_id] = {}
+
                 if sharer_id in balances:
                     # First person gets the extra cents
                     amount_to_pay = cost_per_person + (remainder if idx == 0 else 0)

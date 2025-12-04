@@ -20,11 +20,16 @@ from favorite_recipes import app as favorite_recipes_router
 #from ai_expiration import app as ai_expiration_router
 from dotenv import load_dotenv
 
+# Import new API routers
+from api.fridge_requests import app as fridge_requests_api_router
+from api.shopping_list import app as shopping_list_api_router
+from api.profile_photos import app as profile_photos_router
 
 load_dotenv()
 app = FastAPI()
 app.include_router(users_router)
 app.include_router(recipes_router)
+app.include_router(favorite_recipes_router)
 app.include_router(recipe_gen_router)
 #app.include_router(ai_expiration_router, tags=["ai"])
 
@@ -35,6 +40,7 @@ origins = [
     "http://127.0.0.1:8081",
     "http://localhost:8082",
     "http://127.0.0.1:8082",
+    "*",  # Allow all origins for development (mobile app)
 ]
 
 app.add_middleware(
@@ -103,27 +109,28 @@ async def create_fridge_item(
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
+        # insert new item to fridge
         response = supabase.table("fridge_items").insert({
-            "name": item.name,
+            "name": item.name.strip().lower(),
             "quantity": item.quantity,
-            "days_till_expiration": days_till_expiration, 
+            "days_till_expiration": days_till_expiration,
             "fridge_id": fridge_id,
             "added_by": current_user["id"],
             "shared_by": item.shared_by,
-            "price": item.price, #come back to this,
-            "fridge_id": fridge_id #CHANGED HERE
+            "price": item.price
         }).execute()
 
-        #Remove matching item from shopping list
+        #check off matching item in shopping_list
         supabase.table("shopping_list") \
-            .delete() \
-            .eq("name", item.name.lower()) \
+            .update({"checked": True}) \
+            .ilike("name", item.name.strip().lower()) \
             .eq("fridge_id", fridge_id) \
+            .eq("checked", False) \
             .execute()
         
         return {
             "status": "success",
-            "message": "Fridge item added and removed from shopping list",
+            "message": "Fridge item added and shopping list item checked off",
             "data": response.data,
         }
 
@@ -431,6 +438,11 @@ app.include_router(favorite_recipes_router, prefix="/favorite-recipes")
 app.include_router(ai_expiration_router, prefix="/expiry")
 app.include_router(cost_splitting_router, prefix="/cost-splitting")
 app.include_router(shopping_router, prefix="/shopping")
+
+# Include new API routers
+app.include_router(fridge_requests_api_router, prefix="/api/fridge-requests", tags=["api", "fridge-requests"])
+app.include_router(shopping_list_api_router, prefix="/api/shopping-list", tags=["api", "shopping-list"])
+app.include_router(profile_photos_router, prefix="/api/profile-photos", tags=["api", "profile-photos"])
        
 
 # Login Page

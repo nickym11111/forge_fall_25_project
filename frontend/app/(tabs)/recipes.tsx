@@ -224,7 +224,7 @@ const RecipeItem = ({
         
         try {
             if (newState) {
-                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/add-favorite-recipe/`, {
+                const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/favorite-recipes/add-favorite-recipe/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dataToSend),

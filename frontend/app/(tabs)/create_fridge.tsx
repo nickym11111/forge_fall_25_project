@@ -18,7 +18,6 @@ import { router } from 'expo-router';
 //Custom components
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 
 //Type for API response
 interface ApiResponse {
@@ -216,7 +215,7 @@ export default function CreateFridgeScreen() {
       setFridgeName("");
       setEmails([""]);
 
-      router.replace("/(tabs)/two");
+      router.replace(`/(tabs)/two`);
 
       Alert.alert(
         "Success!",
@@ -241,7 +240,6 @@ export default function CreateFridgeScreen() {
       title="Create Fridge  "
       logo={require('../../assets/images/FridgeIcon.png')}
       />
-      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.formContainer}>
         <View style={styles.form}>
           {/*Enter Fridge Name*/}
@@ -257,43 +255,6 @@ export default function CreateFridgeScreen() {
             onSubmitEditing={Keyboard.dismiss}
             blurOnSubmit={true}
           />
-
-          {/*Invite Fridgemates*/}
-          <Text style={styles.label}>Invite KitchenMates (Email):</Text>
-
-          {/*Email fields*/}
-          {emails.map((email, index) => (
-            <View key={index} style={styles.inputRow}>
-              <TextInput
-                style={styles.input}
-                placeholder="friend@example.com"
-                placeholderTextColor="gray"
-                value={email}
-                onChangeText={(text) => enterEmail(text, index)}
-                editable={!isLoading}
-                returnKeyType="done"
-                onSubmitEditing={Keyboard.dismiss}
-                blurOnSubmit={true}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-              {/*Remove email button*/}
-              {emails.length > 1 && (
-                <TouchableOpacity
-                  onPress={() => removeEmail(index)}
-                  style={styles.removeButton}
-                  disabled={isLoading}
-                >
-                  <Ionicons name="remove-circle" size={24} color="#e63946" />
-                </TouchableOpacity>
-              )}
-            </View>
-          ))}
-
-          {/*Add more email fields*/}
-          <Text style={styles.addEmailText} onPress={addEmailField}>
-            + Add Another Email
-          </Text>
 
           {/*Create button*/}
           <CustomButton
