@@ -245,7 +245,13 @@ const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalP
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FAFBFC",
+    backgroundColor: "#F8F9FF",
+  },
+  closeButton: {
+    position: "absolute",
+    top: 80,
+    right: 20,
+    zIndex: 1000,
   },
   header: {
     flexDirection: "row",

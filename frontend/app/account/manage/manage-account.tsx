@@ -2,7 +2,6 @@ import { StyleSheet, View, Text, Image, TouchableOpacity, Platform, ActivityIndi
 import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
-import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "@/app/context/authContext";
 import { navigate } from "expo-router/build/global-state/routing";
 import { useEffect, useState } from "react";

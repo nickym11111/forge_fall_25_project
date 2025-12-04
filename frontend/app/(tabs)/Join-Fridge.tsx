@@ -4,6 +4,7 @@ import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
 import { router } from "expo-router";
+import CustomHeader from "@/components/CustomHeader";
 import { supabase } from "../utils/client";
 
 interface ApiResponse {

@@ -12,9 +12,9 @@ import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
-import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
 import { router } from "expo-router";
+import ProfileIcon from "@/components/ProfileIcon";
 
 interface ItemProps {
   title: string;
@@ -246,7 +246,6 @@ return (
     <View style={styles.container}>
     <CustomHeader 
       title="Share Recipes!  "
-      logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ProfileIcon className="profileIcon" />
       <TouchableOpacity

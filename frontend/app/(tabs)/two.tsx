@@ -25,8 +25,8 @@ import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 import { useFocusEffect } from "@react-navigation/native";
+import ProfileIcon from "@/components/ProfileIcon";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -35,6 +35,7 @@ const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 // --- Type Definitions ---
 
 interface FridgeMate {
+  id: string;
   first_name?: string;
   last_name?: string;
   name?: string;
@@ -45,6 +46,7 @@ interface FridgeMate {
 interface FoodItem {
   id: number;
   name: string;
+  price?: number
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -169,7 +171,8 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
 };
 
 export default function TabOneScreen() {
-  const{ user } = useAuth();
+
+  const { user } = useAuth();
   const [data, setData] = useState<FoodItem[]>([]); 
   const [searchValue, setSearchValue] = useState<string>("");
   
@@ -185,22 +188,6 @@ export default function TabOneScreen() {
   const [users, setUsers] = useState<any[]>([]);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-
-  // NEW: Handler functions for delete and quantity change
-  const handleDelete = (item: FoodItem) => {
-    setData((prev) => prev.filter((i) => i.id !== item.id));
-    originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
-  };
-
-  const handleQuantityChange = (item: FoodItem, delta: number) => {
-    const newQty = Math.max(1, (item.quantity || 1) + delta);
-    const updated = { ...item, quantity: newQty };
-    
-    setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
-    originalHolder.current = originalHolder.current.map((it) =>
-      it.id === item.id ? updated : it
-    );
-  };
 
   const handleEdit = (item: FoodItem) => {
     setEditItem(item);
@@ -372,6 +359,99 @@ export default function TabOneScreen() {
   }, []);
 
   // Refresh when tab is focused, but only show refreshing indicator (not full loading screen)
+  const handleDelete = async (item: FoodItem) => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        Alert.alert("Error", "Please log in to delete items");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/items/${item.id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to delete item");
+      }
+
+      // Update local state after successful backend delete
+      setData((prev) => prev.filter((i) => i.id !== item.id));
+      originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
+      
+    } catch (err) {
+      console.error("Error deleting item:", err);
+      Alert.alert("Error", "Could not delete item. Please try again.");
+      // Refresh to sync with backend
+      fetchFridgeItems();
+    }
+  };
+
+
+  const handleQuantityChange = async (item: FoodItem, delta: number) => {
+    const newQty = Math.max(1, (item.quantity || 1) + delta);
+    const updated = { ...item, quantity: newQty };
+
+    const getExpiryDateString = (days: number | undefined) => {
+      const date = new Date();
+      date.setDate(date.getDate() + (days || 0)); 
+      return date.toISOString().split('T')[0]; 
+  };
+
+
+    const getSharedByIds = (mates: FridgeMate[] | null | undefined): string[] | null => {
+      if (!mates || mates.length === 0) return null;
+      return mates.map((mate) => mate.id);
+    };
+
+    
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error || !session) {
+        Alert.alert("Error", "Please log in to update items");
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/fridge_items/${item.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          name: item.name,
+          quantity: newQty,
+          expiry_date: getExpiryDateString(item.days_till_expiration),
+          shared_by: getSharedByIds(item.shared_by),
+          price: item.price ?? 0
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update quantity");
+      }
+
+      // Update local state after successful backend update
+      setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
+      originalHolder.current = originalHolder.current.map((it) =>
+        it.id === item.id ? updated : it
+      );
+      
+    } catch (err) {
+      console.error("Error updating quantity:", err);
+      Alert.alert("Error", "Could not update quantity");
+      fetchFridgeItems();  // Refresh to sync with backend
+    }
+  };
+
+
+
+  // Auto-refresh when tab is focused
   useFocusEffect(
     useCallback(() => {
       // Only refresh if we've already loaded once
@@ -519,7 +599,6 @@ export default function TabOneScreen() {
       return aDays - bDays;
     });
 
-
   const searchFunction = (text: string) => {
     setSearchValue(text);
   };
@@ -538,7 +617,6 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
-        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
@@ -580,7 +658,6 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge? PLOY" />
-        <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!

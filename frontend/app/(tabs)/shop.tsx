@@ -57,6 +57,8 @@ export default function SharedListScreen() {
 
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [searchValue, setSearchValue] = useState("");
+
+  
   const [modalOpen, setModalOpen] = useState(false);
   const [formName, setFormName] = useState("");
   const [formQuantity, setFormQuantity] = useState(1);
@@ -247,7 +249,7 @@ export default function SharedListScreen() {
                 </Text>
               )}
               <Text style={styles.itemMeta}>
-                Requested by {item.requested_by ?? "You"}
+                Requested by {item.requested_by}
               </Text>
             </>
           )}
@@ -451,16 +453,22 @@ export default function SharedListScreen() {
 
 //Styles
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7F8FC" },
+  screen: { flex: 1, backgroundColor: "#F7F8FC"},
   search_bar: {
-    height: 40,
-    margin: 12,
-    borderWidth: 1,
-    padding: 10,
-    borderRadius: 8,
+    height: 45,
+    marginTop: 10,
+    marginBottom: 10,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    padding: 12,
+    width: "90%",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    fontSize: 16,
   },
   topCard: {
     margin: 18,
+    marginTop: 5,
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 14,

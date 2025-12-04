@@ -192,7 +192,7 @@ export default function ParseReceiptScreen() {
     setAddingItemIndex((prev) => prev.filter((i) => i !== item.index));
   };
 
-  const parseReceipt = async () => {
+  const parseReceipt = async (retryCount = 0) => {
     if (!imageUri) {
       alert("Please select an image first!");
       return;
@@ -200,7 +200,7 @@ export default function ParseReceiptScreen() {
 
     try {
       setIsLoading(true);
-      setResponseText("Parsing receipt...");
+      setResponseText(retryCount === 0 ? "Parsing receipt..." : "Retrying...");
       setSelectedItems([]);
       setAddingItemIndex([]);
       setSharingWith([]);
@@ -222,16 +222,44 @@ export default function ParseReceiptScreen() {
         base64Image = file.base64Sync();
       }
       const response = await CreateParseReceiptRequest(base64Image);
-      const parsed = JSON.parse(response);
+      
+      // Log the raw response to debug
+      console.log("Raw API response:", response);
+      
+      // Check if response is already an object or needs parsing
+      let parsed;
+      if (typeof response === 'string') {
+        parsed = JSON.parse(response);
+      } else {
+        parsed = response;
+      }
+
+      // Validate that we got valid data
+      if (!parsed || !Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error("Invalid response format from receipt parser");
+      }
 
       setParsedItems(parsed);
-      console.log(parsed);
+      console.log("Parsed items:", parsed);
       setResponseText("");
 
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
-      console.error(error);
-      setResponseText("Error parsing receipt");
+      console.error("Parsing error:", error);
+      
+      // Retry once if this is the first attempt
+      if (retryCount === 0) {
+        console.log("First parsing attempt failed, retrying...");
+        await parseReceipt(1);
+      } else {
+        // Second attempt failed, warn the user
+        setResponseText("");
+        Alert.alert(
+          "Parsing Failed",
+          "Unable to parse the receipt. Please try with a clearer image or ensure the receipt is fully visible.",
+          [{ text: "OK" }]
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -1722,5 +1750,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: "#1e293b",
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });

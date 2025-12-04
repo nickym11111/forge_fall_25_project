@@ -18,6 +18,7 @@ import { router } from 'expo-router';
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
+import CustomHeader from "@/components/CustomHeader";
 
 //Type for API response
 interface ApiResponse {
