@@ -398,9 +398,15 @@ export default function TabOneScreen() {
 
     const getExpiryDateString = (days: number | undefined) => {
       const date = new Date();
-      date.setDate(date.getDate() + (days || 0)); 
-      return date.toISOString().split('T')[0]; 
-  };
+      date.setDate(date.getDate() + (days || 0));
+      
+      // Use local time methods instead of toISOString()
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    };
 
 
     const getSharedByIds = (mates: FridgeMate[] | null | undefined): string[] | null => {
