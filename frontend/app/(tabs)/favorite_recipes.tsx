@@ -16,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Alert } from "react-native";
 
+
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
 interface FridgeMate {
@@ -85,39 +86,38 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
     return "Unknown";
   };
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
+  
+  // Get initials for default profile icon
   const getInitials = (mate: FridgeMate) => {
     if (!mate) return "?";
-    if (mate.first_name && mate.last_name) return `${mate.first_name[0]}${mate.last_name[0]}`.toUpperCase();
+    if (mate.first_name && mate.last_name) {
+      return `${mate.first_name[0]}${mate.last_name[0]}`.toUpperCase();
+    }
     if (mate.first_name) return mate.first_name[0].toUpperCase();
     if (mate.last_name) return mate.last_name[0].toUpperCase();
     if (mate.email) return mate.email[0].toUpperCase();
     return "?";
   };
+
   return (
     <View style={styles.item}>
-      <View style={styles.itemContainer}>
-        <View style={{ flex: 1, backgroundColor: "transparent" }}>
-          <Text style={[styles.itemText, { fontWeight: "bold", fontSize: 25 }]}>{recipe_name}</Text>
-          <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: "transparent", marginTop: 8 }}>
-            {added_by?.profile_photo_url ? (
-              <Image source={{ uri: added_by.profile_photo_url }} style={styles.profilePhoto} />
-            ) : added_by ? (
-              <View style={[styles.profilePhoto, styles.defaultProfileIcon]}>
-                <Text style={styles.profileInitials}>{getInitials(added_by)}</Text>
-              </View>
-            ) : null}
-            <Text style={[styles.itemText, { fontSize: 10, backgroundColor: "transparent", marginLeft: added_by ? 8 : 0 }]}>
-              |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
-            </Text>
-          </View>
-        </View>
-        <TouchableOpacity onPress={handleHeartPress} style={styles.heartButton}>
-          <Ionicons
-            name={isFavorite ? "heart" : "heart-outline"}
-            size={28}
-            color={isFavorite ? "#E91E63" : "#888"}
+      <Text style={[styles.itemText]}>
+        <Text style={{ fontWeight: "bold" }}>{recipe_name}</Text>
+      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+        {added_by?.profile_photo_url ? (
+          <Image
+            source={{ uri: added_by.profile_photo_url }}
+            style={styles.profilePhoto}
           />
-        </TouchableOpacity>
+        ) : added_by ? (
+          <View style={[styles.profilePhoto, styles.defaultProfileIcon]}>
+            <Text style={styles.profileInitials}>{getInitials(added_by)}</Text>
+          </View>
+        ) : null}
+        <Text style={[styles.itemText, { fontSize: 10, marginLeft: added_by ? 8 : 0 }]}>
+          |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
+        </Text>
       </View>
     </View>
   );
@@ -197,20 +197,18 @@ export default function TabOneScreen() {
     fetchRecipeItems();
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <View style={[styles.container, { justifyContent: "center" }]}>
-        <ActivityIndicator size="large" color="purple" />
-        <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
-      </View>
-    );
-  }
+  // Remove full screen loading - show header and load in background
 
   if (error === "NO_FRIDGE") {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="Favorite Recipes" />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/(tabs)/recipes")}
+        >
+          <Ionicons name="arrow-back" size={28} color="#64748b" />
+        </TouchableOpacity>
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
@@ -234,16 +232,26 @@ export default function TabOneScreen() {
   // Error state
   if (error) {
     return (
-      <View style={[styles.container, { justifyContent: "center" }]}>
-        <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
-          {error}
-        </Text>
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="Favorite Recipes" />
+        
         <TouchableOpacity
-          style={styles.filter_button}
-          onPress={fetchRecipeItems}
+          style={styles.backButton}
+          onPress={() => router.push("/(tabs)/recipes")}
         >
-          <Text style={styles.buttonLabel}>Retry</Text>
+          <Ionicons name="arrow-back" size={28} color="#64748b" />
         </TouchableOpacity>
+        <View style={[styles.container, { justifyContent: "center" }]}>
+          <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
+            {error}
+          </Text>
+          <TouchableOpacity
+            style={styles.filter_button}
+            onPress={fetchRecipeItems}
+          >
+            <Text style={styles.buttonLabel}>Retry</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   }
@@ -252,6 +260,13 @@ export default function TabOneScreen() {
     return (
       <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="Favorite Recipes" />
+        
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.push("/(tabs)/recipes")}
+        >
+          <Ionicons name="arrow-back" size={28} color="#64748b" />
+        </TouchableOpacity>
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!
@@ -269,6 +284,18 @@ export default function TabOneScreen() {
       width: '100%', height: '100%',
     }}>
       <CustomHeader title="Favorite Recipes" />
+      
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.push("/(tabs)/recipes")}
+      >
+        <Ionicons name="arrow-back" size={28} color="#64748b" />
+      </TouchableOpacity>
+      {loading && !refreshing && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="small" color="#14b8a6" />
+        </View>
+      )}
     <View style={styles.container}>
       
       <View
@@ -292,8 +319,8 @@ export default function TabOneScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["purple"]}
-            tintColor="purple"
+            colors={["#14b8a6"]}
+            tintColor="#14b8a6"
           />
         }
       />
@@ -409,6 +436,20 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 10,
     fontWeight: "bold",
+  },
+  loadingOverlay: {
+    position: "absolute",
+    top: 100,
+    right: 20,
+    zIndex: 1000,
+  },
+  backButton: {
+    position: "absolute",
+    left: 10,
+    top: 100,
+    zIndex: 1000,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

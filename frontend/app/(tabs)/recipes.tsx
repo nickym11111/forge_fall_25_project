@@ -7,13 +7,13 @@ import {
 } from "react-native";
 import { type SetStateAction, type Dispatch } from "react";
 import Ionicons from '@expo/vector-icons/Ionicons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
 import { useAuth } from "../context/authContext";
+import { router } from "expo-router";
 
 
 interface ItemProps {
@@ -21,15 +21,14 @@ interface ItemProps {
   onAdd?: () => void;
 }
 
-const Item = ({ title, onAdd }: ItemProps) => {
+const Item = ({
+  title
+}: ItemProps) => {
   return (
-    <View style={styles.ingredientItem}> 
-      <Text style={styles.ingredientText}>{title}</Text>
-      {onAdd && (
-        <TouchableOpacity style={styles.addButton} onPress={onAdd}>
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
-      )}
+    <View style={styles.item}> 
+      <Text style={[styles.itemText]}>
+        <Text style={{ fontWeight: "bold" }}>{title}</Text>
+      </Text>
     </View>
   );
 };
@@ -38,32 +37,23 @@ export default function recipes() {
   const [activeTab, setActiveTab] = useState<'ingredients' | 'recipes' | 'favorites'>('ingredients');
 
   const [inputValue, setInputValue] = useState<string>('');
-  const [responseMessage, setResponseMessage] = useState<string[]>([]);
-
-  const [selectedIngredientsPrompt, setSelectedIngredientsPrompt] = useState<string>(''); // could probably delete
+  const [responseMessage, setResponseMessage] = useState<string[]>();
+  const [selectedIngredientsPrompt, setSelectedIngredientsPrompt] = useState<string>('');
   const [selectedRecipePrompt, setSelectedRecipePrompt] = useState<string>('');
-  const [isLoadingRecipes, setIsLoadingRecipes] = useState<boolean>(false); 
-  const [isLoadingIngredients, setIsLoadingIngredients] = useState<boolean>(false); 
+  const [isLoading1, setIsLoading1] = useState<boolean>(false);
+  const [isLoading2, setIsLoading2] = useState<boolean>(false);
   const [recipes, setRecipes] = useState<any[]>([]);
+  const { user } = useAuth();
 
-  const { user, supabase } = useAuth();
   const currentUserId = user?.id || '';
   const currentFridgeId = user?.fridge_id || '';
 
-
-  useEffect(() => {
-    if (activeTab === 'recipes' && recipes.length === 0) {
-      handleFindRecipe();
-    }
-  }, [activeTab]);
+  const searchFunction = (text: string) => {
+    setInputValue(text);
+  };
 
   const handleSubmit = async () => {
-    if (!inputValue.trim()) {
-      alert("Enter a dish to see which ingredients you're missing");
-      return;
-    }
-    
-    setIsLoadingIngredients(true);
+    setIsLoading1(true);
     try {
       const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/find_ingredients`, {
         method: 'POST',
@@ -76,6 +66,7 @@ export default function recipes() {
       }
 
       const data = await response.json();
+      console.log('Received response from backend:', data);
       const rawText = data.output[0].content[0].text;
       const jsonString = rawText.replace(/^Response:\s*/, '');
       let ingredients: string[] = [];
@@ -90,26 +81,32 @@ export default function recipes() {
     } catch (error) {
       console.error('Error sending data:', error);
       setResponseMessage(['Error sending data to backend.']);
-    } finally {
-      setIsLoadingIngredients(false);
     }
+    setIsLoading1(false);
   };
 
   const handleFindRecipe = async () => {
-    setIsLoadingRecipes(true);
+    setIsLoading2(true);
     try {
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/generate-recipes/`);
-      const data2 = await response.json();
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/generate-recipes/`);
+        const data2 = await response.json();
+        console.log('=== FULL RESPONSE ===');
+        console.log(JSON.stringify(data2, null, 2));
+        console.log('=== END RESPONSE ===');
       
-      if (!response.ok) {
-          throw new Error(data2.detail || "Failed to fetch recipes.");
-      }
-
-      if (data2.status === "success") {
-        if (Array.isArray(data2.recipes)) {
-          setRecipes(data2.recipes);
-        } else if (data2.recipes && data2.recipes.message) {
-          setRecipes([{ recipe_name: data2.recipes.message }]);
+        if (!response.ok) {
+            throw new Error(data2.detail || "Failed to fetch recipes.");
+        }
+        if (data2.status === "success") {
+          if (Array.isArray(data2.recipes)) {
+            setRecipes(data2.recipes);
+          } else if (data2.recipes && data2.recipes.message) {
+            setRecipes([{ recipe_name: data2.recipes.message }]);
+          }
+        } else if (data2.status === "info") {
+          setRecipes([{ recipe_name: data2.message }]);
+        } else {
+          setRecipes([{ message: "No recipes found" }]);
         }
       } else if (data2.status === "info") {
         setRecipes([{ recipe_name: data2.message }]);
@@ -191,9 +188,7 @@ const RecipeItem = ({
     const handleHeartPress = async () => {
         const newState = !isFavorite;
         setIsFavorite(newState);
-
         console.log(`Attempting to set '${item.recipe_name}' favorite status to: ${newState}`);
-        
         const dataToSend = {
             recipe: {
                 name: item.recipe_name,
@@ -306,35 +301,36 @@ const PreviewLayout = ({
 );
 
 return (
-  <View style={styles.container}>
-    <CustomHeader 
-      title="Share Recipes!  "
-      logo={require('../../assets/images/FridgeIcon.png')}
-    />
-
-  <View style={styles.tabContainer}>
-    <TouchableOpacity
-      style={[styles.tabButton, activeTab === 'ingredients' && styles.activeIconTab]}
-      onPress={() => setActiveTab('ingredients')}
+    <View style={styles.container}>
+      <CustomHeader 
+      title="Share Recipes! " 
+      logo={require('../../assets/images/FridgeIcon.png')}/>
+      
+      <TouchableOpacity
+        style={styles.favoriteRecipesIcon}
+        onPress={() => router.push("/(tabs)/favorite_recipes")}
       >
-        <MaterialCommunityIcons
-          name={activeTab === 'ingredients' ? "shaker" : "shaker-outline"}
-          size={28}
-          color={activeTab === 'ingredients' ? '#666' : 'white'}
-        />
-        <Text style={[styles.tabText, activeTab === 'ingredients' && styles.activeTabText]}>
-              Get Ingredients
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'recipes' && styles.activeIconTab]}
-            onPress={() => setActiveTab('recipes')}
-          >
-            <MaterialCommunityIcons
-              name={activeTab === 'recipes' ? "food" : "food-outline"}
-              size={28}
-              color={activeTab === 'recipes' ? '#666' : 'white'}
+        <Ionicons name="heart" size={30} color="#E91E63" />
+      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.contentSection}>
+          <View style={styles.boxContainer}>
+            <View>
+              <Text>Generate a list of ingredients for a certain recipe!</Text>
+              <Text></Text>
+              <Text>NOTE: the list only shows what you don't already have</Text>
+              <TextInput
+                style={styles.search_bar}
+                onChangeText={searchFunction}
+                value={inputValue}
+                placeholder="Enter a Dish..."
+              />
+            </View>
+            <CustomButton
+              title= {isLoading1 ? "Getting Ingredients..." : "Get Ingredients"}
+              onPress={handleSubmit}
+              className=""
+              disabled={isLoading1}
             />
             <Text style={[styles.tabText, activeTab === 'recipes' && styles.activeTabText]}>
               Get Recipes
@@ -355,33 +351,35 @@ return (
             </Text>
           </TouchableOpacity>
         </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {activeTab === 'ingredients' && (
-            <View style={styles.contentSection}>
-              <View style={styles.boxContainer}>
-                <Text>Generate a list of ingredients for a certain recipe!</Text>
-              <Text style={styles.noteText}>
-                <Text>NOTE: the list only shows what you don't already have</Text>
-              </Text>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              onChangeText={setInputValue}
-              value={inputValue}
-              placeholder="Enter a Dish..."
-              onSubmitEditing={handleSubmit}
+        <View style={styles.contentSection}>
+          <View style={styles.boxContainer}>
+            <Text>Generate recipes you can make based on your current food inventory!</Text>
+            <Text></Text>
+            <CustomButton
+              title={isLoading2 ? "Getting Recipes..." : "Get Recipes"}
+              onPress={handleFindRecipe}
+              className=""
+              disabled={isLoading2}
             />
-            <TouchableOpacity 
-              style={styles.submitButton}
-              onPress={handleSubmit}
-              disabled={isLoadingIngredients}
-            >
-              <Text style={styles.submitButtonText}>
-                {isLoadingIngredients ? "..." : "→"}
-              </Text>
-            </TouchableOpacity>
+            <FlatList
+              data={recipes}
+              renderItem={({ item }) => (
+                <RecipeItem 
+                  item={item} 
+                  currentUserId={currentUserId} 
+                  currentFridgeId={currentFridgeId}
+                  currentUserName={user?.email || 'User'}
+                />
+              )} 
+              keyExtractor={(item, index) => item.recipe_name || index.toString()}
+              scrollEnabled={false}
+            />
           </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
 
           {responseMessage.length > 0 && (
                   <FlatList
@@ -444,188 +442,11 @@ return (
   }
   
 const styles = StyleSheet.create({
-  container: {
-    flex: 1, // Full screen height
-    backgroundColor: "#F8F9FF",
-  },
-
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: 'transparent',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: 'transparent',
-    justifyContent: 'space-around',
-  },
-  
-  iconTabButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 3,
-    borderBottomColor: 'transparent',
-  },
-  
-  activeIconTab: {
-    borderBottomColor: '#666',
-  },
-  
-  iconTabLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    color: 'red',
-  },
-  
-  activeIconTabLabel: {
-    color: '#666',
-    fontWeight: '600',
-  },
-
-  tabContainer: {
-    flexDirection: 'row',
-    justifyContent: "center",
-  },
-
-  tabButton: {
-    minWidth: "33%",
-    height: 60,
-    paddingVertical: 10,
-    alignItems: 'center',
-    backgroundColor: '#14b8a6',//change
-    marginHorizontal: 4,
-    marginTop: 8,
-    borderRadius: 8,
-    borderBottomColor: 'transparent',
-  }, 
-
-  activeTab: {
-    borderBottomColor: '#666',
-  },
-
-  tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'white',
-  },
-
-  activeTabText: {
-    color: '#666',
-    fontWeight: '700',
-  },
-
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20, 
-    paddingBottom: 40,
-    alignItems: 'center', 
-  },
-
-  contentSection: {
-    width: '100%', 
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-
-   boxContainer: {
-    width: "100%", 
-    maxWidth: 400, 
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 24, 
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-
- instructionText: {
-    fontSize: 15,
-    color: '#333',
-    marginBottom: 8,
-  },
-  
-  noteText: {
-    fontSize: 13,
-    color: '#666',
-    fontStyle: 'italic',
-    marginBottom: 16,
-  },
-  
-  loadingText: {
-    textAlign: 'center',
-    color: '#666',
-    marginTop: 20,
-  },
-  
-  // Search container
-  searchContainer: {
-    flexDirection: 'row',
-    marginBottom: 20,
-    alignItems: 'center',
-    gap: 10,
-  },
-  
-  searchInput: {
-    flex: 1,
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    backgroundColor: 'white',
-  },
-  
-  submitButton: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#14b8a6',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  
-  submitButtonText: {
-    color: 'white',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  
-  // Ingredient item
-  ingredientItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  
-  ingredientText: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  
-  addButton: {
-    backgroundColor: '#14b8a6',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  
-  addButtonText: {
-    color: 'white',
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  
-  // Recipe items
   item: {
     backgroundColor: "#f0f0f0",
     padding: 15,
     marginVertical: 5,
+    marginHorizontal: 0,
     borderRadius: 8,
     width: "100%",
   },
@@ -637,6 +458,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#f0f0f0",
     padding: 15,
     marginVertical: 5,
+    marginHorizontal: 0,
     borderRadius: 8,
     width: "100%", 
   },
@@ -644,27 +466,101 @@ const styles = StyleSheet.create({
   heartButton: {
     paddingLeft: 10,
   },
-  
+  box: {
+    width: 50,
+    height: 50,
+  },
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+
+  tabContainer: {
+    flexDirection: 'row',
+    justifyContent: "center",
+  },
+  selected_filter_button: {
+    backgroundColor: "grey",
+    borderWidth: 0,
+  },
+  buttonLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "white",
+  },
+  selectedLabel: {
+    color: "white",
+  },
+  label: {
+    textAlign: "center",
+    marginBottom: 10,
+    fontSize: 24,
+  },
+  container: {
+    flex: 1, // Full screen height
+    backgroundColor: "#F8F9FF",
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20, 
+    paddingBottom: 40,
+    alignItems: 'center', 
+  },
+  contentSection: {
+    width: '100%', 
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "bold",
+    padding: 20,
+  },
   itemText: {
     fontSize: 18,
     color: "#333",
   },
-  
+  redText: {
+    color: "#d32f2f",
+    fontWeight: "bold",
+  },
   recipeTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
-  
   recipeDescription: {
     fontSize: 14,
     color: '#666',
     marginVertical: 4,
   },
-  
   recipeIngredients: {
     fontSize: 12,
     color: '#888',
     fontStyle: 'italic',
+  },
+  search_bar: {
+    height: 40,
+    marginVertical: 12,
+    marginHorizontal: 0,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    width: "100%",
+  },
+  boxContainer: {
+    width: "100%", 
+    maxWidth: 400, 
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 24, 
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  favoriteRecipesIcon: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
 });

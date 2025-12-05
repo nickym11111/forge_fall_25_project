@@ -6,8 +6,8 @@ import {
   StyleSheet,
   StyleProp,
   ViewStyle,
-  Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 const ProfileIcon = (props: {
   style?: StyleProp<ViewStyle>;
@@ -26,8 +26,10 @@ const ProfileIcon = (props: {
           ...styles.button,
         }}
       >
-        <Image
-          source={require("../assets/images/profile-icon.png")}
+        <Ionicons
+          name="person-circle-outline"
+          size={32}
+          color="#1e293b"
           style={styles.profileIcon}
         />
       </View>
@@ -47,8 +49,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   profileIcon: {
-    width: 30,
-    height: 30,
     marginBottom: 5,
   },
 });

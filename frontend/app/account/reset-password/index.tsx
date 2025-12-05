@@ -1,12 +1,13 @@
 import { supabase } from "@/app/utils/client";
-import React, { useEffect, useState } from "react";
-import { StyleSheet, TextInput, View, Text } from "react-native";
+import React, { useEffect, useState, useRef } from "react";
+import { StyleSheet, TextInput, View, Text, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import ToastMessage from "@/components/ToastMessage";
 import { useAuth } from "../../context/authContext";
+import { router, useLocalSearchParams } from "expo-router";
 import { navigate } from "expo-router/build/global-state/routing";
-import { useLocalSearchParams } from "expo-router";
 
 export default function ResetPassword() {
   const [email, setEmail] = useState("");
@@ -16,6 +17,10 @@ export default function ResetPassword() {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [sessionInitialized, setSessionInitialized] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const confirmPasswordRef = useRef<TextInput>(null);
   
   const { forgotPassword } = useAuth();
   const params = useLocalSearchParams();
@@ -203,74 +208,135 @@ export default function ResetPassword() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader
-        title="Reset Password"
-        logo={require("../../../assets/images/FridgeIcon.png")}
-      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Reset Password</Text>
+        <TouchableOpacity 
+          style={styles.closeButton} 
+          onPress={() => router.back()}
+        >
+          <Ionicons name="close" size={28} color="#64748b" />
+        </TouchableOpacity>
+      </View>
 
       <ToastMessage message={toastMessage} visible={isToastVisible} />
 
-      <View style={styles.formContainer}>
-        {!isRecoveryMode ? (
-          // Step 1: Request password reset email
-          <View style={styles.form}>
-            <Text style={styles.title}>Forgot Password?</Text>
-            <Text style={styles.description}>
-              Enter your email address and we'll send you a link to reset your password.
-            </Text>
-            <TextInput
-              onChangeText={setEmail}
-              placeholder="Email"
-              value={email}
-              style={styles.input}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-            <CustomButton
-              title="Send Reset Email"
-              onPress={handleSendResetEmail}
-              style={styles.button}
-              className=""
-              disabled={false}
-            />
-            <Text
-              style={styles.backToLogin}
-              onPress={() => navigate("/")}
-            >
-              Back to Login
-            </Text>
-          </View>
-        ) : (
-          // Step 2: Update password after clicking email link
-          <View style={styles.form}>
-            <Text style={styles.title}>Create New Password</Text>
-            <Text style={styles.description}>
-              Please enter your new password below.
-            </Text>
-            <TextInput
-              onChangeText={setNewPassword}
-              placeholder="New Password"
-              value={newPassword}
-              secureTextEntry
-              style={styles.input}
-            />
-            <TextInput
-              onChangeText={setConfirmPassword}
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              secureTextEntry
-              style={styles.input}
-            />
-            <CustomButton
-              title="Update Password"
-              onPress={handleUpdatePassword}
-              style={styles.button}
-              className=""
-              disabled={false}
-            />
-          </View>
-        )}
-      </View>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={styles.formContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          {!isRecoveryMode ? (
+            // Step 1: Request password reset email
+            <View style={styles.form}>
+              <Text style={styles.title}>Forgot Password?</Text>
+              <Text style={styles.description}>
+                Enter your email address and we'll send you a link to reset your password.
+              </Text>
+              <View style={[
+                styles.inputContainer,
+                focusedInput === "email" && styles.inputContainerFocused
+              ]} collapsable={false}>
+                <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput
+                  onChangeText={setEmail}
+                  placeholder="Email"
+                  placeholderTextColor="#94a3b8"
+                  value={email}
+                  style={styles.input}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  onFocus={() => setFocusedInput("email")}
+                  onBlur={() => setFocusedInput(null)}
+                  onSubmitEditing={Keyboard.dismiss}
+                  returnKeyType="default"
+                  blurOnSubmit={true}
+                />
+              </View>
+              <CustomButton
+                title="Send Reset Email"
+                onPress={handleSendResetEmail}
+                style={styles.button}
+                className=""
+                disabled={false}
+              />
+            </View>
+          ) : (
+            // Step 2: Update password after clicking email link
+            <View style={styles.form}>
+              <Text style={styles.title}>Create New Password</Text>
+              <Text style={styles.description}>
+                Please enter your new password below.
+              </Text>
+              <View style={[
+                styles.inputContainer,
+                focusedInput === "newPassword" && styles.inputContainerFocused
+              ]} collapsable={false}>
+                <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput
+                  onChangeText={setNewPassword}
+                  placeholder="New Password"
+                  placeholderTextColor="#94a3b8"
+                  value={newPassword}
+                  secureTextEntry={!showPassword}
+                  style={styles.input}
+                  onFocus={() => setFocusedInput("newPassword")}
+                  onBlur={() => setFocusedInput(null)}
+                  onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                  returnKeyType="next"
+                  blurOnSubmit={false}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color="#94a3b8"
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={[
+                styles.inputContainer,
+                focusedInput === "confirmPassword" && styles.inputContainerFocused
+              ]} collapsable={false}>
+                <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+                <TextInput
+                  ref={confirmPasswordRef}
+                  onChangeText={setConfirmPassword}
+                  placeholder="Confirm Password"
+                  placeholderTextColor="#94a3b8"
+                  value={confirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                  style={styles.input}
+                  onFocus={() => setFocusedInput("confirmPassword")}
+                  onBlur={() => setFocusedInput(null)}
+                  onSubmitEditing={Keyboard.dismiss}
+                  returnKeyType="default"
+                  blurOnSubmit={true}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={styles.eyeIcon}
+                >
+                  <Ionicons
+                    name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
+                    size={20}
+                    color="#94a3b8"
+                  />
+                </TouchableOpacity>
+              </View>
+              <CustomButton
+                title="Update Password"
+                onPress={handleUpdatePassword}
+                style={styles.button}
+                className=""
+                disabled={false}
+              />
+            </View>
+          )}
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </View>
   );
 }
@@ -278,47 +344,105 @@ export default function ResetPassword() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  closeButton: {
+    position: "absolute",
+    right: 20,
+    top: 58,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
   },
   formContainer: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 200,
+    paddingHorizontal: 24,
+    paddingBottom: 100,
+    paddingTop: 20,
   },
   form: {
-    alignItems: "center",
-    width: 280,
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 10,
+    fontSize: 28,
+    fontWeight: "700",
+    marginBottom: 12,
     textAlign: "center",
+    color: "#1e293b",
   },
   description: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 20,
+    fontSize: 15,
+    color: "#64748b",
+    marginBottom: 24,
     textAlign: "center",
+    lineHeight: 22,
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  inputContainerFocused: {
+    borderColor: "#14b8a6",
+    borderWidth: 2.5,
+    backgroundColor: "#ffffff",
+    shadowColor: "#14b8a6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    width: "100%",
-    marginVertical: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    fontSize: 15,
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#1e293b",
+  },
+  eyeIcon: {
+    padding: 4,
   },
   button: {
-    width: 217,
-    marginTop: 10,
-  },
-  backToLogin: {
-    marginTop: 15,
-    fontSize: 14,
-    color: "#666",
-    textAlign: "center",
+    width: "100%",
+    marginTop: 8,
   },
 });

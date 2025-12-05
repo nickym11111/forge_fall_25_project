@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from database import supabase  
+from database import supabase
 from pydantic import BaseModel
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 from service import get_current_user, generate_invite_code, get_current_user_with_fridgeMates
 import ast
 import base64
@@ -57,8 +57,9 @@ async def create_user(user: UserCreate):
     except Exception as e:
         return {"error": str(e)}
 
-@app.get("/userInfo/")
+@app.get("/userInfo")
 async def get_current_user_info(current_user = Depends(get_current_user_with_fridgeMates)):
+
     try:
         user_data = current_user if isinstance(current_user, dict) else {
             "id": current_user.id,
@@ -102,6 +103,72 @@ async def get_current_user_info(current_user = Depends(get_current_user_with_fri
     except Exception as e:
         print(f"Error getting user info: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/fridge-members/")
+async def get_fridge_members(current_user = Depends(get_current_user)):
+    """Return members of the authenticated user's active fridge."""
+    try:
+        fridge_id = current_user.get("fridge_id") if isinstance(current_user, dict) else None
+
+        if not fridge_id:
+            return {
+                "status": "success",
+                "fridge_id": None,
+                "members": [],
+            }
+
+        memberships_response = supabase.table("fridge_memberships").select(
+            "users(id, email, first_name, last_name, profile_photo)"
+        ).eq("fridge_id", fridge_id).execute()
+
+        if memberships_response.data is None:
+            raise HTTPException(status_code=500, detail="Failed to fetch fridge members")
+
+        members: List[Dict[str, Any]] = []
+        member_ids = set()
+
+        for membership in memberships_response.data:
+            user_info = membership.get("users")
+            if not user_info:
+                continue
+
+            member_id = user_info.get("id")
+            if not member_id or member_id in member_ids:
+                continue
+
+            member_ids.add(member_id)
+            members.append({
+                "id": member_id,
+                "email": user_info.get("email"),
+                "first_name": user_info.get("first_name"),
+                "last_name": user_info.get("last_name"),
+                "profile_photo": user_info.get("profile_photo"),
+            })
+
+        current_user_id = current_user.get("id") if isinstance(current_user, dict) else None
+        if current_user_id and current_user_id not in member_ids:
+            members.append({
+                "id": current_user_id,
+                "email": current_user.get("email") if isinstance(current_user, dict) else None,
+                "first_name": current_user.get("first_name") if isinstance(current_user, dict) else None,
+                "last_name": current_user.get("last_name") if isinstance(current_user, dict) else None,
+                "profile_photo": current_user.get("profile_photo") if isinstance(current_user, dict) else None,
+            })
+
+        members.sort(key=lambda m: (m.get("first_name") or m.get("email") or "").lower())
+
+        return {
+            "status": "success",
+            "fridge_id": fridge_id,
+            "members": members,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error fetching fridge members: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
     
 # Get all fridges user is a member of
 @app.get("/allFridges")
@@ -131,7 +198,7 @@ async def get_user_fridges(current_user = Depends(get_current_user)):
                 "status": "success",
                 "fridges": []
             }
-        
+
         fridges_with_mates = []
         for fridge in fridges_response.data:
             fridge_members_response = supabase.table("fridge_memberships").select(

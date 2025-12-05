@@ -6,6 +6,7 @@ import {
   ImageSourcePropType,
   Platform,
   StatusBar,
+  ViewStyle,
 } from "react-native";
 import ProfileIcon from "./ProfileIcon";
 
@@ -14,6 +15,7 @@ type CustomHeaderProps = {
   logo?: ImageSourcePropType;
   subtitle?: string;
   noShadow?: boolean;
+  style?: ViewStyle | ViewStyle[];
 };
 
 const CustomHeader = ({
@@ -21,9 +23,10 @@ const CustomHeader = ({
   logo,
   subtitle,
   noShadow = false,
+  style,
 }: CustomHeaderProps) => {
   return (
-    <View style={[styles.header, noShadow && styles.headerNoShadow]}>
+    <View style={[styles.header, noShadow && styles.headerNoShadow , style]}>
       <StatusBar barStyle="light-content" backgroundColor="#14b8a6" />
       <View style={styles.content}>
         <View style={styles.titleRow}>
@@ -80,7 +83,7 @@ const styles = StyleSheet.create({
   titleContainer: {
     flex: 1,
     display: "flex",
-    alignItems: "flex-start",
+    alignItems: "center",
     flexDirection: "row",
     justifyContent: "space-between",
   },

@@ -115,6 +115,9 @@ const RequestCard = ({
         <Text style={styles.label}>User:</Text> {getUserName()}
       </Text>
       <Text style={styles.cardText}>
+        <Text style={styles.label}>Kitchen:</Text> {request.fridges?.name || "Unknown Kitchen"}
+      </Text>
+      <Text style={styles.cardText}>
         <Text style={styles.label}>Email:</Text> {request.users?.email || "N/A"}
       </Text>
       <View style={styles.buttonContainer}>
@@ -193,15 +196,15 @@ const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalP
 
   return (
     <View style={styles.container}>
-      {/* X Button in top right */}
-      <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-        <Ionicons name="close-circle" size={36} color="#333" />
-      </TouchableOpacity>
-
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Join Requests</Text>
-        <Text style={styles.headerSubtitle}>{fridgeName}</Text>
+        <View style={styles.headerContent}>
+          <Text style={styles.headerTitle}>Join Requests</Text>
+          <Text style={styles.headerSubtitle}>{fridgeName}</Text>
+        </View>
+        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <Ionicons name="close" size={28} color="#64748b" />
+        </TouchableOpacity>
       </View>
 
       {/* Content */}
@@ -211,14 +214,14 @@ const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalP
           <RefreshControl
             refreshing={refreshing}
             onRefresh={fetchRequests}
-            colors={["#7C3AED"]}
-            tintColor="#7C3AED"
+            colors={["#14b8a6"]}
+            tintColor="#14b8a6"
           />
         }
       >
         {loading && !refreshing ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#7C3AED" />
+            <ActivityIndicator size="large" color="#14b8a6" />
             <Text style={styles.loadingText}>Loading requests...</Text>
           </View>
         ) : requests.length === 0 ? (
@@ -244,30 +247,43 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F8F9FF",
   },
-  closeButton: {
-    position: "absolute",
-    top: 80,
-    right: 20,
-    zIndex: 1000,
-  },
   header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: 60,
-    paddingBottom: 20,
+    paddingBottom: 24,
     paddingHorizontal: 20,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#e2e8f0",
+    position: "relative",
+  },
+  headerContent: {
+    flex: 1,
     alignItems: "center",
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: "700",
-    color: "#333",
-    marginBottom: 4,
+    color: "#1e293b",
   },
   headerSubtitle: {
-    fontSize: 16,
-    color: "#666",
+    fontSize: 14,
+    color: "#64748b",
+    marginTop: 4,
+  },
+  closeButton: {
+    position: "absolute",
+    right: 20,
+    top: 80,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f1f5f9",
+    alignItems: "center",
+    justifyContent: "center",
   },
   content: {
     flex: 1,
@@ -294,13 +310,13 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 20,
+    padding: 24,
     marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
     elevation: 3,
   },
   cardTitle: {
