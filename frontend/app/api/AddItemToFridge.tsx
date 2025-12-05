@@ -1,11 +1,14 @@
+import { supabase } from "../utils/client";
+
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 
 export async function AddItemToFridge(
   access_token: string,
-  title: string,
+  name: string,
   quantity: string,
   expiryDate: Date,
-  sharedByUserIds: string[]
+  sharedByUserIds: string[],
+  price?: number
 ) {
   const response = await fetch(`${API_URL}/fridge_items/`, {
     method: "POST",
@@ -14,10 +17,85 @@ export async function AddItemToFridge(
       Authorization: `Bearer ${access_token}`,
     },
     body: JSON.stringify({
-      title: title.trim(),
+      name: name.trim(),
       quantity: quantity ? Number(quantity) : 1,
       expiry_date: expiryDate.toISOString().split("T")[0],
       shared_by: sharedByUserIds.length > 0 ? sharedByUserIds : null,
+      price: price || 0.0,
+    }),
+  });
+
+  if (response.ok) {
+    try {
+      //Get the shopping list item
+      const { data: shoppingItems, error } = await supabase
+        .from("shopping_list")
+        .select("*")
+        .ilike("name", name.trim())
+        .limit(1)
+
+      if (error) {
+        console.error("Error fetching shopping list:", error);
+        return response;
+      }
+
+      if (shoppingItems && shoppingItems.length) {
+        const shoppingItem = shoppingItems[0]; 
+        const currentQty = shoppingItem.quantity;
+        const addedQuantity = Number(quantity);
+        const fullName =
+          sharedByUserIds.length === 0 ? "Someone" : sharedByUserIds.join(", ");
+
+        if (addedQuantity >= currentQty) {
+          await supabase
+            .from("shopping_list")
+            .update({
+              checked: true,
+              bought_by: fullName,
+            })
+            .eq("id", shoppingItem.id);
+        } else {
+          // just reduce quantity if not already checked
+          await supabase
+            .from("shopping_list")
+            .update({
+              checked: false,
+              quantity: currentQty - addedQuantity,
+            })
+            .eq("id", shoppingItem.id)
+        }
+
+      }
+    } catch (err) {
+      console.error("Error updating shopping list:", err);
+    }
+  }
+
+
+  return response;
+}
+
+export async function UpdateFridgeItem(
+  access_token: string,
+  itemId: number,
+  name: string,
+  quantity: string,
+  expiryDate: Date,
+  sharedByUserIds: string[],
+  price?: number
+) {
+  const response = await fetch(`${API_URL}/fridge_items/${itemId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${access_token}`,
+    },
+    body: JSON.stringify({
+      name: name.trim(),
+      quantity: quantity ? Number(quantity) : 1,
+      expiry_date: expiryDate.toISOString().split("T")[0],
+      shared_by: sharedByUserIds.length > 0 ? sharedByUserIds : null,
+      price: price || 0.0,
     }),
   });
 
@@ -25,12 +103,7 @@ export async function AddItemToFridge(
 }
 
 export async function PredictExpiryDate(itemName: string) {
-  const url = `${API_URL}/expiry/predict-expiry`;
-  console.log("📡 Calling:", url);
-
-  const controller = new AbortController();
-
-  const response = await fetch(url, {
+  const response = await fetch(`${API_URL}/expiry/predict-expiry`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -38,7 +111,6 @@ export async function PredictExpiryDate(itemName: string) {
     body: JSON.stringify({
       item_name: itemName,
     }),
-    signal: controller.signal,
   });
 
   return response;

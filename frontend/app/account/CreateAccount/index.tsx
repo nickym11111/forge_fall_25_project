@@ -1,10 +1,10 @@
-import { StyleSheet, TextInput, View, Text } from "react-native";
-import { useState } from "react";
+import { StyleSheet, TextInput, View, Text, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
+import { useState, useRef } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
 import { CreateAccountRequest } from "../../api/CreateAccount";
-import ToastMessage from "@/components/ToastMessage";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -12,54 +12,138 @@ export default function CreateAccount() {
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
   const [dietaryRestrictionsText, setDietaryRestrictionsText] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const lastNameRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+  const dietaryRef = useRef<TextInput>(null);
   const dietaryRestrictions = dietaryRestrictionsText
     .split(",")
     .map((item) => item.trim());
-  const [isToastVisible, setIsToastVisible] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Fridge Flow 🏠" />
-      <ToastMessage message={toastMessage} visible={isToastVisible} />
-      <View style={styles.createAccountContainer}>
-        <View style={styles.createAccountForm}>
+      <CustomHeader 
+        title="Create Account" 
+        subtitle="Join Food Flow and start managing your kitchen"
+      />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          contentContainerStyle={styles.createAccountContainer}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.createAccountCard}>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "firstName" && styles.inputContainerFocused
+            ]} collapsable={false}>
+              <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
           <TextInput
             onChangeText={setFirstName}
             placeholder="First Name"
+                placeholderTextColor="#94a3b8"
             value={firstName}
             style={styles.createAccountInput}
-          />
+                onFocus={() => setFocusedInput("firstName")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
+              />
+            </View>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "lastName" && styles.inputContainerFocused
+            ]} collapsable={false}>
+              <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
           <TextInput
+                ref={lastNameRef}
             onChangeText={setLastName}
             placeholder="Last Name"
+                placeholderTextColor="#94a3b8"
             value={lastName}
             style={styles.createAccountInput}
-          />
+                onFocus={() => setFocusedInput("lastName")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
+              />
+            </View>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "email" && styles.inputContainerFocused
+            ]} collapsable={false}>
+              <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
           <TextInput
+                ref={emailRef}
             onChangeText={setEmail}
             placeholder="Email"
+                placeholderTextColor="#94a3b8"
             value={email}
             style={styles.createAccountInput}
-          />
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onFocus={() => setFocusedInput("email")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
+              />
+            </View>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "password" && styles.inputContainerFocused
+            ]} collapsable={false}>
+              <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
           <TextInput
+                ref={passwordRef}
             onChangeText={setPassword}
             placeholder="Password"
+                placeholderTextColor="#94a3b8"
             value={password}
-            secureTextEntry
+                secureTextEntry={!showPassword}
             style={styles.createAccountInput}
-          />
+                onFocus={() => setFocusedInput("password")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+              >
+                <Ionicons
+                  name={showPassword ? "eye-outline" : "eye-off-outline"}
+                  size={20}
+                  color="#94a3b8"
+                />
+              </TouchableOpacity>
+            </View>
+            <View style={[
+              styles.inputContainer,
+              focusedInput === "dietary" && styles.inputContainerFocused
+            ]} collapsable={false}>
+              <Ionicons name="restaurant-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
           <TextInput
+                ref={dietaryRef}
             onChangeText={setDietaryRestrictionsText}
-            placeholder="Dietary Restrictions"
+                placeholder="Dietary Restrictions (optional)"
+                placeholderTextColor="#94a3b8"
             value={dietaryRestrictionsText}
             style={styles.createAccountInput}
+                onFocus={() => setFocusedInput("dietary")}
+                onBlur={() => setFocusedInput(null)}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="default"
+                blurOnSubmit={true}
           />
+            </View>
           <CustomButton
             title="Create Account"
             onPress={async () => {
-              setIsToastVisible(true);
-              setTimeout(() => setIsToastVisible(false), 3000);
               try {
                 const response = await CreateAccountRequest(
                   email,
@@ -68,32 +152,28 @@ export default function CreateAccount() {
                   lastName,
                   dietaryRestrictions
                 );
-                setToastMessage(
-                  response?.status === "User created successfully"
-                    ? "Email verification sent! Please verify your email before logging in."
-                    : response?.error || "Error creating account"
-                );
+                  // Handle success/error - you can add a modal here if needed
               } catch (e) {
-                setToastMessage("Network error");
                 console.log(e);
               }
-              setIsToastVisible(true);
-              setTimeout(() => setIsToastVisible(false), 7000);
             }}
             disabled={!firstName || !lastName || !email || !password}
             style={styles.createAccountButton}
             className=""
           />
-          <Text
+            <TouchableOpacity
             style={styles.backToLoginButton}
             onPress={() => {
               navigate("/");
             }}
           >
-            Back to Login
+              <Text style={styles.backToLoginText}>
+                Already have an account? <Text style={styles.backToLoginLink}>Sign in</Text>
           </Text>
+            </TouchableOpacity>
         </View>
-      </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </View>
   );
 }
@@ -101,34 +181,76 @@ export default function CreateAccount() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
   createAccountContainer: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 200,
+    paddingHorizontal: 24,
+    paddingBottom: 100,
+    paddingTop: 20,
   },
-  createAccountForm: {
+  createAccountCard: {
+    width: "100%",
+    maxWidth: 400,
+    backgroundColor: "#ffffff",
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  inputContainer: {
+    flexDirection: "row",
     alignItems: "center",
-    width: 280,
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
+    backgroundColor: "#f8fafc",
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  inputContainerFocused: {
+    borderColor: "#14b8a6",
+    borderWidth: 2.5,
+    backgroundColor: "#ffffff",
+    shadowColor: "#14b8a6",
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  inputIcon: {
+    marginRight: 12,
   },
   createAccountInput: {
-    width: "100%",
-    marginVertical: 10,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    fontSize: 15,
+    flex: 1,
+    paddingVertical: 14,
+    fontSize: 16,
+    color: "#1e293b",
+  },
+  eyeIcon: {
+    padding: 4,
   },
   createAccountButton: {
     width: "100%",
+    marginTop: 8,
   },
   backToLoginButton: {
-    marginTop: 15,
+    marginTop: 24,
+    alignItems: "center",
+  },
+  backToLoginText: {
     fontSize: 14,
-    color: "#666",
+    color: "#64748b",
     textAlign: "center",
+  },
+  backToLoginLink: {
+    color: "#14b8a6",
+    fontWeight: "600",
   },
 });

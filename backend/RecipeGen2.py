@@ -60,7 +60,7 @@ contains the string "Need more ingredients for sufficient meals.".
         content = response.choices[0].message.content
         print(f"=== OpenAI response: {content[:200]}... ===")
         
-        recipe_json = json.loads(content)
+        recipe_json = json.loads(content) 
         
         return {
             "status": "success",

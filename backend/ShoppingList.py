@@ -1,75 +1,99 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import Optional, List
+from fastapi import APIRouter, HTTPException, Query
+from uuid import uuid4
+from typing import Optional
 from database import supabase
+from pydantic import BaseModel
 
 app = APIRouter()
 
-#Data Model
 class ShoppingItem(BaseModel):
     name: str
-    price: Optional[float] = 0.0
-    requested_by: str
+    quantity: Optional[int]
+    requested_by: Optional[str]
     bought_by: Optional[str] = None
     checked: Optional[bool] = False
-    need_by: Optional[str] = None        
+    need_by: Optional[str] = None
+    fridge_id: Optional[str] = None   
 
-#Create New Item
+# Add item to shopping list
 @app.post("/items/")
 def add_item(item: ShoppingItem):
-    try:
-        response = (
-            supabase.table("ShoppingList")
-            .insert({
-                "name": item.name,
-                "price": item.price,
-                "requested_by": item.requested_by,
-                "bought_by": item.bought_by,
-                "checked": item.checked,
-                "need_by": item.need_by,
-                "shared_with": item.shared_with,
-            })
-            .execute()
-        )
-        print("Item added:", response)
-        return {"data": response.data, "status": "Item added successfully"}
-    
-    except Exception as e:
-        print("Error adding item:", e)
-        return {"error": str(e)}
 
-#Get All Current Items
+    if not item.fridge_id:
+        item.fridge_id = str(uuid4())
+
+    response = (
+    supabase.table("shopping_list")
+    .insert({
+        "name": item.name,
+        "quantity": item.quantity,
+        "requested_by": item.requested_by,
+        "bought_by": item.bought_by,
+        "checked": item.checked,
+        "need_by": item.need_by,
+        "fridge_id": item.fridge_id,
+    })
+    .execute()
+)
+    print("Supabase insert response:", response)
+    
+    if not response.data:
+        raise HTTPException(status_code=400, detail=f"Supabase error: {response.error.message}")
+
+    return {"data": response.data, "status": "Item added successfully"}
+
+
+# Get shopping list items
 @app.get("/items/")
-def get_items():
-    response = supabase.table("ShoppingList").select("*").execute()
-    print("Retrieved items:", response.data)
+def get_items(fridge_id: str = Query(...)):
+    response = (
+        supabase.table("shopping_list")
+        .select("*")
+        .eq("fridge_id", fridge_id)
+        .execute()
+    )
     return {"data": response.data}
 
-#Update Existing Item
+
+# Update an existing item
 @app.put("/items/{item_id}")
 def update_item(item_id: str, item: ShoppingItem):
+  
     response = (
-        supabase.table("ShoppingList")
+        supabase.table("shopping_list")
         .update({
             "name": item.name,
-            "price": item.price,
+            "quantity": item.quantity,
             "requested_by": item.requested_by,
             "bought_by": item.bought_by,
-            "checked": item.checked,
+            "checked": item.checked,   # fixed
             "need_by": item.need_by,
+            "fridge_id": item.fridge_id,
         })
         .eq("id", item_id)
         .execute()
     )
-    return {"data": response.data}
+    return {"data": response.data, "status": "Item updated successfully"}
 
-#Delete Item
-@app.delete("/items/{item_id}")
+
+# Delete shopping list item by item_id
+@app.delete("/{item_id}")
 def delete_item(item_id: str):
+    response = supabase.table("shopping_list").delete().eq("id", item_id).execute()
+    return {"data": response.data, "status": "Item deleted successfully"}
+
+# Delete shopping list item by name
+@app.delete("/remove_by_name")
+def remove_item_by_name(name: str, fridge_id: str):
     response = (
-        supabase.table("ShoppingList")
+        supabase.table("shopping_list")
         .delete()
-        .eq("id", item_id)
+        .ilike("name", name)
+        .eq("fridge_id", fridge_id)
         .execute()
     )
-    return {"data": response.data}
+    return {
+        "status": "success",
+        "deleted": len(response.data),
+        "data": response.data
+    }

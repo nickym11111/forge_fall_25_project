@@ -3,6 +3,7 @@ import { useUser } from '../hooks/useUser';
 import { supabase } from '../utils/client';
 import { clearUserCache, refreshUserCache } from '../hooks/useUser';
 import { Alert } from 'react-native';
+import { router } from 'expo-router';
 
 interface fridgeMate {
     id: string;
@@ -15,6 +16,8 @@ interface UserData {
   id: string;
   email: string;
   fridge_id: string | null;
+  active_fridge_id?: string | null;
+  fridge_count?: number; 
   fridge?: {
     id: string;
     name: string;
@@ -28,6 +31,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  forgotPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -64,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       await supabase.auth.signOut();
+      router.replace('/(tabs)');
       clearUserCache();
     } catch (error) {
       console.error('Logout error:', error);
@@ -74,8 +79,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await refreshUserCache();
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'http://localhost:8081/account/reset-password'
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send password reset email' 
+      };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser, forgotPassword }}>
       {children}
     </AuthContext.Provider>
   );

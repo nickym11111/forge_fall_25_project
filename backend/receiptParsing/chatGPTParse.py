@@ -31,12 +31,32 @@ def getChatGPTResponse(base64_image: str):
         ],
     )
 
-    return response
+    print("raw response", response.output[0].content[0].text)
+    return response.output[0].content[0].text
+
+def clean_item_names(item_names: str):
+    response = client.responses.create(
+        model="gpt-4.1-mini",
+        input=[
+            {
+                "role": "user",
+                "content": [
+                    { "type": "input_text", "text": "Take this object and clean up the key names, to the item that it seems to represent. For example, `PAC BROTH CHCKN` should be `Chicken Broth`. Do this in title case. Return as JSON. Do not include any extra text (including backticks `), only give me the json starting with the [" },
+                    { "type": "input_text", "text": item_names },
+                ],
+            }
+        ],
+    )
+
+    print("cleaned response", response.output[0].content[0].text)
+    return response.output[0].content[0].text
 
 @app.post("/parse-receipt")
 def parse_receipt(receipt: Receipt):
     try:
-        return getChatGPTResponse(receipt.base64Image);
+        raw_response = getChatGPTResponse(receipt.base64Image)
+        cleaned_response = clean_item_names(raw_response)
+        return cleaned_response
     except Exception as e:
         error_msg = f"Error parsing receipt: {str(e)}"
         print(error_msg)

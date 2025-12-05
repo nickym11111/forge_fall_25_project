@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from database import supabase  
 from pydantic import BaseModel
+from service import get_current_user
+
 
 app = APIRouter()
 
@@ -20,3 +22,43 @@ def join_fridge(request: JoinRequest):
     return {"status": "success", "message": f"Successfully joined fridge: {found_fridge['name']}"}
     
 
+class LeaveRequest(BaseModel):
+    fridgeId: str
+    userId: str
+
+@app.post("/leave-fridge")
+def leave_fridge(request: LeaveRequest, current_user = Depends(get_current_user)):
+    fridge_id = request.fridgeId
+    user_id = request.userId
+    
+    if user_id != current_user.get("id"):
+        raise HTTPException(status_code=403, detail="You can only leave your own fridges")
+
+    try:
+        delete_response = supabase.table("fridge_memberships").delete().eq(
+            "user_id", user_id
+        ).eq("fridge_id", fridge_id).execute()
+        
+        if not delete_response.data:
+            return {"status": "error", "message": "You are not a member of this fridge"}
+        
+        user_response = supabase.table("users").select("active_fridge_id").eq("id", user_id).execute()
+        
+        if user_response.data and user_response.data[0].get("active_fridge_id") == fridge_id:
+            # Get remaining fridges
+            remaining = supabase.table("fridge_memberships").select("fridge_id").eq("user_id", user_id).execute()
+            
+            if remaining.data and len(remaining.data) > 0:
+                # Set to first remaining fridge
+                new_active = remaining.data[0]["fridge_id"]
+                supabase.table("users").update({"active_fridge_id": new_active}).eq("id", user_id).execute()
+            else:
+                # No fridges left, set to null
+                supabase.table("users").update({"active_fridge_id": None}).eq("id", user_id).execute()
+        
+        return {"status": "success", "message": "Successfully left fridge"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
