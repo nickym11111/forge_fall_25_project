@@ -190,6 +190,12 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="add-item"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
