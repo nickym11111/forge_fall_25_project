@@ -334,13 +334,22 @@ async def accept_fridge_request(
 
         fridge_request = request_response.data[0]
 
-        # Update user profile with fridge_id
-        profile_response = supabase.table("users").update({
+        # 1. Create fridge membership
+        membership_response = supabase.table("fridge_memberships").insert({
+            "user_id": fridge_request["requested_by"],
             "fridge_id": fridge_request["fridge_id"]
+        }).execute()
+        
+        # 2. Update user profile with active_fridge_id and fridge_id
+        profile_response = supabase.table("users").update({
+            "fridge_id": fridge_request["fridge_id"],
+            "active_fridge_id": fridge_request["fridge_id"]
         }).eq("id", fridge_request["requested_by"]).execute()
 
         if not profile_response.data:
-            raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
+            # If user update fails, we might want to rollback membership, 
+            # but for now just raising error is standard for this codebase
+            raise HTTPException(status_code=500, detail="Failed to update user profile")
 
         # Mark request as accepted
         supabase.table("fridge_requests").update({
