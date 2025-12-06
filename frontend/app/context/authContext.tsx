@@ -15,6 +15,9 @@ interface fridgeMate {
 interface UserData {
   id: string;
   email: string;
+  first_name?: string;
+  last_name?: string;
+  profile_photo?: string | null;
   fridge_id: string | null;
   active_fridge_id?: string | null;
   fridge_count?: number; 

@@ -20,17 +20,17 @@ import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
 
-import { useAuth } from "../context/authContext"; 
+import { useAuth } from "../context/authContext";
 import { supabase } from "../utils/client";
 import { useIsFocused } from "@react-navigation/native";
 
 interface ShoppingItem {
-  id?: number; 
+  id?: number;
   name: string;
-  quantity?: number;  
-  requested_by: string; 
-  bought_by?: string | null; 
-  checked?: boolean; 
+  quantity?: number;
+  requested_by: string;
+  bought_by?: string | null;
+  checked?: boolean;
   need_by?: string;
   fridge_id?: string;
 }
@@ -51,14 +51,13 @@ const isoToShort = (iso?: string) => {
 
 // Component
 export default function SharedListScreen() {
-  const { user } = useAuth(); 
-  const user_id = user?.id; 
+  const { user } = useAuth();
+  const user_id = user?.id;
   const isFocused = useIsFocused();
 
   const [items, setItems] = useState<ShoppingItem[]>([]);
   const [searchValue, setSearchValue] = useState("");
 
-  
   const [modalOpen, setModalOpen] = useState(false);
   const [formName, setFormName] = useState("");
   const [formQuantity, setFormQuantity] = useState(1);
@@ -119,11 +118,12 @@ export default function SharedListScreen() {
       return;
     }
 
+
     const newItem: ShoppingItem = {
       name: formName.trim(),
       quantity: Math.max(1, Math.floor(formQuantity)),
       need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
-      requested_by: user?.id || "",
+      requested_by: (user?.first_name + " " + user?.last_name) || "",
       bought_by: null,
       checked: false,
       fridge_id,
@@ -269,11 +269,7 @@ export default function SharedListScreen() {
                 onPress={() => changeItemQuantity(item, -1)}
                 style={styles.controlIcon}
               >
-                <Ionicons
-                  name="remove-circle-outline"
-                  size={22}
-                  color="#222"
-                />
+                <Ionicons name="remove-circle-outline" size={22} color="#222" />
               </TouchableOpacity>
             )}
 
@@ -300,55 +296,50 @@ export default function SharedListScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <CustomHeader title="Shared Shopping List 🛒" />
-            
 
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View>
-          {/* Search */}
-          <TextInput
-            style={styles.search_bar}
-            onChangeText={setSearchValue}
-            value={searchValue}
-            placeholder="Search items..."
-            placeholderTextColor="#999"
-          />
+      {/* Search */}
+      <TextInput
+        style={styles.search_bar}
+        onChangeText={setSearchValue}
+        value={searchValue}
+        placeholder="Search items..."
+        placeholderTextColor="#999"
+      />
 
-          {/* Top Card (Add Item quick input) */}
-          <View style={styles.topCard}>
-            <Text style={styles.cardTitle}>Add Item</Text>
+      {/* Top Card (Add Item quick input) */}
+      <View style={styles.topCard}>
+        <Text style={styles.cardTitle}>Add Item</Text>
 
-            <View style={styles.topRow}>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="cube-outline"
-                  size={20}
-                  color="#94a3b8"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.topInput}
-                  placeholder="Item name..."
-                  placeholderTextColor="#94a3b8"
-                  value={formName}
-                  onChangeText={setFormName}
-                />
-              </View>
-              <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
-                <Ionicons name="add" size={28} color="#fff" />
-              </TouchableOpacity>
-            </View>
+        <View style={styles.topRow}>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="cube-outline"
+              size={20}
+              color="#94a3b8"
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.topInput}
+              placeholder="Item name..."
+              placeholderTextColor="#94a3b8"
+              value={formName}
+              onChangeText={setFormName}
+            />
           </View>
-
-          {/* Items List */}
-          <FlatList
-            data={filteredItems}
-            keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
-            renderItem={renderItemCard}
-            contentContainerStyle={styles.itemsList}
-            keyboardShouldPersistTaps="handled"
-          />
+          <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
+            <Ionicons name="add" size={28} color="#fff" />
+          </TouchableOpacity>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
+
+      {/* Items List */}
+      <FlatList
+        data={filteredItems}
+        keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
+        renderItem={renderItemCard}
+        contentContainerStyle={styles.itemsList}
+        keyboardShouldPersistTaps="handled"
+      />
 
       {/* Modal for adding item with details */}
       {modalOpen && (
@@ -389,9 +380,7 @@ export default function SharedListScreen() {
               <Text style={styles.inputLabel}>Quantity</Text>
               <View style={styles.qtyRow}>
                 <TouchableOpacity
-                  onPress={() =>
-                    setFormQuantity(Math.max(1, formQuantity - 1))
-                  }
+                  onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}
                 >
                   <Ionicons
                     name="remove-circle-outline"
@@ -414,7 +403,9 @@ export default function SharedListScreen() {
                 onPress={() => setShowDatePicker(true)}
               >
                 <Text style={styles.dateText}>
-                  {formNeedBy ? formatShortDate(formNeedBy) : "Tap to select date"}
+                  {formNeedBy
+                    ? formatShortDate(formNeedBy)
+                    : "Tap to select date"}
                 </Text>
                 <Ionicons name="calendar-outline" size={20} color="#222" />
               </TouchableOpacity>
@@ -453,7 +444,7 @@ export default function SharedListScreen() {
 
 //Styles
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7F8FC"},
+  screen: { flex: 1, backgroundColor: "#F7F8FC" },
   search_bar: {
     margin: 18,
     paddingHorizontal: 20,
