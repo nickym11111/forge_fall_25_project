@@ -90,7 +90,7 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
   const handleDelete = () => {
     Alert.alert(
       "Delete Item",
-      `Are you sure you want to delete ${item}?`,
+      `Are you sure you want to delete ${item.name}?`,
       [
         { text: "Cancel", style: "cancel" },
         { text: "Yes", style: "destructive", onPress: () => onDelete(item) },
