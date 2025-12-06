@@ -230,7 +230,7 @@ export default function TabOneScreen() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${API_URL}/fridge-mates/`, {
+      const response = await fetch(`${API_URL}/fridge-members/`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
