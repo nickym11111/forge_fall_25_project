@@ -9,6 +9,7 @@ from Join import app as join_router
 from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
+from typing import List, Optional, Any
 from CostSplitting import app as cost_splitting_router
 from receiptParsing.chatGPTParse import app as receipt_router
 from recipes import app as recipes_router
@@ -127,7 +128,6 @@ async def create_fridge_item(
             "message": "Fridge item added and shopping list item checked off",
             "data": response.data,
         }
-
     except Exception as e:
         print(f"Error creating fridge item: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
@@ -334,13 +334,22 @@ async def accept_fridge_request(
 
         fridge_request = request_response.data[0]
 
-        # Update user profile with fridge_id
-        profile_response = supabase.table("users").update({
+        # 1. Create fridge membership
+        membership_response = supabase.table("fridge_memberships").insert({
+            "user_id": fridge_request["requested_by"],
             "fridge_id": fridge_request["fridge_id"]
-        }).eq("id", accept_dto.request_id).execute()
+        }).execute()
+        
+        # 2. Update user profile with active_fridge_id and fridge_id
+        profile_response = supabase.table("users").update({
+            "fridge_id": fridge_request["fridge_id"],
+            "active_fridge_id": fridge_request["fridge_id"]
+        }).eq("id", fridge_request["requested_by"]).execute()
 
         if not profile_response.data:
-            raise HTTPException(status_code=500, detail="Failed to accept invite to fridge")
+            # If user update fails, we might want to rollback membership, 
+            # but for now just raising error is standard for this codebase
+            raise HTTPException(status_code=500, detail="Failed to update user profile")
 
         # Mark request as accepted
         supabase.table("fridge_requests").update({

@@ -8,6 +8,7 @@ import {
   StatusBar,
   ViewStyle,
 } from "react-native";
+import { usePathname } from "expo-router";
 import ProfileIcon from "./ProfileIcon";
 
 type CustomHeaderProps = {
@@ -25,6 +26,9 @@ const CustomHeader = ({
   noShadow = false,
   style,
 }: CustomHeaderProps) => {
+  const pathname = usePathname();
+  const shouldShowProfileIcon = !pathname?.includes('/account/CreateAccount') && pathname !== '/(tabs)' && pathname !== '/';
+  
   return (
     <View style={[styles.header, noShadow && styles.headerNoShadow , style]}>
       <StatusBar barStyle="light-content" backgroundColor="#14b8a6" />
@@ -36,12 +40,14 @@ const CustomHeader = ({
               <Text style={styles.headerTitle}>{title}</Text>
               {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
             </View>
-            <ProfileIcon
-              className="profile-icon"
-              style={{
-                marginLeft: 0,
-              }}
-            />
+            {shouldShowProfileIcon && (
+              <ProfileIcon
+                className="profile-icon"
+                style={{
+                  marginLeft: 0,
+                }}
+              />
+            )}
           </View>
         </View>
       </View>

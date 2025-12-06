@@ -17,7 +17,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { type SetStateAction, type Dispatch } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from 'expo-router';
+import { router } from "expo-router";
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect, useCallback } from "react";
@@ -26,7 +26,6 @@ import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import { useFocusEffect } from "@react-navigation/native";
-
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -46,7 +45,7 @@ interface FridgeMate {
 interface FoodItem {
   id: number;
   name: string;
-  price?: number
+  price?: number;
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -73,7 +72,7 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
     if (mate.name) return mate.name;
     if (mate.email) {
       // Use email prefix as fallback
-      return mate.email.split('@')[0];
+      return mate.email.split("@")[0];
     }
     return "Unknown";
   };
@@ -144,7 +143,11 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
               onPress={() => onQuantityChange(item, -1)}
               style={styles.controlBtn}
             >
-              <Ionicons name="remove-circle-outline" size={20} color="#14b8a6" />
+              <Ionicons
+                name="remove-circle-outline"
+                size={20}
+                color="#14b8a6"
+              />
             </TouchableOpacity>
           )}
 
@@ -160,10 +163,7 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
           </TouchableOpacity>
         </View>
       </View>
-      <TouchableOpacity 
-        onPress={() => onEdit(item)}
-        style={styles.editButton}
-      >
+      <TouchableOpacity onPress={() => onEdit(item)} style={styles.editButton}>
         <Ionicons name="create-outline" size={18} color="#666" />
       </TouchableOpacity>
     </View>
@@ -171,11 +171,10 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
 };
 
 export default function TabOneScreen() {
-
   const { user } = useAuth();
-  const [data, setData] = useState<FoodItem[]>([]); 
+  const [data, setData] = useState<FoodItem[]>([]);
   const [searchValue, setSearchValue] = useState<string>("");
-  
+
   // Edit modal state
   const [editItem, setEditItem] = useState<FoodItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -204,15 +203,17 @@ export default function TabOneScreen() {
     } else {
       setEditExpiryDate(new Date());
     }
-    
+
     // Set shared by user IDs
     if (item.shared_by && item.shared_by.length > 0) {
-      const userIds = item.shared_by.map((mate: any) => mate.id).filter(Boolean);
+      const userIds = item.shared_by
+        .map((mate: any) => mate.id)
+        .filter(Boolean);
       setEditSharedBy(userIds);
     } else {
       setEditSharedBy([]);
     }
-    
+
     setShowEditModal(true);
   };
 
@@ -227,10 +228,12 @@ export default function TabOneScreen() {
     if (isLoadingUsers) return;
     setIsLoadingUsers(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${API_URL}/fridge-mates/`, {
+      const response = await fetch(`${API_URL}/fridge-members/`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -278,17 +281,21 @@ export default function TabOneScreen() {
 
   const getSelectedUsersDisplayText = () => {
     if (editSharedBy.length === 0) return "Select who's sharing (optional)...";
-    
+
     const selectedUsers = users.filter((u) => editSharedBy.includes(u.id));
     if (selectedUsers.length === 0) return "Select who's sharing (optional)...";
-    
+
     if (selectedUsers.length === 1) {
       return getUserDisplayName(selectedUsers[0]);
     }
     if (selectedUsers.length === 2) {
-      return `${getUserDisplayName(selectedUsers[0])} and ${getUserDisplayName(selectedUsers[1])}`;
+      return `${getUserDisplayName(selectedUsers[0])} and ${getUserDisplayName(
+        selectedUsers[1]
+      )}`;
     }
-    return `${getUserDisplayName(selectedUsers[0])}, ${getUserDisplayName(selectedUsers[1])}, and ${selectedUsers.length - 2} more`;
+    return `${getUserDisplayName(selectedUsers[0])}, ${getUserDisplayName(
+      selectedUsers[1]
+    )}, and ${selectedUsers.length - 2} more`;
   };
 
   const handleSaveEdit = async () => {
@@ -299,7 +306,9 @@ export default function TabOneScreen() {
 
     setIsLoadingEdit(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         Alert.alert("Error", "You must be logged in to edit items");
         setIsLoadingEdit(false);
@@ -333,13 +342,16 @@ export default function TabOneScreen() {
 
       // Refresh the items list
       await fetchFridgeItems(false);
-      
+
       setShowEditModal(false);
       setEditItem(null);
       Alert.alert("Success", "Item updated successfully!");
     } catch (error) {
       console.error("Error updating item:", error);
-      Alert.alert("Error", error instanceof Error ? error.message : "Failed to update item");
+      Alert.alert(
+        "Error",
+        error instanceof Error ? error.message : "Failed to update item"
+      );
     } finally {
       setIsLoadingEdit(false);
     }
@@ -362,8 +374,11 @@ export default function TabOneScreen() {
   // Refresh when tab is focused, but only show refreshing indicator (not full loading screen)
   const handleDelete = async (item: FoodItem) => {
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
       if (error || !session) {
         Alert.alert("Error", "Please log in to delete items");
         return;
@@ -372,8 +387,8 @@ export default function TabOneScreen() {
       const response = await fetch(`${API_URL}/items/${item.id}`, {
         method: "DELETE",
         headers: {
-          "Authorization": `Bearer ${session.access_token}`
-        }
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (!response.ok) {
@@ -382,8 +397,9 @@ export default function TabOneScreen() {
 
       // Update local state after successful backend delete
       setData((prev) => prev.filter((i) => i.id !== item.id));
-      originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
-      
+      originalHolder.current = originalHolder.current.filter(
+        (i) => i.id !== item.id
+      );
     } catch (err) {
       console.error("Error deleting item:", err);
       Alert.alert("Error", "Could not delete item. Please try again.");
@@ -391,7 +407,6 @@ export default function TabOneScreen() {
       fetchFridgeItems();
     }
   };
-
 
   const handleQuantityChange = async (item: FoodItem, delta: number) => {
     const newQty = Math.max(1, (item.quantity || 1) + delta);
@@ -408,16 +423,19 @@ export default function TabOneScreen() {
       return `${year}-${month}-${day}`;
     };
 
-
-    const getSharedByIds = (mates: FridgeMate[] | null | undefined): string[] | null => {
+    const getSharedByIds = (
+      mates: FridgeMate[] | null | undefined
+    ): string[] | null => {
       if (!mates || mates.length === 0) return null;
       return mates.map((mate) => mate.id);
     };
 
-    
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
       if (error || !session) {
         Alert.alert("Error", "Please log in to update items");
         return;
@@ -427,15 +445,15 @@ export default function TabOneScreen() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           name: item.name,
           quantity: newQty,
           expiry_date: getExpiryDateString(item.days_till_expiration),
           shared_by: getSharedByIds(item.shared_by),
-          price: item.price ?? 0
-        })
+          price: item.price ?? 0,
+        }),
       });
 
       if (!response.ok) {
@@ -447,15 +465,12 @@ export default function TabOneScreen() {
       originalHolder.current = originalHolder.current.map((it) =>
         it.id === item.id ? updated : it
       );
-      
     } catch (err) {
       console.error("Error updating quantity:", err);
       Alert.alert("Error", "Could not update quantity");
-      fetchFridgeItems();  // Refresh to sync with backend
+      fetchFridgeItems(); // Refresh to sync with backend
     }
   };
-
-
 
   // Auto-refresh when tab is focused
   useFocusEffect(
@@ -467,7 +482,6 @@ export default function TabOneScreen() {
     }, [hasLoadedOnce])
   );
 
-
   const fetchFridgeItems = async (showFullLoading: boolean = true) => {
     try {
       if (showFullLoading) {
@@ -478,7 +492,10 @@ export default function TabOneScreen() {
       }
       console.log("Fetching data from:", `${API_URL}/fridge_items/`);
 
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error || !session) {
         setData([]);
@@ -493,8 +510,8 @@ export default function TabOneScreen() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
-        }
+          Authorization: `Bearer ${session.access_token}`,
+        },
       });
 
       if (!response.ok) {
@@ -542,7 +559,7 @@ export default function TabOneScreen() {
   // Manual refresh handler - only refresh items, don't show full screen loading
   const onRefresh = () => {
     fetchFridgeItems(false);
-  }; 
+  };
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
@@ -621,17 +638,34 @@ export default function TabOneScreen() {
 
   if (error === "NO_FRIDGE") {
     return (
-      <View style={{width: '100%', height: '100%'}}>
+      <View style={{ width: "100%", height: "100%" }}>
         <CustomHeader title="What's In Our Fridge?" />
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+          <Text
+            style={{
+              fontSize: 18,
+              textAlign: "center",
+              padding: 20,
+              color: "#666",
+            }}
+          >
             You haven't joined a fridge yet!
           </Text>
-          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+          <Text
+            style={{
+              fontSize: 14,
+              textAlign: "center",
+              paddingHorizontal: 20,
+              color: "#999",
+            }}
+          >
             Create or join a fridge to start tracking your food items.
           </Text>
           <TouchableOpacity
-            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
+            style={[
+              styles.filter_button,
+              { marginTop: 20, alignSelf: "center", minWidth: "60%" },
+            ]}
             onPress={() => {
               router.push("/(tabs)/create_fridge");
             }}
@@ -662,13 +696,27 @@ export default function TabOneScreen() {
 
   if (data.length === 0) {
     return (
-      <View style={{width: '100%', height: '100%'}}>
-        <CustomHeader title="What's In Our Fridge? PLOY" />
+      <View style={{ width: "100%", height: "100%" }}>
+        <CustomHeader title="What's In Our Fridge?" />
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+          <Text
+            style={{
+              fontSize: 18,
+              textAlign: "center",
+              padding: 20,
+              color: "#666",
+            }}
+          >
             Your fridge is empty!
           </Text>
-          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+          <Text
+            style={{
+              fontSize: 14,
+              textAlign: "center",
+              paddingHorizontal: 20,
+              color: "#999",
+            }}
+          >
             Add some items to get started.
           </Text>
         </View>
@@ -677,81 +725,38 @@ export default function TabOneScreen() {
   }
 
   return (
-  <View style={{
-    width: '100%', height: '100%',
-  }}>
-    <CustomHeader title="What's In Our Kitchen?" />
-    
-    <View style={styles.container}>
-      <View style={styles.searchContainer}>
-        <View style={styles.inputContainer}>
-          <Ionicons name="search-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
-            style={styles.searchInput}
-            onChangeText={searchFunction}
-            value={searchValue}
-            placeholder="Search food items..."
-            placeholderTextColor="#94a3b8"
-          />
-        </View>
-      </View>
-      
-      <PreviewLayout
-        values={["All Items", "Expiring Soon", "My Items", "Shared"]}
-        selectedValue={selectedFilters}
-        setSelectedValue={setSelectedFilters}
-      />
-      
-      <FlatList
-        data={finalListData}
-        renderItem={({ item }) => (
-          <Item
-            item={item}
-            onDelete={handleDelete}
-            onQuantityChange={handleQuantityChange}
-            onEdit={handleEdit}
-          />
-        )}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#14b8a6"]}
-            tintColor="#14b8a6"
-          />
-        }
-      />
-    </View>
+    <View
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
+    >
+      <CustomHeader title="What's In Our Kitchen?" />
 
-    {/* Edit Modal */}
-    {showEditModal && editItem && (
-      <Modal
-        transparent={true}
-        animationType="slide"
-        visible={showEditModal}
-        onRequestClose={() => setShowEditModal(false)}
-      >
-        <Pressable 
-          style={styles.modalOverlay} 
-          onPress={() => setShowEditModal(false)} 
+      <View style={styles.container}>
+        <View style={styles.searchContainer}>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="search-outline"
+              size={20}
+              color="#94a3b8"
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.searchInput}
+              onChangeText={searchFunction}
+              value={searchValue}
+              placeholder="Search food items..."
+              placeholderTextColor="#94a3b8"
+            />
+          </View>
+        </View>
+
+        <PreviewLayout
+          values={["All Items", "Expiring Soon", "My Items", "Shared"]}
+          selectedValue={selectedFilters}
+          setSelectedValue={setSelectedFilters}
         />
-        <View style={styles.editModalCard}>
-          <ScrollView
-            contentContainerStyle={styles.modalScrollContent}
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Item</Text>
-              <TouchableOpacity
-                onPress={() => setShowEditModal(false)}
-                style={styles.modalCloseButton}
-              >
-                <Ionicons name="close" size={24} color="#64748b" />
-              </TouchableOpacity>
-            </View>
 
             {/* Item Name */}
             <Text style={styles.modalInputLabel}>Item Name *</Text>
@@ -826,11 +831,23 @@ export default function TabOneScreen() {
               </Text>
             </TouchableOpacity>
 
-            {/* Save Button */}
-            <TouchableOpacity
-              style={[styles.modalSaveButton, isLoadingEdit && styles.modalSaveButtonDisabled]}
-              onPress={handleSaveEdit}
-              disabled={isLoadingEdit}
+      {/* Edit Modal */}
+      {showEditModal && editItem && (
+        <Modal
+          transparent={true}
+          animationType="slide"
+          visible={showEditModal}
+          onRequestClose={() => setShowEditModal(false)}
+        >
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => setShowEditModal(false)}
+          />
+          <View style={styles.editModalCard}>
+            <ScrollView
+              contentContainerStyle={styles.modalScrollContent}
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
             >
               <Text style={styles.modalSaveButtonText}>
                 {isLoadingEdit ? "Saving..." : "Save Changes"}
@@ -1004,7 +1021,7 @@ const styles = StyleSheet.create({
     padding: 20,
     color: "#333",
   },
-  
+
   searchContainer: {
     width: "100%",
     alignItems: "center",
@@ -1050,7 +1067,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     alignItems: "center",
   },
-  
+
   // Item Card Styles
   item: {
     backgroundColor: "#ffffff",
@@ -1087,7 +1104,6 @@ const styles = StyleSheet.create({
     padding: 4,
     marginTop: -11,
     marginRight: -8,
-
   },
   infoText: {
     fontSize: 15,
@@ -1100,7 +1116,7 @@ const styles = StyleSheet.create({
   redText: {
     color: "#dc2626",
   },
-  
+
   itemRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -1331,4 +1347,3 @@ const styles = StyleSheet.create({
     color: "#1e293b",
   },
 });
-

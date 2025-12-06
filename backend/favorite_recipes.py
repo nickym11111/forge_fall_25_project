@@ -125,12 +125,37 @@ def get_items(current_user = Depends(get_current_user)):
 class RecipeDelete(BaseModel):
     recipe_name: str
 
-@app.delete("/delete-recipe/")
-def delete_item(payload: RecipeDelete):
-    response = (
-        supabase.table("favorite_recipes")
-        .delete()
-        .eq("recipe_name", payload.recipe_name)
-        .execute()
-    )
-    return {"data": response.data}
+@app.delete("/delete-recipe/{recipe_id}")
+def delete_item(recipe_id: int):
+    try:
+        print(f"Attempting to delete recipe with ID: {recipe_id}")
+        
+        # First check if the recipe exists
+        check_response = supabase.table("favorite_recipes").select("*").eq("id", recipe_id).execute()
+        print(f"Recipe exists check: {check_response.data}")
+        
+        if not check_response.data or len(check_response.data) == 0:
+            raise HTTPException(status_code=404, detail=f"Recipe with ID {recipe_id} not found")
+        
+        # Delete the recipe
+        response = (
+            supabase.table("favorite_recipes")
+            .delete()
+            .eq("id", recipe_id)
+            .execute()
+        )
+        
+        print(f"Delete response: {response.data}")
+        
+        return {
+            "data": response.data, 
+            "status": "success",
+            "message": "Recipe deleted successfully"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting recipe: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to delete recipe: {str(e)}")

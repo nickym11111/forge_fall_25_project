@@ -55,7 +55,9 @@ const RequestCard = ({
       const endpoint =
         status === "ACCEPTED" ? "/fridge/accept-request/" : "/decline-request/";
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
       if (!session) {
         Alert.alert("Error", "Please log in again");
@@ -66,7 +68,7 @@ const RequestCard = ({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           request_id: request.id,
@@ -82,7 +84,6 @@ const RequestCard = ({
 
       Alert.alert("Success", result.message);
       onStatusChange();
-
     } catch (error) {
       console.error(
         `Error ${status === "ACCEPTED" ? "accepting" : "declining"} request:`,
@@ -90,8 +91,8 @@ const RequestCard = ({
       );
       Alert.alert(
         "Error",
-        error instanceof Error 
-          ? error.message 
+        error instanceof Error
+          ? error.message
           : `Failed to ${status === "ACCEPTED" ? "accept" : "decline"} request`
       );
     } finally {
@@ -100,6 +101,7 @@ const RequestCard = ({
   };
 
   const getUserName = () => {
+    console.log(request);
     const user = request.users;
     if (user?.first_name && user?.last_name) {
       return `${user.first_name} ${user.last_name}`;
@@ -113,9 +115,6 @@ const RequestCard = ({
       <Text style={styles.cardTitle}>Join Request</Text>
       <Text style={styles.cardText}>
         <Text style={styles.label}>User:</Text> {getUserName()}
-      </Text>
-      <Text style={styles.cardText}>
-        <Text style={styles.label}>Kitchen:</Text> {request.fridges?.name || "Unknown Kitchen"}
       </Text>
       <Text style={styles.cardText}>
         <Text style={styles.label}>Email:</Text> {request.users?.email || "N/A"}
@@ -152,7 +151,11 @@ const RequestCard = ({
   );
 };
 
-const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalProps) => {
+const ViewRequestsModal = ({
+  fridgeId,
+  fridgeName,
+  onClose,
+}: ViewRequestsModalProps) => {
   const [requests, setRequests] = useState<FridgeRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -162,7 +165,9 @@ const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalP
       if (!refreshing) setLoading(true);
       setRefreshing(true);
 
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) {
         throw new Error("No active session");
       }
@@ -180,7 +185,6 @@ const ViewRequestsModal = ({ fridgeId, fridgeName, onClose }: ViewRequestsModalP
 
       const result = await response.json();
       setRequests(result.data || []);
-
     } catch (err) {
       console.error("Error fetching requests:", err);
       Alert.alert("Error", "Failed to load requests");

@@ -30,6 +30,17 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/authContext";
 import { router } from "expo-router";
 
+// Conditionally import react-datepicker for web
+let DatePicker: any;
+if (Platform.OS === "web") {
+  try {
+    DatePicker = require("react-datepicker").default;
+    require("react-datepicker/dist/react-datepicker.css");
+  } catch (e) {
+    console.warn("Failed to load react-datepicker", e);
+  }
+}
+
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
@@ -53,7 +64,9 @@ export default function ParseReceiptScreen() {
   const [itemQuantity, setItemQuantity] = useState("");
   const [itemPrice, setItemPrice] = useState("");
   const [itemExpiryDate, setItemExpiryDate] = useState<Date>(new Date());
-  const [tempItemExpiryDate, setTempItemExpiryDate] = useState<Date>(new Date());
+  const [tempItemExpiryDate, setTempItemExpiryDate] = useState<Date>(
+    new Date()
+  );
   const [showItemDatePicker, setShowItemDatePicker] = useState(false);
   const [showItemUserPicker, setShowItemUserPicker] = useState(false);
   const [itemSharedByUserIds, setItemSharedByUserIds] = useState<string[]>([]);
@@ -222,13 +235,13 @@ export default function ParseReceiptScreen() {
         base64Image = file.base64Sync();
       }
       const response = await CreateParseReceiptRequest(base64Image);
-      
+
       // Log the raw response to debug
       console.log("Raw API response:", response);
-      
+
       // Check if response is already an object or needs parsing
       let parsed;
-      if (typeof response === 'string') {
+      if (typeof response === "string") {
         parsed = JSON.parse(response);
       } else {
         parsed = response;
@@ -246,7 +259,7 @@ export default function ParseReceiptScreen() {
       setResponseText(JSON.stringify(parsed, null, 2));
     } catch (error) {
       console.error("Parsing error:", error);
-      
+
       // Retry once if this is the first attempt
       if (retryCount === 0) {
         console.log("First parsing attempt failed, retrying...");
@@ -276,10 +289,12 @@ export default function ParseReceiptScreen() {
 
   const fetchItemUsers = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${API_URL}/fridge-mates/`, {
+      const response = await fetch(`${API_URL}/fridge-members/`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -292,24 +307,28 @@ export default function ParseReceiptScreen() {
         } else {
           // Fallback to fridgeMates from user context
           if (user?.fridgeMates) {
-            setItemUsers(user.fridgeMates.map((mate: any) => ({
-              id: mate.id,
-              first_name: mate.first_name,
-              last_name: mate.last_name,
-              email: mate.email,
-            })));
+            setItemUsers(
+              user.fridgeMates.map((mate: any) => ({
+                id: mate.id,
+                first_name: mate.first_name,
+                last_name: mate.last_name,
+                email: mate.email,
+              }))
+            );
           }
         }
       }
     } catch (error) {
       console.error("Error fetching users:", error);
       if (user?.fridgeMates) {
-        setItemUsers(user.fridgeMates.map((mate: any) => ({
-          id: mate.id,
-          first_name: mate.first_name,
-          last_name: mate.last_name,
-          email: mate.email,
-        })));
+        setItemUsers(
+          user.fridgeMates.map((mate: any) => ({
+            id: mate.id,
+            first_name: mate.first_name,
+            last_name: mate.last_name,
+            email: mate.email,
+          }))
+        );
       }
     }
   };
@@ -358,7 +377,7 @@ export default function ParseReceiptScreen() {
         itemSharedByUserIds,
         itemPrice ? Number(itemPrice) : undefined
       );
-      
+
       const data = await response.json();
 
       if (response.ok) {
@@ -462,10 +481,10 @@ export default function ParseReceiptScreen() {
         subtitle="Take a photo or upload a receipt to automatically add items"
         noShadow={true}
         style={{
-          marginBottom: 10
+          marginBottom: 10,
         }}
       />
-      
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -475,10 +494,15 @@ export default function ParseReceiptScreen() {
           style={styles.addItemButton}
           onPress={() => setShowAddItemModal(true)}
         >
-          <Ionicons name="add" size={20} color="white" style={{ marginRight: 6 }} />
+          <Ionicons
+            name="add"
+            size={20}
+            color="white"
+            style={{ marginRight: 6 }}
+          />
           <Text style={styles.addItemButtonText}>Add Item Manually</Text>
         </TouchableOpacity>
-        
+
         <View style={styles.uploadSection}>
           <View style={styles.imageContainer}>
             <TouchableOpacity
@@ -871,6 +895,7 @@ export default function ParseReceiptScreen() {
           animationType="fade"
           visible={showAddItemModal}
           onRequestClose={() => {
+            Keyboard.dismiss();
             resetAddItemForm();
             setShowAddItemModal(false);
           }}
@@ -878,206 +903,258 @@ export default function ParseReceiptScreen() {
           <Pressable
             style={styles.addItemModalOverlay}
             onPress={() => {
+              Keyboard.dismiss();
               resetAddItemForm();
               setShowAddItemModal(false);
             }}
           >
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={styles.addItemModalCard}>
-                <View style={styles.addItemModalScrollContent}>
-                  <View style={styles.addItemModalHeader}>
-                    <Text style={styles.addItemModalTitle}>Add Item</Text>
+            <Pressable
+              onPress={(e) => {
+                e.stopPropagation();
+                Keyboard.dismiss();
+              }}
+            >
+              <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.addItemModalCard}>
+                  <View style={styles.addItemModalScrollContent}>
+                    <View style={styles.addItemModalHeader}>
+                      <Text style={styles.addItemModalTitle}>Add Item</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Keyboard.dismiss();
+                          resetAddItemForm();
+                          setShowAddItemModal(false);
+                        }}
+                        style={styles.addItemModalCloseButton}
+                      >
+                        <Ionicons name="close" size={20} color="#64748b" />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Item Name */}
+                    <Text style={styles.addItemModalLabel}>
+                      Item Name <Text style={{ color: "#ef4444" }}>*</Text>
+                    </Text>
+                    <View style={styles.addItemModalInputContainer}>
+                      <Ionicons
+                        name="cube-outline"
+                        size={18}
+                        color="#94a3b8"
+                        style={styles.addItemModalInputIcon}
+                      />
+                      <TextInput
+                        style={styles.addItemModalInput}
+                        placeholder="e.g., Milk, Eggs, Chicken"
+                        placeholderTextColor="#94a3b8"
+                        value={itemTitle}
+                        onChangeText={setItemTitle}
+                        editable={!isAddingItem}
+                      />
+                    </View>
+
+                    {/* Quantity */}
+                    <Text style={styles.addItemModalLabel}>Quantity</Text>
+                    <View style={styles.addItemModalInputContainer}>
+                      <Ionicons
+                        name="calculator-outline"
+                        size={18}
+                        color="#94a3b8"
+                        style={styles.addItemModalInputIcon}
+                      />
+                      <TextInput
+                        style={styles.addItemModalInput}
+                        placeholder="e.g., 2 (default: 1)"
+                        placeholderTextColor="#94a3b8"
+                        value={itemQuantity}
+                        onChangeText={setItemQuantity}
+                        keyboardType="numeric"
+                        editable={!isAddingItem}
+                      />
+                    </View>
+
+                    {/* Price */}
+                    <Text style={styles.addItemModalLabel}>Price ($)</Text>
+                    <View style={styles.addItemModalInputContainer}>
+                      <Ionicons
+                        name="cash-outline"
+                        size={18}
+                        color="#94a3b8"
+                        style={styles.addItemModalInputIcon}
+                      />
+                      <TextInput
+                        style={styles.addItemModalInput}
+                        placeholder="e.g., 4.99 (optional)"
+                        placeholderTextColor="#94a3b8"
+                        value={itemPrice}
+                        onChangeText={setItemPrice}
+                        keyboardType="decimal-pad"
+                        editable={!isAddingItem}
+                      />
+                    </View>
+
+                    {/* Expiry Date */}
+                    <Text style={styles.addItemModalLabel}>Expiry Date</Text>
+                    {Platform.OS === "web" && DatePicker ? (
+                      <View style={styles.addItemModalInputContainer}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={18}
+                          color="#94a3b8"
+                          style={styles.addItemModalInputIcon}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <DatePicker
+                            selected={itemExpiryDate}
+                            onChange={(date: Date) => {
+                              if (date) {
+                                setItemExpiryDate(date);
+                                setItemAiSuggested(false);
+                              }
+                            }}
+                            className="w-full !bg-transparent !border-0 text-slate-700 font-medium"
+                            dateFormat="MMMM d, yyyy"
+                            minDate={new Date()}
+                            customInput={
+                              <TextInput
+                                style={{
+                                  ...styles.addItemModalDatePickerText,
+                                  width: "100%",
+                                  outline: "none",
+                                }}
+                              />
+                            }
+                          />
+                        </View>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.addItemModalInputContainer}
+                        onPress={() => {
+                          setTempItemExpiryDate(itemExpiryDate);
+                          setShowItemDatePicker(true);
+                        }}
+                        disabled={isAddingItem}
+                      >
+                        <Ionicons
+                          name="calendar-outline"
+                          size={18}
+                          color="#94a3b8"
+                          style={styles.addItemModalInputIcon}
+                        />
+                        <Text style={styles.addItemModalDatePickerText}>
+                          {formatItemDate(itemExpiryDate)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+
+                    {/* Shared By */}
+                    <Text style={styles.addItemModalLabel}>Shared By</Text>
                     <TouchableOpacity
+                      style={styles.addItemModalInputContainer}
                       onPress={() => {
-                        resetAddItemForm();
-                        setShowAddItemModal(false);
+                        if (itemUsers.length === 0) fetchItemUsers();
+                        setShowItemUserPicker(true);
                       }}
-                      style={styles.addItemModalCloseButton}
+                      disabled={isAddingItem}
                     >
-                      <Ionicons name="close" size={20} color="#64748b" />
+                      <Ionicons
+                        name="people-outline"
+                        size={18}
+                        color="#94a3b8"
+                        style={styles.addItemModalInputIcon}
+                      />
+                      <Text
+                        style={
+                          itemSharedByUserIds.length > 0
+                            ? styles.addItemModalDatePickerText
+                            : styles.addItemModalDatePickerPlaceholder
+                        }
+                      >
+                        {getSelectedItemUsersText()}
+                      </Text>
                     </TouchableOpacity>
+
+                    {/* Add Button */}
+                    <View style={styles.addItemModalButtonContainer}>
+                      <CustomButton
+                        title={isAddingItem ? "Adding..." : "Add Item"}
+                        onPress={handleAddItemSubmit}
+                        style={styles.addItemModalAddButton}
+                        className=""
+                        disabled={isAddingItem}
+                      />
+                    </View>
                   </View>
+                </View>
+              </TouchableWithoutFeedback>
 
-                  {/* Item Name */}
-              <Text style={styles.addItemModalLabel}>
-                Item Name <Text style={{ color: "#ef4444" }}>*</Text>
-              </Text>
-              <View style={styles.addItemModalInputContainer}>
-                <Ionicons
-                  name="cube-outline"
-                  size={18}
-                  color="#94a3b8"
-                  style={styles.addItemModalInputIcon}
-                />
-                <TextInput
-                  style={styles.addItemModalInput}
-                  placeholder="e.g., Milk, Eggs, Chicken"
-                  placeholderTextColor="#94a3b8"
-                  value={itemTitle}
-                  onChangeText={setItemTitle}
-                  editable={!isAddingItem}
-                />
-              </View>
-
-              {/* Quantity */}
-              <Text style={styles.addItemModalLabel}>Quantity</Text>
-              <View style={styles.addItemModalInputContainer}>
-                <Ionicons
-                  name="calculator-outline"
-                  size={18}
-                  color="#94a3b8"
-                  style={styles.addItemModalInputIcon}
-                />
-                <TextInput
-                  style={styles.addItemModalInput}
-                  placeholder="e.g., 2 (default: 1)"
-                  placeholderTextColor="#94a3b8"
-                  value={itemQuantity}
-                  onChangeText={setItemQuantity}
-                  keyboardType="numeric"
-                  editable={!isAddingItem}
-                />
-              </View>
-
-              {/* Price */}
-              <Text style={styles.addItemModalLabel}>Price ($)</Text>
-              <View style={styles.addItemModalInputContainer}>
-                <Ionicons
-                  name="cash-outline"
-                  size={18}
-                  color="#94a3b8"
-                  style={styles.addItemModalInputIcon}
-                />
-                <TextInput
-                  style={styles.addItemModalInput}
-                  placeholder="e.g., 4.99 (optional)"
-                  placeholderTextColor="#94a3b8"
-                  value={itemPrice}
-                  onChangeText={setItemPrice}
-                  keyboardType="decimal-pad"
-                  editable={!isAddingItem}
-                />
-              </View>
-
-              {/* Expiry Date */}
-              <Text style={styles.addItemModalLabel}>Expiry Date</Text>
-              <TouchableOpacity
-                style={styles.addItemModalInputContainer}
-                onPress={() => {
-                  setTempItemExpiryDate(itemExpiryDate);
-                  setShowItemDatePicker(true);
-                }}
-                disabled={isAddingItem}
-              >
-                <Ionicons
-                  name="calendar-outline"
-                  size={18}
-                  color="#94a3b8"
-                  style={styles.addItemModalInputIcon}
-                />
-                <Text style={styles.addItemModalDatePickerText}>
-                  {formatItemDate(itemExpiryDate)}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Shared By */}
-              <Text style={styles.addItemModalLabel}>Shared By</Text>
-              <TouchableOpacity
-                style={styles.addItemModalInputContainer}
-                onPress={() => {
-                  if (itemUsers.length === 0) fetchItemUsers();
-                  setShowItemUserPicker(true);
-                }}
-                disabled={isAddingItem}
-              >
-                <Ionicons
-                  name="people-outline"
-                  size={18}
-                  color="#94a3b8"
-                  style={styles.addItemModalInputIcon}
-                />
-                <Text
-                  style={
-                    itemSharedByUserIds.length > 0
-                      ? styles.addItemModalDatePickerText
-                      : styles.addItemModalDatePickerPlaceholder
-                  }
+              {/* Date Picker Modal for Add Item - iOS Overlay inside Modal */}
+              {showItemDatePicker && Platform.OS === "ios" && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    zIndex: 1000,
+                  }}
                 >
-                  {getSelectedItemUsersText()}
-                </Text>
-              </TouchableOpacity>
+                  <View style={styles.addItemDatePickerModalPopupBox}>
+                    <View style={styles.addItemDatePickerModalHeader}>
+                      <TouchableOpacity
+                        onPress={cancelItemDateSelection}
+                        style={styles.addItemDatePickerModalButton}
+                      >
+                        <Text style={styles.addItemDatePickerModalButtonText}>
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                      <Text style={styles.addItemDatePickerModalTitle}>
+                        Select Date
+                      </Text>
+                      <TouchableOpacity
+                        onPress={confirmItemDateSelection}
+                        style={styles.addItemDatePickerModalButton}
+                      >
+                        <Text style={styles.addItemDatePickerModalButtonText}>
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.addItemDatePickerModalPickerWrapper}>
+                      <DateTimePicker
+                        value={tempItemExpiryDate}
+                        mode="date"
+                        display="inline"
+                        onChange={onItemDateChange}
+                        minimumDate={new Date()}
+                        style={styles.addItemDatePickerIOS}
+                      />
+                    </View>
+                  </View>
+                </View>
+              )}
 
-              {/* Add Button */}
-              <View style={styles.addItemModalButtonContainer}>
-                <CustomButton
-                  title={isAddingItem ? "Adding..." : "Add Item"}
-                  onPress={handleAddItemSubmit}
-                  style={styles.addItemModalAddButton}
-                  className=""
-                  disabled={isAddingItem}
+              {/* Android DatePicker outside Card but inside Pressable? Loop suggests checking placement. 
+                Android DateTimePicker is usually a dialog on its own (display='default'). 
+                Rendering it here triggers the dialog. It doesn't need to be visually inside the layout flow. 
+            */}
+              {showItemDatePicker && Platform.OS === "android" && (
+                <DateTimePicker
+                  value={itemExpiryDate}
+                  mode="date"
+                  display="default"
+                  onChange={onItemDateChange}
+                  minimumDate={new Date()}
                 />
-                </View>
-                </View>
-              </View>
+              )}
             </Pressable>
           </Pressable>
         </Modal>
-      )}
-
-      {/* Date Picker Modal for Add Item */}
-      {showItemDatePicker && Platform.OS === "ios" && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          visible={showItemDatePicker}
-          onRequestClose={cancelItemDateSelection}
-        >
-          <View style={styles.addItemDatePickerModalContainer}>
-            <View style={styles.addItemDatePickerModalPopupBox}>
-              <View style={styles.addItemDatePickerModalHeader}>
-                <TouchableOpacity
-                  onPress={cancelItemDateSelection}
-                  style={styles.addItemDatePickerModalButton}
-                >
-                  <Text style={styles.addItemDatePickerModalButtonText}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.addItemDatePickerModalTitle}>
-                  Select Date
-                </Text>
-                <TouchableOpacity
-                  onPress={confirmItemDateSelection}
-                  style={styles.addItemDatePickerModalButton}
-                >
-                  <Text style={styles.addItemDatePickerModalButtonText}>
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.addItemDatePickerModalPickerWrapper}>
-                <DateTimePicker
-                  value={tempItemExpiryDate}
-                  mode="date"
-                  display="inline"
-                  onChange={onItemDateChange}
-                  minimumDate={new Date()}
-                  style={styles.addItemDatePickerIOS}
-                />
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {showItemDatePicker && Platform.OS === "android" && (
-        <DateTimePicker
-          value={itemExpiryDate}
-          mode="date"
-          display="default"
-          onChange={onItemDateChange}
-          minimumDate={new Date()}
-        />
       )}
 
       {/* User Picker Modal for Add Item */}
@@ -1756,5 +1833,5 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
-  }
+  },
 });
