@@ -335,7 +335,7 @@ export default function CreateFridgeScreen() {
       </View>
       <TouchableOpacity
         style={styles.closeButton}
-        onPress={() => navigate("/")}
+        onPress={() => router.back()}
       >
         <Ionicons name="close" size={28} color="#64748b" />
       </TouchableOpacity>
