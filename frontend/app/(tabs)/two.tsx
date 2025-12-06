@@ -17,7 +17,7 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { type SetStateAction, type Dispatch } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from 'expo-router';
+import { router } from "expo-router";
 import EditScreenInfo from "@/components/EditScreenInfo";
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useEffect, useCallback } from "react";
