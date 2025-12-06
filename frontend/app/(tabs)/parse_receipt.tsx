@@ -283,7 +283,7 @@ export default function ParseReceiptScreen() {
       } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${API_URL}/fridge-mates/`, {
+      const response = await fetch(`${API_URL}/fridge-members/`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -889,20 +889,14 @@ export default function ParseReceiptScreen() {
             setShowAddItemModal(false);
           }}
         >
-          <Pressable
-            style={styles.addItemModalOverlay}
+          <TouchableWithoutFeedback
             onPress={() => {
               Keyboard.dismiss();
               resetAddItemForm();
               setShowAddItemModal(false);
             }}
           >
-            <Pressable
-              onPress={(e) => {
-                e.stopPropagation();
-                Keyboard.dismiss();
-              }}
-            >
+            <View style={styles.addItemModalOverlay}>
               <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.addItemModalCard}>
                   <View style={styles.addItemModalScrollContent}>
@@ -1042,8 +1036,8 @@ export default function ParseReceiptScreen() {
                   </View>
                 </View>
               </TouchableWithoutFeedback>
-            </Pressable>
-          </Pressable>
+            </View>
+          </TouchableWithoutFeedback>
         </Modal>
       )}
 
@@ -1055,8 +1049,12 @@ export default function ParseReceiptScreen() {
           visible={showItemDatePicker}
           onRequestClose={cancelItemDateSelection}
         >
-          <View style={styles.addItemDatePickerModalContainer}>
-            <View style={styles.addItemDatePickerModalPopupBox}>
+          <Pressable
+            style={styles.addItemDatePickerModalContainer}
+            onPress={cancelItemDateSelection}
+          >
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View style={styles.addItemDatePickerModalPopupBox}>
               <View style={styles.addItemDatePickerModalHeader}>
                 <TouchableOpacity
                   onPress={cancelItemDateSelection}
@@ -1088,8 +1086,9 @@ export default function ParseReceiptScreen() {
                   style={styles.addItemDatePickerIOS}
                 />
               </View>
-            </View>
-          </View>
+              </View>
+            </Pressable>
+          </Pressable>
         </Modal>
       )}
 
@@ -1111,8 +1110,12 @@ export default function ParseReceiptScreen() {
           visible={showItemUserPicker}
           onRequestClose={() => setShowItemUserPicker(false)}
         >
-          <View style={styles.addItemUserPickerModalOverlay}>
-            <View style={styles.addItemUserPickerModalCard}>
+          <Pressable
+            style={styles.addItemUserPickerModalOverlay}
+            onPress={() => setShowItemUserPicker(false)}
+          >
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View style={styles.addItemUserPickerModalCard}>
               <View style={styles.addItemUserPickerModalHeader}>
                 <TouchableOpacity
                   onPress={() => {
@@ -1161,8 +1164,9 @@ export default function ParseReceiptScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            </View>
-          </View>
+              </View>
+            </Pressable>
+          </Pressable>
         </Modal>
       )}
     </KeyboardAvoidingView>
