@@ -262,7 +262,7 @@ export default function SharedListScreen() {
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <CustomHeader title="Shared Shopping List 🛒" />
+      <CustomHeader title="Shared Shopping List" />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View>
           {/* Top Card (Add Item quick input) */}
