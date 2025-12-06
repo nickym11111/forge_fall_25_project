@@ -1,4 +1,15 @@
-import { StyleSheet, TextInput, View, Text, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ScrollView, Modal } from "react-native";
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  Text,
+  TouchableOpacity,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ScrollView,
+  Modal,
+  Image,
+} from "react-native";
 import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
@@ -23,27 +34,44 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader 
-      title="Food Flow  " 
-      logo={require('../../assets/images/FridgeIcon.png')}/>
+      <CustomHeader
+        title="Log in"
+        logo={require("../../assets/images/New_Fridge_Logo.png")}
+      />
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.loginContainer}
           keyboardShouldPersistTaps="handled"
         >
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../assets/images/New_Fridge_Logo.png")}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.headline}>KitchenCloud</Text>
+          </View>
           <View style={styles.loginCard}>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "email" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
-            onChangeText={setEmail}
-            placeholder="Email"
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "email" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                onChangeText={setEmail}
+                placeholder="Email"
                 placeholderTextColor="#94a3b8"
-            value={email}
-            style={styles.loginInput}
+                value={email}
+                style={styles.loginInput}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 onFocus={() => setFocusedInput("email")}
@@ -53,19 +81,27 @@ export default function TabOneScreen() {
                 blurOnSubmit={true}
               />
             </View>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "password" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "password" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
                 ref={passwordRef}
-            onChangeText={setPassword}
-            placeholder="Password"
+                onChangeText={setPassword}
+                placeholder="Password"
                 placeholderTextColor="#94a3b8"
-            value={password}
+                value={password}
                 secureTextEntry={!showPassword}
-            style={styles.loginInput}
+                style={styles.loginInput}
                 onFocus={() => setFocusedInput("password")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
@@ -83,34 +119,40 @@ export default function TabOneScreen() {
                 />
               </TouchableOpacity>
             </View>
-          <CustomButton
+            <CustomButton
               title="Sign In"
-            onPress={async () => {
-              try {
-                const result = await login(email, password);
-                
+              onPress={async () => {
+                try {
+                  const result = await login(email, password);
+
                   if (!result.success) {
-                    setErrorMessage(result.error || "We're sorry, but something went wrong. Please try again.");
+                    setErrorMessage(
+                      result.error ||
+                        "We're sorry, but something went wrong. Please try again."
+                    );
                     setShowErrorModal(true);
-                }
-              } catch (e) {
-                  setErrorMessage("We're sorry, but something went wrong. Please try again.");
+                  }
+                } catch (e) {
+                  setErrorMessage(
+                    "We're sorry, but something went wrong. Please try again."
+                  );
                   setShowErrorModal(true);
-                console.log(e);
-              }
-            }}
-            style={styles.loginButton}
-            className="" 
-            disabled={false}
-          />
+                  console.log(e);
+                }
+              }}
+              style={styles.loginButton}
+              className=""
+              disabled={false}
+            />
             <TouchableOpacity
-            style={styles.createAccountButton}
-            onPress={() => {
-              navigate("/account/CreateAccount");
-            }}
-          >
+              style={styles.createAccountButton}
+              onPress={() => {
+                navigate("/account/CreateAccount");
+              }}
+            >
               <Text style={styles.createAccountText}>
-                Don't have an account? <Text style={styles.createAccountLink}>Create Account</Text>
+                Don't have an account?{" "}
+                <Text style={styles.createAccountLink}>Create Account</Text>
               </Text>
             </TouchableOpacity>
           </View>
@@ -126,9 +168,7 @@ export default function TabOneScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.errorModal}>
             <Text style={styles.errorTitle}>Error</Text>
-            <Text style={styles.errorMessage}>
-              {errorMessage}
-          </Text>
+            <Text style={styles.errorMessage}>{errorMessage}</Text>
             <TouchableOpacity
               style={styles.errorButton}
               onPress={() => setShowErrorModal(false)}
@@ -146,6 +186,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FAFBFC",
+  },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
+  headline: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#0f172a",
+    marginTop: 16,
   },
   loginContainer: {
     flexGrow: 1,
