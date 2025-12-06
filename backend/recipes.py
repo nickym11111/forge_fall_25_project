@@ -56,28 +56,29 @@ def find_ingredients(ingredients: Ingredients):
 @app.post("/add_to_grocery_list")
 async def add_to_grocery_list(grocery_item: GroceryItem):
     """
-    Add an ingredient to the user's grocery list
+    Add an ingredient to the shopping list
     """
     try:
-        print(f"Adding '{grocery_item.ingredient}' to grocery list for user {grocery_item.userId}")
+        print(f"Adding '{grocery_item.ingredient}' to shopping list for user {grocery_item.userId}")
         
-        # Insert into grocery_list table
-        result = supabase.table("grocery_list").insert({
-            "item_name": grocery_item.ingredient,
-            "user_id": grocery_item.userId,
+        # Insert into shopping_list table
+        result = supabase.table("shopping_list").insert({
+            "name": grocery_item.ingredient,
+            "requested_by": grocery_item.userId,
             "fridge_id": grocery_item.fridgeId,
-            "added_at": datetime.now().isoformat(),
-            "is_purchased": False
+            "checked": False,
+            "quantity": 1,
+            # Don't include created_at - it auto-generates
         }).execute()
         
         print(f"Successfully added: {result.data}")
         
         return {
             "status": "success", 
-            "message": f"{grocery_item.ingredient} added to grocery list"
+            "message": f"{grocery_item.ingredient} added to shopping list"
         }
         
     except Exception as e:
-        error_msg = f"Error adding to grocery list: {str(e)}"
+        error_msg = f"Error adding to shopping list: {str(e)}"
         print(error_msg)
         raise HTTPException(status_code=500, detail=error_msg)
