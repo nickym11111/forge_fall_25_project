@@ -238,7 +238,7 @@ export default function CreateFridgeScreen() {
     <View style={styles.container}>
       {/*Page Header*/}
       <CustomHeader 
-      title="Create Fridge  "
+      title= "                    Create Fridge"
       logo={require('../../assets/images/FridgeIcon.png')}
       />
       <ProfileIcon className="profileIcon" />

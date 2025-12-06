@@ -244,7 +244,7 @@ const PreviewLayout = ({
 return (
     <View style={styles.container}>
     <CustomHeader 
-      title="Share Recipes!  "
+      title="             Share Recipes!  "
       />
       <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.scrollContent}>

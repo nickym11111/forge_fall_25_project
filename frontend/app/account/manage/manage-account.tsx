@@ -112,7 +112,7 @@ export default function ManageAccount() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Manage Account 🧾</Text>
+        <Text style={styles.headerTitle}>Manage Account</Text>
       </View>
       <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
         <Ionicons name="close-circle" size={36} color="#333" />

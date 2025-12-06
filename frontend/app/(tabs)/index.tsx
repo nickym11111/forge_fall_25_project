@@ -25,7 +25,7 @@ export default function TabOneScreen() {
   return (
     <View style={styles.container}>
       <CustomHeader 
-      title="Food Flow  " 
+      title="       Kitchen Cloud " 
       logo={require('../../assets/images/FridgeIcon.png')}/>
       <ProfileIcon className="profileIcon" />
 

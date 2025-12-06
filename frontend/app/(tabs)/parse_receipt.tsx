@@ -221,8 +221,8 @@ export default function ParseReceiptScreen() {
       style={styles.container}
     >
       <CustomHeader
-        title="Scan Receipt"
-        subtitle="Take a photo or upload a receipt to automatically add items"
+        title="                Scan Receipt"
+        subtitle="   Take photo or upload receipt to add items"
         noShadow={true}
       />
       <ScrollView

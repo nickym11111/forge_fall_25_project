@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   Keyboard,
   TouchableWithoutFeedback,
+  TextStyle
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useState, useEffect } from "react";
@@ -28,6 +29,7 @@ interface ApiResponse {
   message: string;
   detail?: string;
 }
+
 
 interface User {
   id: string;
@@ -46,6 +48,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#FAFBFC",
+  },
+    header: {
+    width: "100%",
+    paddingVertical: 15,
   },
 
   scrollContent: {
@@ -713,11 +719,14 @@ export default function AddItemManual() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
+    <View style={styles.header}>
       <CustomHeader 
         title="Add Item" 
         subtitle="Manually add items to your kitchen inventory"
       />
-      <ProfileIcon className="profileIcon" />
+    </View>
+
+
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
@@ -941,3 +950,4 @@ export default function AddItemManual() {
     </KeyboardAvoidingView>
   );
 }
+

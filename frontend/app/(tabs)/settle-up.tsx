@@ -145,7 +145,7 @@ export default function SettleUpScreen() {
     return (
       <View style={styles.centerContainer}>
         <View style={styles.centerContainer}>
-        <CustomHeader title="Settle Up"/>
+        <CustomHeader title="                    Settle Up"/>
         </View>
         <ProfileIcon className="profileIcon" />
         <ActivityIndicator size="large" color="purple" />
@@ -158,7 +158,7 @@ export default function SettleUpScreen() {
     return (
       <View style={styles.centerContainer}>
         <View style={{ width: "100%", alignItems: "center" }}>
-        <CustomHeader title="Settle Up" />
+        <CustomHeader title="                    Settle Up" />
         </View>
         <ProfileIcon className="profileIcon" />
         <Text style={styles.errorText}>{error}</Text>
@@ -172,7 +172,7 @@ export default function SettleUpScreen() {
   return (
     <View style={styles.container}>
       <View>
-        <CustomHeader title="Settle Up" />
+        <CustomHeader title="                    Settle Up" />
         <ProfileIcon className="profileIcon" />
       </View>
       

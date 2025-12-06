@@ -347,7 +347,9 @@ export default function TabOneScreen() {
   if (error === "NO_FRIDGE") {
     return (
       <View style={{width: '100%', height: '100%'}}>
-        <CustomHeader title="What's In Our Fridge?" />
+        <View style={styles.header}>
+        <CustomHeader title="What's In Our Kitchen?" />
+        </View>
         <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
@@ -389,7 +391,7 @@ export default function TabOneScreen() {
   if (data.length === 0) {
     return (
       <View style={{width: '100%', height: '100%'}}>
-        <CustomHeader title="What's In Our Fridge?" />
+        <CustomHeader title="What's In Our Kitchen?" />
         <ProfileIcon className="profileIcon" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
@@ -407,7 +409,7 @@ export default function TabOneScreen() {
   <View style={{
     width: '100%', height: '100%',
   }}>
-    <CustomHeader title="What's In Our Kitchen?" />
+    <CustomHeader title="    What's In Our Kitchen?" />
     <View style={styles.container}>
       
       <TextInput
@@ -665,6 +667,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#333",
+  },
+    header: {
+    width: "100%",
+    paddingVertical: 15,
+    alignItems: "center",      // <-- centers child horizontally
+    justifyContent: "center",   // <-- centers vertically if needed
   },
 });
 
