@@ -10,7 +10,6 @@ import {
 } from "react-native";
 import { supabase } from "../utils/client";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
 
@@ -326,6 +325,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: "#666",
+    marginLeft: "auto",
+    marginRight: "auto",
   },
   errorText: {
     color: "#F44336",

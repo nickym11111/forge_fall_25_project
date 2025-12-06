@@ -12,7 +12,6 @@ import React, { useState, useRef, useEffect } from "react";
 import type { PropsWithChildren } from "react";
 import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
-import ProfileIcon from "@/components/ProfileIcon";
 import { useAuth } from "../context/authContext";
 
 interface ItemProps {
@@ -246,7 +245,6 @@ return (
     <CustomHeader 
       title="             Share Recipes!  "
       />
-      <ProfileIcon className="profileIcon" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.contentSection}>
           <View style={styles.boxContainer}>

@@ -12,7 +12,6 @@ import React, { useState, useRef, useCallback } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
-import ProfileIcon from "@/components/ProfileIcon";
 import { useFocusEffect } from "@react-navigation/native";
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Alert } from "react-native";
@@ -211,8 +210,12 @@ export default function TabOneScreen() {
   if (error === "NO_FRIDGE") {
     return (
       <View style={{width: '100%', height: '100%'}}>
+<<<<<<< HEAD
         <CustomHeader title="           Favorite Recipes" />
         <ProfileIcon className="profileIcon" />
+=======
+        <CustomHeader title="Favorite Recipes" />
+>>>>>>> 1c73dbd1f7ce0e8b50a9243672870a3441f097b4
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
@@ -253,8 +256,12 @@ export default function TabOneScreen() {
   if (data.length === 0) {
     return (
       <View style={{width: '100%', height: '100%'}}>
+<<<<<<< HEAD
         <CustomHeader title= "           Favorite Recipes" />
         <ProfileIcon className="profileIcon" />
+=======
+        <CustomHeader title="Favorite Recipes" />
+>>>>>>> 1c73dbd1f7ce0e8b50a9243672870a3441f097b4
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!
@@ -271,8 +278,12 @@ export default function TabOneScreen() {
     <View style={{
       width: '100%', height: '100%',
     }}>
+<<<<<<< HEAD
       <CustomHeader title="           Favorite Recipes" />
       <ProfileIcon className="profileIcon" />
+=======
+      <CustomHeader title="Favorite Recipes" />
+>>>>>>> 1c73dbd1f7ce0e8b50a9243672870a3441f097b4
     <View style={styles.container}>
       
       <View
