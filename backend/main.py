@@ -71,7 +71,7 @@ class FridgeItemCreate(BaseModel):
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
-    price: Optional[int]
+    price: Optional[float]
 
 class AcceptFridgeRequestDTO(BaseModel):
     request_id: str
