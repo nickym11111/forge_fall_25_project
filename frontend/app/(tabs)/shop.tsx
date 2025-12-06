@@ -295,42 +295,27 @@ export default function SharedListScreen() {
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <CustomHeader title="Shared Shopping List 🛒" />
+      <CustomHeader title="Shopping List" />
 
-      {/* Search */}
-      <TextInput
+
+      {/* Top Card (Search quick input) */}
+      <View style={styles.topCard}>
+        
+        <View style={styles.topRow}>
+          
+            <TextInput
         style={styles.search_bar}
         onChangeText={setSearchValue}
         value={searchValue}
         placeholder="Search items..."
         placeholderTextColor="#999"
       />
-
-      {/* Top Card (Add Item quick input) */}
-      <View style={styles.topCard}>
-        <Text style={styles.cardTitle}>Add Item</Text>
-
-        <View style={styles.topRow}>
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="cube-outline"
-              size={20}
-              color="#94a3b8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.topInput}
-              placeholder="Item name..."
-              placeholderTextColor="#94a3b8"
-              value={formName}
-              onChangeText={setFormName}
-            />
-          </View>
+          
           <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
             <Ionicons name="add" size={28} color="#fff" />
           </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
       {/* Items List */}
       <FlatList
@@ -446,12 +431,12 @@ export default function SharedListScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7F8FC" },
   search_bar: {
-    margin: 18,
+    margin: 8,
     paddingHorizontal: 20,
     borderWidth: 2,
     borderColor: "#14b8a6",
     padding: 12,
-    width: "90%",
+    width: "80%",
     borderRadius: 10,
     backgroundColor: "#ffffff",
     fontSize: 16,
@@ -498,7 +483,7 @@ const styles = StyleSheet.create({
     color: "#1e293b",
   },
   plusBtn: {
-    marginLeft: 12,
+    marginLeft: 0,
     width: 46,
     height: 46,
     borderRadius: 23,
