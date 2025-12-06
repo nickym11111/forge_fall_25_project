@@ -62,16 +62,30 @@ async def get_pending_requests(
         # Transform the data to match frontend expectations
         transformed_data = []
         for request in response.data:
+            # Handle potential list wrapping for users
+            user_data = request.get("users")
+            if isinstance(user_data, list) and len(user_data) > 0:
+                user_data = user_data[0]
+            elif isinstance(user_data, list):
+                user_data = None
+                
+            # Handle potential list wrapping for fridges
+            fridge_data = request.get("fridges")
+            if isinstance(fridge_data, list) and len(fridge_data) > 0:
+                fridge_data = fridge_data[0]
+            elif isinstance(fridge_data, list):
+                fridge_data = None
+                
             transformed_data.append({
                 "id": request["id"],
                 "fridge_id": request["fridge_id"],
                 "requested_by": request["requested_by"],
                 "acceptance_status": request["acceptance_status"],
                 "created_at": request["created_at"],
-                "user": request.get("users"),
-                "fridge": request.get("fridges"),
-                "users": request.get("users"),  # For backward compatibility
-                "fridges": request.get("fridges")  # For backward compatibility
+                "user": user_data,
+                "fridge": fridge_data,
+                "users": user_data,  # For backward compatibility
+                "fridges": fridge_data  # For backward compatibility
             })
         
         return {
@@ -104,9 +118,33 @@ async def get_requests_by_fridge(
             """
         ).eq("fridge_id", fridge_id).eq("acceptance_status", "PENDING").execute()
         
+        
+        # Transform the data to ensure nested objects are correctly formatted
+        transformed_data = []
+        for request in response.data:
+            # Handle potential list wrapping for users (Supabase 1:N vs N:1 behavior)
+            user_data = request.get("users")
+            if isinstance(user_data, list) and len(user_data) > 0:
+                user_data = user_data[0]
+            elif isinstance(user_data, list):
+                user_data = None
+                
+            # Handle potential list wrapping for fridges
+            fridge_data = request.get("fridges")
+            if isinstance(fridge_data, list) and len(fridge_data) > 0:
+                fridge_data = fridge_data[0]
+            elif isinstance(fridge_data, list):
+                fridge_data = None
+
+            # Create new dict with fixed data
+            transformed_item = request.copy()
+            transformed_item["users"] = user_data
+            transformed_item["fridges"] = fridge_data
+            transformed_data.append(transformed_item)
+
         return {
             "status": "success",
-            "data": response.data
+            "data": transformed_data
         }
         
     except HTTPException:
