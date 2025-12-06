@@ -99,9 +99,12 @@ const styles = StyleSheet.create({
   },
 
   joinButton: {
-    width: "100%",
-    marginTop: 8,
-  },
+    width: "30%",
+    marginVertical: -10,
+    padding: 12,
+    borderRadius: 8,
+    fontSize: 15,
+    },
 
   createFridgeButton: {
     marginTop: 24,
@@ -109,6 +112,14 @@ const styles = StyleSheet.create({
     color: "#64748b",
     textAlign: "center",
   },
+
+  label:
+  {
+    fontSize: 14,
+    color: "#0c0c0cff",
+    marginBottom: 2,
+    marginTop: 10,
+  }
 });
 
 export default function JoinFridgeScreen() {

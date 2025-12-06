@@ -9,6 +9,7 @@ from Join import app as join_router
 from ai_expiration import app as ai_expiration_router
 from Users import app as users_router
 from ShoppingList import app as shopping_router
+from typing import List, Optional, Any
 from CostSplitting import app as cost_splitting_router
 from receiptParsing.chatGPTParse import app as receipt_router
 from recipes import app as recipes_router
@@ -70,7 +71,7 @@ class FridgeItemCreate(BaseModel):
     quantity: Optional[int] = 1
     expiry_date: str
     shared_by: Optional[List[str]] = None
-    price: Optional[int]
+    price: Optional[float]
 
 class AcceptFridgeRequestDTO(BaseModel):
     request_id: str
@@ -127,7 +128,6 @@ async def create_fridge_item(
             "message": "Fridge item added and shopping list item checked off",
             "data": response.data,
         }
-
     except Exception as e:
         print(f"Error creating fridge item: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to add item: {str(e)}")
