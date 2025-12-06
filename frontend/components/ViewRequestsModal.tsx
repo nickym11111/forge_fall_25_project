@@ -117,10 +117,6 @@ const RequestCard = ({
         <Text style={styles.label}>User:</Text> {getUserName()}
       </Text>
       <Text style={styles.cardText}>
-        <Text style={styles.label}>Kitchen:</Text>{" "}
-        {request.fridges?.name || "Unknown Kitchen"}
-      </Text>
-      <Text style={styles.cardText}>
         <Text style={styles.label}>Email:</Text> {request.users?.email || "N/A"}
       </Text>
       <View style={styles.buttonContainer}>
