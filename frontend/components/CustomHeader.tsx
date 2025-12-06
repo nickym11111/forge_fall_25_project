@@ -26,22 +26,22 @@ const CustomHeader = ({
   style,
 }: CustomHeaderProps) => {
   return (
-    <View style={[styles.header, noShadow && styles.headerNoShadow , style]}>
+    <View style={[styles.header, noShadow && styles.headerNoShadow, style]}>
       <StatusBar barStyle="light-content" backgroundColor="#14b8a6" />
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          {logo && <Image source={logo} style={styles.logo} />}
           <View style={styles.titleContainer}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.titleWrapper}>
               <Text style={styles.headerTitle}>{title}</Text>
-              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
             </View>
-            <ProfileIcon
-              className="profile-icon"
-              style={{
-                marginLeft: 0,
-              }}
-            />
+            <View style={styles.profileIconContainer}>
+              <ProfileIcon
+                className="profile-icon"
+                style={{
+                  marginLeft: 0,
+                }}
+              />
+            </View>
           </View>
         </View>
       </View>
@@ -82,10 +82,19 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
-    display: "flex",
-    alignItems: "center",
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
+  },
+  titleWrapper: {
+    position: "absolute",
+    width: "100%",
+    alignItems: "center",
+    zIndex: 1,
+  },
+  profileIconContainer: {
+    zIndex: 2,
+    marginLeft: "auto",
   },
   headerTitle: {
     color: "white",
