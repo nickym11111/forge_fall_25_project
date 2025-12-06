@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -14,15 +14,13 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
-
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
-
 import { useAuth } from "../context/authContext";
 import { supabase } from "../utils/client";
-import { useIsFocused } from "@react-navigation/native";
+import ProfileIcon from "@/components/ProfileIcon";
 
 interface ShoppingItem {
   id?: number;
@@ -35,6 +33,8 @@ interface ShoppingItem {
   fridge_id?: string;
 }
 
+const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/shopping`;
+
 //Helper Functions
 const formatShortDate = (d: Date) => {
   const mm = String(d.getMonth() + 1).padStart(2, "0");
@@ -45,58 +45,26 @@ const formatShortDate = (d: Date) => {
 
 const isoToShort = (iso?: string) => {
   if (!iso) return "";
-  const date = new Date(iso);
-  return isNaN(date.getTime()) ? iso : formatShortDate(date);
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return formatShortDate(d);
 };
 
-// Component
 export default function SharedListScreen() {
   const { user } = useAuth();
   const user_id = user?.id;
-  const isFocused = useIsFocused();
 
+  // ---------- State ----------
   const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [searchValue, setSearchValue] = useState("");
-
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Add form
   const [formName, setFormName] = useState("");
-  const [formQuantity, setFormQuantity] = useState(1);
+  const [formQuantity, setFormQuantity] = useState<number>(1);
   const [formNeedBy, setFormNeedBy] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
-  // Filter items based on search
-  const filteredItems = items.filter((item) =>
-    item.name.toLowerCase().includes(searchValue.toLowerCase())
-  );
-
-  // Load Items
-  const loadItems = async () => {
-    if (!user?.fridge_id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from("shopping_list")
-        .select("*")
-        .eq("fridge_id", user.fridge_id)
-        .order("id", { ascending: true });
-
-      if (!error) setItems(data || []);
-      else throw error;
-    } catch (err) {
-      console.error("loadItems:", err);
-    }
-  };
-
-  useEffect(() => {
-    loadItems();
-  }, [user?.fridge_id]);
-
-  useEffect(() => {
-    if (isFocused) loadItems();
-  }, [isFocused]);
-
   const resetForm = () => {
-    setFormName("");
     setFormQuantity(1);
     setFormNeedBy(null);
     setShowDatePicker(false);
@@ -122,7 +90,7 @@ export default function SharedListScreen() {
       name: formName.trim(),
       quantity: Math.max(1, Math.floor(formQuantity)),
       need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
-      requested_by: user?.first_name + " " + user?.last_name || "",
+      requested_by: user?.id,
       bought_by: null,
       checked: false,
       fridge_id,
@@ -130,7 +98,7 @@ export default function SharedListScreen() {
 
     try {
       const { data, error } = await supabase
-        .from("shopping_list")
+        .from("shopping_list") // <-- your Supabase table name
         .insert([newItem])
         .select();
 
@@ -248,7 +216,7 @@ export default function SharedListScreen() {
                 </Text>
               )}
               <Text style={styles.itemMeta}>
-                Requested by {item.requested_by}
+                Requested by {item.requested_by ?? "You"}
               </Text>
             </>
           )}
@@ -294,62 +262,14 @@ export default function SharedListScreen() {
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <CustomHeader title="Shopping List" />
+      <CustomHeader title="Shared Shopping List 🛒" />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View>
+          {/* Top Card (Add Item quick input) */}
+          <View style={styles.topCard}>
+            <Text style={styles.cardTitle}>Add Item</Text>
 
-      {/* Top Card (Search quick input) */}
-      <View style={styles.topCard}>
-        <View style={styles.topRow}>
-          <TextInput
-            style={styles.search_bar}
-            onChangeText={setSearchValue}
-            value={searchValue}
-            placeholder="Search items..."
-            placeholderTextColor="#999"
-          />
-
-          <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
-            <Ionicons name="add" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Items List */}
-        <FlatList
-          data={filteredItems}
-          keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
-          renderItem={renderItemCard}
-          contentContainerStyle={styles.itemsList}
-          keyboardShouldPersistTaps="handled"
-        />
-      </View>
-
-      {/* Items List */}
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
-        renderItem={renderItemCard}
-        contentContainerStyle={styles.itemsList}
-        keyboardShouldPersistTaps="handled"
-      />
-
-      {/* Modal for adding item with details */}
-      {modalOpen && (
-        <Modal
-          transparent={true}
-          animationType="none"
-          visible={modalOpen}
-          onRequestClose={closeModal}
-        >
-          <Pressable style={styles.modalOverlay} onPress={closeModal} />
-          <View style={styles.modalCard}>
-            <ScrollView
-              contentContainerStyle={styles.modalScrollContent}
-              nestedScrollEnabled
-              keyboardShouldPersistTaps="handled"
-            >
-              <Text style={styles.modalTitle}>Add Item</Text>
-
-              {/* Item Name */}
-              <Text style={styles.inputLabel}>Item Name *</Text>
+            <View style={styles.topRow}>
               <View style={styles.inputContainer}>
                 <Ionicons
                   name="cube-outline"
@@ -358,76 +278,131 @@ export default function SharedListScreen() {
                   style={styles.inputIcon}
                 />
                 <TextInput
-                  style={styles.input}
-                  placeholder="eg. Milk, Eggs, Bread"
+                  style={styles.topInput}
+                  placeholder="Item name..."
                   placeholderTextColor="#94a3b8"
                   value={formName}
                   onChangeText={setFormName}
                 />
               </View>
+              <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
+                <Ionicons name="add" size={28} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-              {/* Quantity */}
-              <Text style={styles.inputLabel}>Quantity</Text>
-              <View style={styles.qtyRow}>
-                <TouchableOpacity
-                  onPress={() => setFormQuantity(Math.max(1, formQuantity - 1))}
-                >
-                  <Ionicons
-                    name="remove-circle-outline"
-                    size={25}
-                    color="#222"
-                  />
-                </TouchableOpacity>
-                <Text style={styles.qtyNumber}>{formQuantity}</Text>
-                <TouchableOpacity
-                  onPress={() => setFormQuantity(formQuantity + 1)}
-                >
-                  <Ionicons name="add-circle-outline" size={25} color="#222" />
-                </TouchableOpacity>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Your Items</Text>
+          </View>
+
+          <FlatList
+            data={items}
+            keyExtractor={(it, i) =>
+              it.id ? String(it.id) : `${it.name}-${i}`
+            }
+            renderItem={renderItemCard}
+            contentContainerStyle={styles.itemsList}
+            keyboardShouldPersistTaps="handled"
+          />
+        </View>
+      </TouchableWithoutFeedback>
+
+      {/* Popup (Add Item) */}
+      <Modal
+        visible={modalOpen}
+        transparent
+        animationType="none"
+        onRequestClose={closeModal}
+      >
+        <Pressable style={styles.modalOverlay} onPress={closeModal} />
+
+        <View style={[styles.modalCard]}>
+          <ScrollView
+            contentContainerStyle={{ padding: 10 }}
+            nestedScrollEnabled
+          >
+            <Text style={styles.modalTitle}>Add Item</Text>
+
+            {/* Name */}
+            <Text style={styles.inputLabel}>Item Name *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="eg. Milk, Eggs, Bread"
+              placeholderTextColor="#888"
+              value={formName}
+              onChangeText={setFormName}
+            />
+
+            {/* Quantity + Need By */}
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>Quantity</Text>
+                <View style={styles.qtyRow}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      setFormQuantity(Math.max(1, formQuantity - 1))
+                    }
+                  >
+                    <Ionicons
+                      name="remove-circle-outline"
+                      size={25}
+                      color="#222"
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.qtyNumber}>{formQuantity}</Text>
+                  <TouchableOpacity
+                    onPress={() => setFormQuantity(formQuantity + 1)}
+                  >
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={25}
+                      color="#222"
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
 
-              {/* Need By Date */}
-              <Text style={styles.inputLabel}>Need By</Text>
-              <TouchableOpacity
-                style={styles.dateInput}
-                onPress={() => setShowDatePicker(true)}
-              >
-                <Text style={styles.dateText}>
-                  {formNeedBy
-                    ? formatShortDate(formNeedBy)
-                    : "Tap to select date"}
-                </Text>
-                <Ionicons name="calendar-outline" size={20} color="#222" />
-              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.inputLabel}>Need by</Text>
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateText}>
+                    {formNeedBy
+                      ? formatShortDate(formNeedBy)
+                      : "Tap to select date"}
+                  </Text>
+                  <Ionicons name="calendar-outline" size={20} color="#222" />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-              {showDatePicker && (
-                <View style={styles.datePickerContainer}>
-                  <DateTimePicker
-                    value={formNeedBy || new Date()}
-                    mode="date"
-                    display={Platform.OS === "ios" ? "inline" : "default"}
-                    onChange={onChangeNeedBy}
-                    minimumDate={new Date()}
-                  />
-                </View>
-              )}
+            {showDatePicker && (
+              <View style={styles.datePickerContainer}>
+                <DateTimePicker
+                  value={formNeedBy || new Date()}
+                  mode="date"
+                  display={Platform.OS === "ios" ? "inline" : "default"}
+                  onChange={onChangeNeedBy}
+                />
+              </View>
+            )}
 
-              {/* Add Button */}
-              <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
-                <Text style={styles.addItemButtonText}>Add Item</Text>
-              </TouchableOpacity>
+            {/* Add Button */}
+            <TouchableOpacity style={styles.addItemButton} onPress={addItem}>
+              <Text style={styles.addItemButtonText}>Add Item</Text>
+            </TouchableOpacity>
 
-              {/* Cancel Button */}
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={closeModal}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </Modal>
-      )}
+            <TouchableOpacity
+              onPress={closeModal}
+              style={{ marginTop: 8, alignSelf: "center" }}
+            >
+              <Text style={{ color: "#666" }}>Cancel</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -435,20 +410,10 @@ export default function SharedListScreen() {
 //Styles
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F7F8FC" },
-  search_bar: {
-    margin: 8,
-    paddingHorizontal: 20,
-    borderWidth: 2,
-    borderColor: "#14b8a6",
-    padding: 12,
-    width: "80%",
-    borderRadius: 10,
-    backgroundColor: "#ffffff",
-    fontSize: 16,
-  },
+
+  //Header top card
   topCard: {
     margin: 18,
-    marginTop: 5,
     backgroundColor: "#fff",
     borderRadius: 16,
     padding: 14,
@@ -462,11 +427,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginBottom: 8,
   },
-  topRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
+  topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
   inputContainer: {
     flex: 1,
     flexDirection: "row",
@@ -488,14 +449,30 @@ const styles = StyleSheet.create({
     color: "#1e293b",
   },
   plusBtn: {
-    marginLeft: 0,
+    marginLeft: 12,
     width: 46,
     height: 46,
     borderRadius: 23,
     backgroundColor: "#14b8a6",
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#6C63FF",
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
+
+  // Section headers
+  section: {
+    marginHorizontal: 22,
+    marginTop: 6,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#2C2C54",
+  },
+
+  // Item cards
   itemsList: {
     paddingHorizontal: 10,
     paddingBottom: 140,
@@ -534,6 +511,7 @@ const styles = StyleSheet.create({
     color: "#666",
     fontSize: 13,
   },
+
   itemRight: {
     width: 120,
     alignItems: "center",
@@ -565,6 +543,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111",
   },
+
   // Modal
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -582,28 +561,26 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOpacity: 0.12,
     shadowRadius: 12,
-    elevation: 8,
-  },
-  modalScrollContent: {
-    paddingBottom: 10,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
     marginBottom: 12,
-    color: "#111",
   },
+
+  // Inputs
   inputLabel: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
     color: "#555",
-    marginBottom: 8,
-    marginTop: 12,
+    marginBottom: 6,
   },
   input: {
-    flex: 1,
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: "#FAFBFF",
     fontSize: 16,
-    color: "#222",
   },
   row: {
     flexDirection: "row",
@@ -627,44 +604,35 @@ const styles = StyleSheet.create({
   },
   dateInput: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
     borderRadius: 12,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     backgroundColor: "#FAFBFF",
-    borderWidth: 1.5,
-    borderColor: "#e2e8f0",
+    borderWidth: 1,
+    borderColor: "#E8E8E8",
   },
   dateText: {
     color: "#333",
-    fontSize: 16,
   },
   datePickerContainer: {
     marginTop: 12,
     alignItems: "center",
     justifyContent: "center",
   },
+
+  // Buttons
   addItemButton: {
-    marginTop: 20,
+    marginTop: 14,
     backgroundColor: "#14b8a6",
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 12,
     alignItems: "center",
   },
   addItemButtonText: {
     color: "#fff",
     fontWeight: "700",
-    fontSize: 16,
-  },
-  cancelButton: {
-    marginTop: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  cancelButtonText: {
-    color: "#666",
-    fontWeight: "600",
     fontSize: 16,
   },
 });
