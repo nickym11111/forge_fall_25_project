@@ -6,16 +6,15 @@ import {
   RefreshControl,
   Image,
 } from "react-native";
-import { router } from 'expo-router';
+import { router } from "expo-router";
 import { Text, View } from "@/components/Themed";
 import React, { useState, useRef, useCallback } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import { useFocusEffect } from "@react-navigation/native";
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Ionicons from "@expo/vector-icons/Ionicons";
 import { Alert } from "react-native";
-
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
@@ -49,36 +48,43 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
       "Remove Recipe",
       `Are you sure you want to remove "${recipe_name}" from favorites?`,
       [
-        { text: "No", onPress: () => console.log("Cancelled"), style: "cancel" },
+        {
+          text: "No",
+          onPress: () => console.log("Cancelled"),
+          style: "cancel",
+        },
         {
           text: "Yes",
           onPress: async () => {
             try {
               setIsFavorite(false); // optimistically update UI
-              const { data: { session } } = await supabase.auth.getSession();
+              const {
+                data: { session },
+              } = await supabase.auth.getSession();
               const response = await fetch(`${API_URL}/delete-recipe/`, {
                 method: "DELETE",
                 headers: {
                   "Content-Type": "application/json",
-                  "Authorization": `Bearer ${session?.access_token}`
+                  Authorization: `Bearer ${session?.access_token}`,
                 },
-                body: JSON.stringify({ recipe_name })
+                body: JSON.stringify({ recipe_name }),
               });
               if (!response.ok) throw new Error("Failed to remove recipe");
-              onRemove(recipe_name); 
+              onRemove(recipe_name);
             } catch (err) {
               console.error(err);
-              setIsFavorite(true); 
+              setIsFavorite(true);
             }
-          }
-        }
+          },
+        },
       ],
       { cancelable: true }
     );
   };
   const getDisplayName = (mate: FridgeMate) => {
     if (!mate) return "Unknown";
-    if (mate.first_name && mate.last_name) return `${mate.first_name} ${mate.last_name}`;
+    if (mate.first_name && mate.last_name)
+      return `${mate.first_name} ${mate.last_name}`;
     if (mate.first_name) return mate.first_name;
     if (mate.last_name) return mate.last_name;
     if (mate.name) return mate.name;
@@ -86,7 +92,7 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
     return "Unknown";
   };
   const addedByName = added_by ? getDisplayName(added_by) : "Unknown";
-  
+
   // Get initials for default profile icon
   const getInitials = (mate: FridgeMate) => {
     if (!mate) return "?";
@@ -101,10 +107,21 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
 
   return (
     <View style={styles.item}>
-      <Text style={[styles.itemText]}>
-        <Text style={{ fontWeight: "bold" }}>{recipe_name}</Text>
-      </Text>
-      <View style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <Text style={[styles.itemText, { flex: 1, flexWrap: "wrap", paddingRight: 8, maxWidth: "80%" }]}>
+          <Text style={{ fontWeight: "bold" }}>{recipe_name}</Text>
+        </Text>
+        <TouchableOpacity onPress={handleHeartPress} style={styles.heartButton}>
+          <Ionicons
+            name={isFavorite ? "heart" : "heart-outline"}
+            size={28}
+            color={isFavorite ? "#E91E63" : "#888"}
+          />
+        </TouchableOpacity>
+      </View>
+      <View
+        style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}
+      >
         {added_by?.profile_photo_url ? (
           <Image
             source={{ uri: added_by.profile_photo_url }}
@@ -115,7 +132,12 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
             <Text style={styles.profileInitials}>{getInitials(added_by)}</Text>
           </View>
         ) : null}
-        <Text style={[styles.itemText, { fontSize: 10, marginLeft: added_by ? 8 : 0 }]}>
+        <Text
+          style={[
+            styles.itemText,
+            { fontSize: 10, marginLeft: added_by ? 8 : 0 },
+          ]}
+        >
           |<Text style={{ fontWeight: "bold" }}> Added by</Text> {addedByName}
         </Text>
       </View>
@@ -124,7 +146,7 @@ const Item = ({ recipe_name, added_by, onRemove }: ItemProps) => {
 };
 
 export default function TabOneScreen() {
-  const{ user } = useAuth();
+  const { user } = useAuth();
   const [data, setData] = useState<RecipeItem[]>([]);
   const originalHolder = useRef<RecipeItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -141,9 +163,15 @@ export default function TabOneScreen() {
   const fetchRecipeItems = async () => {
     try {
       setLoading(true);
-      console.log("Fetching data from:", `${API_URL}/favorite-recipes/get-favorite-recipes/`);
+      console.log(
+        "Fetching data from:",
+        `${API_URL}/favorite-recipes/get-favorite-recipes/`
+      );
 
-      const { data: { session }, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error || !session) {
         setData([]);
@@ -154,13 +182,16 @@ export default function TabOneScreen() {
 
       console.log("User ID:", user?.id);
 
-      const response = await fetch(`${API_URL}/favorite-recipes/get-favorite-recipes/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session.access_token}`
+      const response = await fetch(
+        `${API_URL}/favorite-recipes/get-favorite-recipes/`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }
-      });
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -168,7 +199,10 @@ export default function TabOneScreen() {
 
       const result = await response.json();
       console.log("API Response:", result);
-      console.log("Added by data:", result.data.map((item: RecipeItem) => item.added_by));
+      console.log(
+        "Added by data:",
+        result.data.map((item: RecipeItem) => item.added_by)
+      );
 
       if (result.message === "User has no fridge assigned") {
         setData([]);
@@ -201,7 +235,7 @@ export default function TabOneScreen() {
 
   if (error === "NO_FRIDGE") {
     return (
-      <View style={{width: '100%', height: '100%'}}>
+      <View style={{ width: "100%", height: "100%" }}>
         <CustomHeader title="Favorite Recipes" />
         <TouchableOpacity
           style={styles.backButton}
@@ -210,14 +244,31 @@ export default function TabOneScreen() {
           <Ionicons name="arrow-back" size={28} color="#64748b" />
         </TouchableOpacity>
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+          <Text
+            style={{
+              fontSize: 18,
+              textAlign: "center",
+              padding: 20,
+              color: "#666",
+            }}
+          >
             You haven't joined a fridge yet!
           </Text>
-          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+          <Text
+            style={{
+              fontSize: 14,
+              textAlign: "center",
+              paddingHorizontal: 20,
+              color: "#999",
+            }}
+          >
             Create or join a fridge to start tracking your food items.
           </Text>
           <TouchableOpacity
-            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
+            style={[
+              styles.filter_button,
+              { marginTop: 20, alignSelf: "center", minWidth: "60%" },
+            ]}
             onPress={() => {
               router.push("/(tabs)/create_fridge");
             }}
@@ -232,9 +283,8 @@ export default function TabOneScreen() {
   // Error state
   if (error) {
     return (
-      <View style={{width: '100%', height: '100%'}}>
+      <View style={{ width: "100%", height: "100%" }}>
         <CustomHeader title="Favorite Recipes" />
-        
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(tabs)/recipes")}
@@ -258,9 +308,8 @@ export default function TabOneScreen() {
 
   if (data.length === 0) {
     return (
-      <View style={{width: '100%', height: '100%'}}>
+      <View style={{ width: "100%", height: "100%" }}>
         <CustomHeader title="Favorite Recipes" />
-        
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.push("/(tabs)/recipes")}
@@ -268,10 +317,24 @@ export default function TabOneScreen() {
           <Ionicons name="arrow-back" size={28} color="#64748b" />
         </TouchableOpacity>
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+          <Text
+            style={{
+              fontSize: 18,
+              textAlign: "center",
+              padding: 20,
+              color: "#666",
+            }}
+          >
             Your fridge is empty!
           </Text>
-          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+          <Text
+            style={{
+              fontSize: 14,
+              textAlign: "center",
+              paddingHorizontal: 20,
+              color: "#999",
+            }}
+          >
             Add some items to get started.
           </Text>
         </View>
@@ -280,11 +343,13 @@ export default function TabOneScreen() {
   }
 
   return (
-    <View style={{
-      width: '100%', height: '100%',
-    }}>
+    <View
+      style={{
+        width: "100%",
+        height: "100%",
+      }}
+    >
       <CustomHeader title="Favorite Recipes" />
-      
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.push("/(tabs)/recipes")}
@@ -296,35 +361,34 @@ export default function TabOneScreen() {
           <ActivityIndicator size="small" color="#14b8a6" />
         </View>
       )}
-    <View style={styles.container}>
-      
-      <View
-        style={styles.separator}
-        lightColor="#eee"
-        darkColor="rgba(255,255,255,0.1)"
-      />
-      <FlatList
-        data={data}
-        renderItem={({ item }) => (
-          <Item
-            recipe_name={item.recipe_name}
-            added_by={item.added_by}
+      <View style={styles.container}>
+        <View
+          style={styles.separator}
+          lightColor="#eee"
+          darkColor="rgba(255,255,255,0.1)"
+        />
+        <FlatList
+          data={data}
+          renderItem={({ item }) => (
+            <Item
+              recipe_name={item.recipe_name}
+              added_by={item.added_by}
               onRemove={(name) => {
-              setData(prev => prev.filter(r => r.recipe_name !== name));
-            }}
-          />
-        )}
-        keyExtractor={(item) => item.id.toString()}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={["#14b8a6"]}
-            tintColor="#14b8a6"
-          />
-        }
-      />
-    </View>
+                setData((prev) => prev.filter((r) => r.recipe_name !== name));
+              }}
+            />
+          )}
+          keyExtractor={(item) => item.id.toString()}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={["#14b8a6"]}
+              tintColor="#14b8a6"
+            />
+          }
+        />
+      </View>
     </View>
   );
 }
@@ -361,16 +425,16 @@ const styles = StyleSheet.create({
   selectedLabel: {
     color: "white",
   },
-    itemContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
+  itemContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     backgroundColor: "#f0f0f0",
     padding: 15,
     marginVertical: 5,
     marginHorizontal: 0,
     borderRadius: 8,
-    width: "100%", 
+    width: "100%",
   },
   label: {
     textAlign: "center",
@@ -411,7 +475,7 @@ const styles = StyleSheet.create({
     padding: 10,
     width: 350,
   },
-    heartButton: {
+  heartButton: {
     paddingLeft: 10,
     width: 40,
     alignItems: "center",
@@ -452,4 +516,3 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
-
