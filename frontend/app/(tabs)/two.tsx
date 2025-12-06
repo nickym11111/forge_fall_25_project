@@ -664,7 +664,7 @@ export default function TabOneScreen() {
   if (data.length === 0) {
     return (
       <View style={{width: '100%', height: '100%'}}>
-        <CustomHeader title="What's In Our Fridge? PLOY" />
+        <CustomHeader title="What's In Our Fridge?" />
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!
