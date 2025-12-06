@@ -460,6 +460,42 @@ export default function ParseReceiptScreen() {
     setShowItemDatePicker(false);
   };
 
+  // Trigger AI date prediction when item name or quantity changes
+  useEffect(() => {
+    const predictExpiryForItem = async () => {
+      // Only predict if we have a title and haven't manually set a date
+      if (!itemTitle.trim() || itemAiSuggested || !itemQuantity) return;
+
+      setIsLoadingItemAI(true);
+      try {
+        const response = await PredictExpiryDate(itemTitle);
+        const data = await response.json();
+        
+        if (data.days) {
+          const days = parseInt(data.days);
+          const newExpiryDate = new Date();
+          newExpiryDate.setDate(newExpiryDate.getDate() + days);
+          setItemExpiryDate(newExpiryDate);
+          setTempItemExpiryDate(newExpiryDate);
+          setItemAiSuggested(true);
+        }
+      } catch (error) {
+        console.warn("Failed to predict expiry date:", error);
+      } finally {
+        setIsLoadingItemAI(false);
+      }
+    };
+
+    // Debounce the API call
+    const timeoutId = setTimeout(() => {
+      if (itemTitle.trim()) {
+        predictExpiryForItem();
+      }
+    }, 800);
+
+    return () => clearTimeout(timeoutId);
+  }, [itemTitle, itemQuantity]);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -976,14 +1012,21 @@ export default function ParseReceiptScreen() {
                     </View>
 
                     {/* Expiry Date */}
-                    <Text style={styles.addItemModalLabel}>Expiry Date</Text>
+                    <Text style={styles.addItemModalLabel}>
+                      Expiry Date
+                      {itemAiSuggested && (
+                        <Text style={{ fontSize: 12, color: "#14b8a6", fontWeight: "normal" }}>
+                          {" "}(AI Suggested)
+                        </Text>
+                      )}
+                    </Text>
                     <TouchableOpacity
                       style={styles.addItemModalInputContainer}
                       onPress={() => {
                         setTempItemExpiryDate(itemExpiryDate);
                         setShowItemDatePicker(true);
                       }}
-                      disabled={isAddingItem}
+                      disabled={isAddingItem || isLoadingItemAI}
                     >
                       <Ionicons
                         name="calendar-outline"
@@ -991,9 +1034,13 @@ export default function ParseReceiptScreen() {
                         color="#94a3b8"
                         style={styles.addItemModalInputIcon}
                       />
-                      <Text style={styles.addItemModalDatePickerText}>
-                        {formatItemDate(itemExpiryDate)}
-                      </Text>
+                      {isLoadingItemAI ? (
+                        <ActivityIndicator size="small" color="#14b8a6" style={{ flex: 1 }} />
+                      ) : (
+                        <Text style={styles.addItemModalDatePickerText}>
+                          {formatItemDate(itemExpiryDate)}
+                        </Text>
+                      )}
                     </TouchableOpacity>
 
                     {/* Shared By */}
@@ -1049,46 +1096,45 @@ export default function ParseReceiptScreen() {
           visible={showItemDatePicker}
           onRequestClose={cancelItemDateSelection}
         >
-          <Pressable
-            style={styles.addItemDatePickerModalContainer}
-            onPress={cancelItemDateSelection}
-          >
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={styles.addItemDatePickerModalPopupBox}>
-              <View style={styles.addItemDatePickerModalHeader}>
-                <TouchableOpacity
-                  onPress={cancelItemDateSelection}
-                  style={styles.addItemDatePickerModalButton}
-                >
-                  <Text style={styles.addItemDatePickerModalButtonText}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.addItemDatePickerModalTitle}>
-                  Select Date
-                </Text>
-                <TouchableOpacity
-                  onPress={confirmItemDateSelection}
-                  style={styles.addItemDatePickerModalButton}
-                >
-                  <Text style={styles.addItemDatePickerModalButtonText}>
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.addItemDatePickerModalPickerWrapper}>
-                <DateTimePicker
-                  value={tempItemExpiryDate}
-                  mode="date"
-                  display="inline"
-                  onChange={onItemDateChange}
-                  minimumDate={new Date()}
-                  style={styles.addItemDatePickerIOS}
-                />
-              </View>
-              </View>
-            </Pressable>
-          </Pressable>
+          <TouchableWithoutFeedback onPress={cancelItemDateSelection}>
+            <View style={styles.addItemDatePickerModalContainer}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.addItemDatePickerModalPopupBox}>
+                  <View style={styles.addItemDatePickerModalHeader}>
+                    <TouchableOpacity
+                      onPress={cancelItemDateSelection}
+                      style={styles.addItemDatePickerModalButton}
+                    >
+                      <Text style={styles.addItemDatePickerModalButtonText}>
+                        Cancel
+                      </Text>
+                    </TouchableOpacity>
+                    <Text style={styles.addItemDatePickerModalTitle}>
+                      Select Date
+                    </Text>
+                    <TouchableOpacity
+                      onPress={confirmItemDateSelection}
+                      style={styles.addItemDatePickerModalButton}
+                    >
+                      <Text style={styles.addItemDatePickerModalButtonText}>
+                        Done
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.addItemDatePickerModalPickerWrapper}>
+                    <DateTimePicker
+                      value={tempItemExpiryDate}
+                      mode="date"
+                      display="inline"
+                      onChange={onItemDateChange}
+                      minimumDate={new Date()}
+                      style={styles.addItemDatePickerIOS}
+                    />
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
         </Modal>
       )}
 
@@ -1110,63 +1156,62 @@ export default function ParseReceiptScreen() {
           visible={showItemUserPicker}
           onRequestClose={() => setShowItemUserPicker(false)}
         >
-          <Pressable
-            style={styles.addItemUserPickerModalOverlay}
-            onPress={() => setShowItemUserPicker(false)}
-          >
-            <Pressable onPress={(e) => e.stopPropagation()}>
-              <View style={styles.addItemUserPickerModalCard}>
-              <View style={styles.addItemUserPickerModalHeader}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setItemSharedByUserIds([]);
-                    setShowItemUserPicker(false);
-                  }}
-                  style={styles.addItemUserPickerModalButton}
-                >
-                  <Text style={styles.addItemUserPickerModalButtonText}>
-                    Clear All
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.addItemUserPickerModalTitle}>
-                  Select Users
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowItemUserPicker(false)}
-                  style={styles.addItemUserPickerModalButton}
-                >
-                  <Text style={styles.addItemUserPickerModalButtonText}>
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.addItemUserPickerModalList}>
-                {itemUsers.map((user) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={styles.addItemUserPickerOption}
-                    onPress={() => toggleItemUserSelection(user.id)}
-                  >
-                    <View
-                      style={[
-                        styles.addItemUserPickerCheckbox,
-                        itemSharedByUserIds.includes(user.id) &&
-                          styles.addItemUserPickerCheckboxSelected,
-                      ]}
+          <TouchableWithoutFeedback onPress={() => setShowItemUserPicker(false)}>
+            <View style={styles.addItemUserPickerModalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.addItemUserPickerModalCard}>
+                  <View style={styles.addItemUserPickerModalHeader}>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setItemSharedByUserIds([]);
+                        setShowItemUserPicker(false);
+                      }}
+                      style={styles.addItemUserPickerModalButton}
                     >
-                      {itemSharedByUserIds.includes(user.id) && (
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      )}
-                    </View>
-                    <Text style={styles.addItemUserPickerOptionText}>
-                      {getItemUserDisplayName(user)}
+                      <Text style={styles.addItemUserPickerModalButtonText}>
+                        Clear All
+                      </Text>
+                    </TouchableOpacity>
+                    <Text style={styles.addItemUserPickerModalTitle}>
+                      Select Users
                     </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-              </View>
-            </Pressable>
-          </Pressable>
+                    <TouchableOpacity
+                      onPress={() => setShowItemUserPicker(false)}
+                      style={styles.addItemUserPickerModalButton}
+                    >
+                      <Text style={styles.addItemUserPickerModalButtonText}>
+                        Done
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  <ScrollView style={styles.addItemUserPickerModalList}>
+                    {itemUsers.map((user) => (
+                      <TouchableOpacity
+                        key={user.id}
+                        style={styles.addItemUserPickerOption}
+                        onPress={() => toggleItemUserSelection(user.id)}
+                      >
+                        <View
+                          style={[
+                            styles.addItemUserPickerCheckbox,
+                            itemSharedByUserIds.includes(user.id) &&
+                              styles.addItemUserPickerCheckboxSelected,
+                          ]}
+                        >
+                          {itemSharedByUserIds.includes(user.id) && (
+                            <Ionicons name="checkmark" size={16} color="#fff" />
+                          )}
+                        </View>
+                        <Text style={styles.addItemUserPickerOptionText}>
+                          {getItemUserDisplayName(user)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
         </Modal>
       )}
     </KeyboardAvoidingView>
