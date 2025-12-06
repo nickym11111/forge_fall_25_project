@@ -358,7 +358,7 @@ export default function ParseReceiptScreen() {
         itemSharedByUserIds,
         itemPrice ? Number(itemPrice) : undefined
       );
-
+      
       const data = await response.json();
 
       if (response.ok) {
