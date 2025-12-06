@@ -30,6 +30,17 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/authContext";
 import { router } from "expo-router";
 
+// Conditionally import react-datepicker for web
+let DatePicker: any;
+if (Platform.OS === "web") {
+  try {
+    DatePicker = require("react-datepicker").default;
+    require("react-datepicker/dist/react-datepicker.css");
+  } catch (e) {
+    console.warn("Failed to load react-datepicker", e);
+  }
+}
+
 export default function ParseReceiptScreen() {
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [responseText, setResponseText] = useState("");
@@ -283,7 +294,7 @@ export default function ParseReceiptScreen() {
       } = await supabase.auth.getSession();
       if (!session) return;
 
-      const response = await fetch(`${API_URL}/fridge-mates/`, {
+      const response = await fetch(`${API_URL}/fridge-members/`, {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
@@ -366,7 +377,7 @@ export default function ParseReceiptScreen() {
         itemSharedByUserIds,
         itemPrice ? Number(itemPrice) : undefined
       );
-      
+
       const data = await response.json();
 
       if (response.ok) {
@@ -983,24 +994,58 @@ export default function ParseReceiptScreen() {
 
                     {/* Expiry Date */}
                     <Text style={styles.addItemModalLabel}>Expiry Date</Text>
-                    <TouchableOpacity
-                      style={styles.addItemModalInputContainer}
-                      onPress={() => {
-                        setTempItemExpiryDate(itemExpiryDate);
-                        setShowItemDatePicker(true);
-                      }}
-                      disabled={isAddingItem}
-                    >
-                      <Ionicons
-                        name="calendar-outline"
-                        size={18}
-                        color="#94a3b8"
-                        style={styles.addItemModalInputIcon}
-                      />
-                      <Text style={styles.addItemModalDatePickerText}>
-                        {formatItemDate(itemExpiryDate)}
-                      </Text>
-                    </TouchableOpacity>
+                    {Platform.OS === "web" && DatePicker ? (
+                      <View style={styles.addItemModalInputContainer}>
+                        <Ionicons
+                          name="calendar-outline"
+                          size={18}
+                          color="#94a3b8"
+                          style={styles.addItemModalInputIcon}
+                        />
+                        <View style={{ flex: 1 }}>
+                          <DatePicker
+                            selected={itemExpiryDate}
+                            onChange={(date: Date) => {
+                              if (date) {
+                                setItemExpiryDate(date);
+                                setItemAiSuggested(false);
+                              }
+                            }}
+                            className="w-full !bg-transparent !border-0 text-slate-700 font-medium"
+                            dateFormat="MMMM d, yyyy"
+                            minDate={new Date()}
+                            customInput={
+                              <TextInput
+                                style={{
+                                  ...styles.addItemModalDatePickerText,
+                                  width: "100%",
+                                  outline: "none",
+                                }}
+                              />
+                            }
+                          />
+                        </View>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.addItemModalInputContainer}
+                        onPress={() => {
+                          setTempItemExpiryDate(itemExpiryDate);
+                          setShowItemDatePicker(true);
+                        }}
+                        disabled={isAddingItem}
+                      >
+                        <Ionicons
+                          name="calendar-outline"
+                          size={18}
+                          color="#94a3b8"
+                          style={styles.addItemModalInputIcon}
+                        />
+                        <Text style={styles.addItemModalDatePickerText}>
+                          {formatItemDate(itemExpiryDate)}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
 
                     {/* Shared By */}
                     <Text style={styles.addItemModalLabel}>Shared By</Text>
