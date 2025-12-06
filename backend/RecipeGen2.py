@@ -1,9 +1,10 @@
 from dotenv import load_dotenv
 import os
 import json
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from database import supabase 
 from openai import OpenAI
+from service import get_current_user 
 
 #Load environment variables and configure OpenAI client
 load_dotenv()
@@ -52,7 +53,7 @@ contains the string "Need more ingredients for sufficient meals.".
                 {"role": "system", "content": "You are a helpful recipe assistant that only responds with valid JSON."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7,
+            temperature=0.9,
             timeout=30  # Add 30 second timeout
         )
         print("=== OpenAI API call successful ===")
@@ -60,6 +61,10 @@ contains the string "Need more ingredients for sufficient meals.".
         content = response.choices[0].message.content
         print(f"=== OpenAI response: {content[:200]}... ===")
         
+        import re
+        content = re.sub(r'```json|```', '', content).strip()
+        print(f"=== Cleaned response: {content[:200]}... ===")
+
         recipe_json = json.loads(content) 
         
         return {
@@ -82,7 +87,11 @@ def generate_recipes2():
     
     except json.JSONDecodeError as e:
         print(f"=== JSON decode error: {e} ===")
-        raise HTTPException(status_code=500, detail=f"Error parsing recipes from OpenAI: {str(e)}")
+        return {
+            "status": "error",
+            "recipes": [],
+            "message": "Error generating recipes. Please try again."
+        }
     except Exception as e:
         error_msg = f"An error occurred: {str(e)}"
         print(f"=== Exception: {error_msg} ===")
