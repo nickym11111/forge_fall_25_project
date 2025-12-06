@@ -11,11 +11,11 @@ import {
 } from "react-native";
 import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from "@react-navigation/native";
 
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
-import { router } from 'expo-router';
+import { router } from "expo-router";
 
 //Custom components
 import CustomButton from "@/components/CustomButton";
@@ -223,8 +223,11 @@ export default function CreateFridgeScreen() {
 
     try {
       console.log("Getting a new session:");
-      const { data: { session }, error } = await supabase.auth.getSession();
-    
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
       console.log("Session exists?", !!session);
       console.log("Session error:", error);
 
@@ -238,8 +241,9 @@ export default function CreateFridgeScreen() {
       // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json",
-                   "Authorization": `Bearer ${session.access_token}`
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({ name: fridgeName }),
       });
@@ -247,7 +251,7 @@ export default function CreateFridgeScreen() {
       const fridgeData: ApiResponse = await createFridgeResponse.json();
       console.log("Kitchen creation response:", fridgeData);
 
-      console.log("✅ Step 1: Fridge created successfully"); 
+      console.log("✅ Step 1: Fridge created successfully");
 
       if (!createFridgeResponse.ok || fridgeData.status !== "success") {
         throw new Error(fridgeData.message || "Failed to create Kitchen");
@@ -260,7 +264,7 @@ export default function CreateFridgeScreen() {
         throw new Error("No Kitchen ID returned from server");
       }
 
-      // Invite code 
+      // Invite code
       /*
       // 2. Then, send invites to all provided emails
       const invitePromises = validEmails.map(async (email) => {
@@ -312,11 +316,7 @@ export default function CreateFridgeScreen() {
 
       router.replace(`/(tabs)/two`);
 
-      Alert.alert(
-        "Success!",
-        "Fridge created successfully!"
-      );
-      
+      Alert.alert("Success!", "Fridge created successfully!");
     } catch (error) {
       console.error("Error:", error);
       setIsLoading(false);
@@ -333,20 +333,31 @@ export default function CreateFridgeScreen() {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Create Kitchen</Text>
       </View>
-      <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
+      <TouchableOpacity
+        style={styles.closeButton}
+        onPress={() => router.back()}
+      >
         <Ionicons name="close" size={28} color="#64748b" />
       </TouchableOpacity>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.formContainer}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.form}>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "fridgeName" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="restaurant-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "fridgeName" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="restaurant-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
               <TextInput
                 style={styles.input}
                 placeholder="Kitchen name"
@@ -362,25 +373,24 @@ export default function CreateFridgeScreen() {
               />
             </View>
             {/*Create button*/}
-          <CustomButton
-            title={isLoading ? "Creating..." : "Create Kitchen"}
-            onPress={handleCreateFridge}
-            style={styles.createButton}
-            disabled={isLoading}
-            className={""}
-          />
+            <CustomButton
+              title={isLoading ? "Creating..." : "Create Kitchen"}
+              onPress={handleCreateFridge}
+              style={styles.createButton}
+              disabled={isLoading}
+              className={""}
+            />
 
-          {/*Navigate to Join Fridge page*/}
-          <Text
-            style={styles.joinFridgeText}
-            onPress={() => !isLoading && router.push("/(tabs)/Join-Fridge")}
-          >
-            Join a kitchen instead
-          </Text>
+            {/*Navigate to Join Fridge page*/}
+            <Text
+              style={styles.joinFridgeText}
+              onPress={() => !isLoading && router.push("/(tabs)/Join-Fridge")}
+            >
+              Join a kitchen instead
+            </Text>
           </View>
         </ScrollView>
       </TouchableWithoutFeedback>
     </View>
   );
 }
-

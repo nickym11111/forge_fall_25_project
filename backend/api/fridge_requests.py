@@ -84,9 +84,30 @@ async def get_pending_requests(
                 "created_at": request["created_at"],
                 "user": user_data,
                 "fridge": fridge_data,
-                "users": user_data,  # For backward compatibility
                 "fridges": fridge_data  # For backward compatibility
             })
+
+        # Fallback: If users are missing, fetch them manually
+        missing_user_ids = set()
+        for item in transformed_data:
+            if not item.get("user") and item.get("requested_by"):
+                missing_user_ids.add(item["requested_by"])
+        
+        if missing_user_ids:
+            print(f"Fetching {len(missing_user_ids)} missing users for pending requests: {missing_user_ids}")
+            users_response = supabase.table("users").select(
+                "id, email, first_name, last_name"
+            ).in_("id", list(missing_user_ids)).execute()
+            
+            if users_response.data:
+                users_map = {u["id"]: u for u in users_response.data}
+                
+                # Fill in missing user data
+                for item in transformed_data:
+                    if not item.get("user") and item.get("requested_by") in users_map:
+                        user_data = users_map[item["requested_by"]]
+                        item["user"] = user_data
+                        item["users"] = user_data  # For backward compatibility
         
         return {
             "status": "success",
@@ -141,6 +162,28 @@ async def get_requests_by_fridge(
             transformed_item["users"] = user_data
             transformed_item["fridges"] = fridge_data
             transformed_data.append(transformed_item)
+
+        # Fallback: If users are missing, fetch them manually
+        # This handles cases where the join might fail or return null due to RLS or other issues
+        missing_user_ids = set()
+        for item in transformed_data:
+            if not item.get("users") and item.get("requested_by"):
+                missing_user_ids.add(item["requested_by"])
+        
+        if missing_user_ids:
+            print(f"Fetching {len(missing_user_ids)} missing users: {missing_user_ids}")
+            users_response = supabase.table("users").select(
+                "id, email, first_name, last_name"
+            ).in_("id", list(missing_user_ids)).execute()
+            
+            if users_response.data:
+                users_map = {u["id"]: u for u in users_response.data}
+                
+                # Fill in missing user data
+                for item in transformed_data:
+                    if not item.get("users") and item.get("requested_by") in users_map:
+                        item["users"] = users_map[item["requested_by"]]
+                        print(f"filled user for request {item['id']}")
 
         return {
             "status": "success",
