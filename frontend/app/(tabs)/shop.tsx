@@ -118,12 +118,11 @@ export default function SharedListScreen() {
       return;
     }
 
-
     const newItem: ShoppingItem = {
       name: formName.trim(),
       quantity: Math.max(1, Math.floor(formQuantity)),
       need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
-      requested_by: (user?.first_name + " " + user?.last_name) || "",
+      requested_by: user?.first_name + " " + user?.last_name || "",
       bought_by: null,
       checked: false,
       fridge_id,
@@ -295,45 +294,33 @@ export default function SharedListScreen() {
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-<<<<<<< HEAD
-      <CustomHeader title="Shared Shopping List" />
-=======
       <CustomHeader title="Shopping List" />
->>>>>>> main
-
 
       {/* Top Card (Search quick input) */}
       <View style={styles.topCard}>
-        
         <View style={styles.topRow}>
-          
-            <TextInput
-        style={styles.search_bar}
-        onChangeText={setSearchValue}
-        value={searchValue}
-        placeholder="Search items..."
-        placeholderTextColor="#999"
-      />
-          
+          <TextInput
+            style={styles.search_bar}
+            onChangeText={setSearchValue}
+            value={searchValue}
+            placeholder="Search items..."
+            placeholderTextColor="#999"
+          />
+
           <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
             <Ionicons name="add" size={28} color="#fff" />
           </TouchableOpacity>
-          </View>
-<<<<<<< HEAD
-
-          {/* Items List */}
-          <FlatList
-            data={filteredItems}
-            keyExtractor={(it, i) =>
-              it.id ? String(it.id) : `${it.name}-${i}`
-            }
-            renderItem={renderItemCard}
-            contentContainerStyle={styles.itemsList}
-            keyboardShouldPersistTaps="handled"
-          />
-=======
->>>>>>> main
         </View>
+
+        {/* Items List */}
+        <FlatList
+          data={filteredItems}
+          keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
+          renderItem={renderItemCard}
+          contentContainerStyle={styles.itemsList}
+          keyboardShouldPersistTaps="handled"
+        />
+      </View>
 
       {/* Items List */}
       <FlatList
