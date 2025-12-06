@@ -1087,65 +1087,74 @@ export default function ParseReceiptScreen() {
                   </View>
                 </View>
               </TouchableWithoutFeedback>
+
+              {/* Date Picker Modal for Add Item - iOS Overlay inside Modal */}
+              {showItemDatePicker && Platform.OS === "ios" && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    zIndex: 1000,
+                  }}
+                >
+                  <View style={styles.addItemDatePickerModalPopupBox}>
+                    <View style={styles.addItemDatePickerModalHeader}>
+                      <TouchableOpacity
+                        onPress={cancelItemDateSelection}
+                        style={styles.addItemDatePickerModalButton}
+                      >
+                        <Text style={styles.addItemDatePickerModalButtonText}>
+                          Cancel
+                        </Text>
+                      </TouchableOpacity>
+                      <Text style={styles.addItemDatePickerModalTitle}>
+                        Select Date
+                      </Text>
+                      <TouchableOpacity
+                        onPress={confirmItemDateSelection}
+                        style={styles.addItemDatePickerModalButton}
+                      >
+                        <Text style={styles.addItemDatePickerModalButtonText}>
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <View style={styles.addItemDatePickerModalPickerWrapper}>
+                      <DateTimePicker
+                        value={tempItemExpiryDate}
+                        mode="date"
+                        display="inline"
+                        onChange={onItemDateChange}
+                        minimumDate={new Date()}
+                        style={styles.addItemDatePickerIOS}
+                      />
+                    </View>
+                  </View>
+                </View>
+              )}
+
+              {/* Android DatePicker outside Card but inside Pressable? Loop suggests checking placement. 
+                Android DateTimePicker is usually a dialog on its own (display='default'). 
+                Rendering it here triggers the dialog. It doesn't need to be visually inside the layout flow. 
+            */}
+              {showItemDatePicker && Platform.OS === "android" && (
+                <DateTimePicker
+                  value={itemExpiryDate}
+                  mode="date"
+                  display="default"
+                  onChange={onItemDateChange}
+                  minimumDate={new Date()}
+                />
+              )}
             </Pressable>
           </Pressable>
         </Modal>
-      )}
-
-      {/* Date Picker Modal for Add Item */}
-      {showItemDatePicker && Platform.OS === "ios" && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          visible={showItemDatePicker}
-          onRequestClose={cancelItemDateSelection}
-        >
-          <View style={styles.addItemDatePickerModalContainer}>
-            <View style={styles.addItemDatePickerModalPopupBox}>
-              <View style={styles.addItemDatePickerModalHeader}>
-                <TouchableOpacity
-                  onPress={cancelItemDateSelection}
-                  style={styles.addItemDatePickerModalButton}
-                >
-                  <Text style={styles.addItemDatePickerModalButtonText}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.addItemDatePickerModalTitle}>
-                  Select Date
-                </Text>
-                <TouchableOpacity
-                  onPress={confirmItemDateSelection}
-                  style={styles.addItemDatePickerModalButton}
-                >
-                  <Text style={styles.addItemDatePickerModalButtonText}>
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <View style={styles.addItemDatePickerModalPickerWrapper}>
-                <DateTimePicker
-                  value={tempItemExpiryDate}
-                  mode="date"
-                  display="inline"
-                  onChange={onItemDateChange}
-                  minimumDate={new Date()}
-                  style={styles.addItemDatePickerIOS}
-                />
-              </View>
-            </View>
-          </View>
-        </Modal>
-      )}
-
-      {showItemDatePicker && Platform.OS === "android" && (
-        <DateTimePicker
-          value={itemExpiryDate}
-          mode="date"
-          display="default"
-          onChange={onItemDateChange}
-          minimumDate={new Date()}
-        />
       )}
 
       {/* User Picker Modal for Add Item */}
