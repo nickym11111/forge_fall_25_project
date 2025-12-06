@@ -1,10 +1,20 @@
-import { StyleSheet, TextInput, View, Text, TouchableOpacity, Keyboard, TouchableWithoutFeedback, ScrollView } from "react-native";
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  Text,
+  TouchableOpacity,
+  Keyboard,
+  TouchableWithoutFeedback,
+  ScrollView,
+} from "react-native";
 import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
 import { CreateAccountRequest } from "../../api/CreateAccount";
+import { Alert } from "react-native";
 
 export default function CreateAccount() {
   const [firstName, setFirstName] = useState("");
@@ -24,27 +34,35 @@ export default function CreateAccount() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader 
-        title="Create Account" 
+      <CustomHeader
+        title="Create Account"
         subtitle="Join Food Flow and start managing your kitchen"
       />
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.createAccountContainer}
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.createAccountCard}>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "firstName" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
-            onChangeText={setFirstName}
-            placeholder="First Name"
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "firstName" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
+                onChangeText={setFirstName}
+                placeholder="First Name"
                 placeholderTextColor="#94a3b8"
-            value={firstName}
-            style={styles.createAccountInput}
+                value={firstName}
+                style={styles.createAccountInput}
                 onFocus={() => setFocusedInput("firstName")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
@@ -52,18 +70,26 @@ export default function CreateAccount() {
                 blurOnSubmit={true}
               />
             </View>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "lastName" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="person-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "lastName" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="person-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
                 ref={lastNameRef}
-            onChangeText={setLastName}
-            placeholder="Last Name"
+                onChangeText={setLastName}
+                placeholder="Last Name"
                 placeholderTextColor="#94a3b8"
-            value={lastName}
-            style={styles.createAccountInput}
+                value={lastName}
+                style={styles.createAccountInput}
                 onFocus={() => setFocusedInput("lastName")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
@@ -71,18 +97,26 @@ export default function CreateAccount() {
                 blurOnSubmit={true}
               />
             </View>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "email" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "email" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="mail-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
                 ref={emailRef}
-            onChangeText={setEmail}
-            placeholder="Email"
+                onChangeText={setEmail}
+                placeholder="Email"
                 placeholderTextColor="#94a3b8"
-            value={email}
-            style={styles.createAccountInput}
+                value={email}
+                style={styles.createAccountInput}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 onFocus={() => setFocusedInput("email")}
@@ -92,19 +126,27 @@ export default function CreateAccount() {
                 blurOnSubmit={true}
               />
             </View>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "password" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="lock-closed-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "password" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="lock-closed-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
                 ref={passwordRef}
-            onChangeText={setPassword}
-            placeholder="Password"
+                onChangeText={setPassword}
+                placeholder="Password"
                 placeholderTextColor="#94a3b8"
-            value={password}
+                value={password}
                 secureTextEntry={!showPassword}
-            style={styles.createAccountInput}
+                style={styles.createAccountInput}
                 onFocus={() => setFocusedInput("password")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
@@ -122,56 +164,74 @@ export default function CreateAccount() {
                 />
               </TouchableOpacity>
             </View>
-            <View style={[
-              styles.inputContainer,
-              focusedInput === "dietary" && styles.inputContainerFocused
-            ]} collapsable={false}>
-              <Ionicons name="restaurant-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+            <View
+              style={[
+                styles.inputContainer,
+                focusedInput === "dietary" && styles.inputContainerFocused,
+              ]}
+              collapsable={false}
+            >
+              <Ionicons
+                name="restaurant-outline"
+                size={20}
+                color="#94a3b8"
+                style={styles.inputIcon}
+              />
+              <TextInput
                 ref={dietaryRef}
-            onChangeText={setDietaryRestrictionsText}
+                onChangeText={setDietaryRestrictionsText}
                 placeholder="Dietary Restrictions (optional)"
                 placeholderTextColor="#94a3b8"
-            value={dietaryRestrictionsText}
-            style={styles.createAccountInput}
+                value={dietaryRestrictionsText}
+                style={styles.createAccountInput}
                 onFocus={() => setFocusedInput("dietary")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
                 returnKeyType="default"
                 blurOnSubmit={true}
-          />
+              />
             </View>
-          <CustomButton
-            title="Create Account"
-            onPress={async () => {
-              try {
-                const response = await CreateAccountRequest(
-                  email,
-                  password,
-                  firstName,
-                  lastName,
-                  dietaryRestrictions
-                );
-                  // Handle success/error - you can add a modal here if needed
-              } catch (e) {
-                console.log(e);
-              }
-            }}
-            disabled={!firstName || !lastName || !email || !password}
-            style={styles.createAccountButton}
-            className=""
-          />
+            <CustomButton
+              title="Create Account"
+              onPress={async () => {
+                try {
+                  const response = await CreateAccountRequest(
+                    email,
+                    password,
+                    firstName,
+                    lastName,
+                    dietaryRestrictions
+                  );
+                  Alert.alert(
+                    "Check your email",
+                    "Please check your email to verify your account.",
+                    [
+                      {
+                        text: "OK",
+                        onPress: () => navigate("/(tabs)/create_fridge"),
+                      },
+                    ]
+                  );
+                } catch (e) {
+                  console.log(e);
+                }
+              }}
+              disabled={!firstName || !lastName || !email || !password}
+              style={styles.createAccountButton}
+              className=""
+            />
             <TouchableOpacity
-            style={styles.backToLoginButton}
-            onPress={() => {
-              navigate("/");
-            }}
-          >
+              style={styles.backToLoginButton}
+              onPress={() => {
+                navigate("/");
+              }}
+            >
               <Text style={styles.backToLoginText}>
-                Already have an account? <Text style={styles.backToLoginLink}>Sign in</Text>
-          </Text>
+                Already have an account?{" "}
+                <Text style={styles.backToLoginLink}>Sign in</Text>
+              </Text>
             </TouchableOpacity>
-        </View>
+          </View>
         </ScrollView>
       </TouchableWithoutFeedback>
     </View>
