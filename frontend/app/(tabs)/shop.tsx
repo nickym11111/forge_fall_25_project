@@ -16,7 +16,6 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
-import CustomHeader from "@/components/CustomHeader";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import { useAuth } from "../context/authContext";
 import { supabase } from "../utils/client";
@@ -229,14 +228,14 @@ export default function SharedListScreen() {
                 onPress={() => deleteItem(item)}
                 style={styles.controlIcon}
               >
-                <Ionicons name="trash-outline" size={20} color="#222" />
+                <Ionicons name="trash-outline" size={20} color="#1e293b" />
               </TouchableOpacity>
             ) : (
               <TouchableOpacity
                 onPress={() => changeItemQuantity(item, -1)}
                 style={styles.controlIcon}
               >
-                <Ionicons name="remove-circle-outline" size={22} color="#222" />
+                <Ionicons name="remove-circle-outline" size={22} color="#1e293b" />
               </TouchableOpacity>
             )}
 
@@ -248,7 +247,7 @@ export default function SharedListScreen() {
               onPress={() => changeItemQuantity(item, 1)}
               style={styles.controlIcon}
             >
-              <Ionicons name="add-circle-outline" size={22} color="#222" />
+                <Ionicons name="add-circle-outline" size={22} color="#1e293b" />
             </TouchableOpacity>
           </View>
         </View>
@@ -262,7 +261,10 @@ export default function SharedListScreen() {
       style={styles.screen}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <CustomHeader title="Shared Shopping List" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Shared Shopping List</Text>
+        <ProfileIcon className="" style={styles.profileIconContainer} />
+      </View>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View>
           {/* Top Card (Add Item quick input) */}
@@ -346,7 +348,7 @@ export default function SharedListScreen() {
                     <Ionicons
                       name="remove-circle-outline"
                       size={25}
-                      color="#222"
+                      color="#1e293b"
                     />
                   </TouchableOpacity>
                   <Text style={styles.qtyNumber}>{formQuantity}</Text>
@@ -356,7 +358,7 @@ export default function SharedListScreen() {
                     <Ionicons
                       name="add-circle-outline"
                       size={25}
-                      color="#222"
+                      color="#1e293b"
                     />
                   </TouchableOpacity>
                 </View>
@@ -373,7 +375,7 @@ export default function SharedListScreen() {
                       ? formatShortDate(formNeedBy)
                       : "Tap to select date"}
                   </Text>
-                  <Ionicons name="calendar-outline" size={20} color="#222" />
+                  <Ionicons name="calendar-outline" size={20} color="#1e293b" />
                 </TouchableOpacity>
               </View>
             </View>
@@ -398,7 +400,7 @@ export default function SharedListScreen() {
               onPress={closeModal}
               style={{ marginTop: 8, alignSelf: "center" }}
             >
-              <Text style={{ color: "#666" }}>Cancel</Text>
+              <Text style={{ color: "#64748b" }}>Cancel</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -409,22 +411,47 @@ export default function SharedListScreen() {
 
 //Styles
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#F7F8FC" },
-
+  screen: { flex: 1, backgroundColor: "#FAFBFC" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  profileIconContainer: {
+    position: "absolute",
+    right: 10,
+    top: 50,
+  },
   //Header top card
   topCard: {
-    margin: 18,
+    margin: 20,
+    marginTop: 24,
     backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: 24,
+    padding: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   cardTitle: {
     fontSize: 20,
     fontWeight: "700",
+    color: "#1e293b",
     marginBottom: 8,
   },
   topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
@@ -456,38 +483,44 @@ const styles = StyleSheet.create({
     backgroundColor: "#14b8a6",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#6C63FF",
-    shadowOpacity: 0.15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
     shadowRadius: 8,
+    elevation: 2,
   },
 
   // Section headers
   section: {
-    marginHorizontal: 22,
-    marginTop: 6,
+    marginHorizontal: 20,
+    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#2C2C54",
+    color: "#1e293b",
   },
 
   // Item cards
   itemsList: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 0,
     paddingBottom: 140,
   },
   itemCard: {
-    marginHorizontal: 18,
-    marginTop: 12,
-    backgroundColor: "#FAFAFB",
-    borderRadius: 10,
-    padding: 14,
+    marginHorizontal: 20,
+    marginTop: 16,
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    padding: 24,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   itemLeft: {
     width: 40,
@@ -500,15 +533,15 @@ const styles = StyleSheet.create({
   itemTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#111",
+    color: "#1e293b",
   },
   itemChecked: {
     textDecorationLine: "line-through",
-    color: "#8c8c8c",
+    color: "#94a3b8",
   },
   itemMeta: {
     marginTop: 6,
-    color: "#666",
+    color: "#64748b",
     fontSize: 13,
   },
 
@@ -541,7 +574,7 @@ const styles = StyleSheet.create({
   qtyText: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#111",
+    color: "#1e293b",
   },
 
   // Modal
@@ -555,32 +588,39 @@ const styles = StyleSheet.create({
     left: "5%",
     right: "5%",
     backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: 24,
+    padding: 24,
     maxHeight: "72%",
     shadowColor: "#000",
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "700",
+    color: "#1e293b",
     marginBottom: 12,
   },
 
   // Inputs
   inputLabel: {
     fontSize: 13,
-    color: "#555",
+    fontWeight: "600",
+    color: "#1e293b",
     marginBottom: 6,
   },
   input: {
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
-    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
+    borderRadius: 16,
     padding: 12,
-    backgroundColor: "#FAFBFF",
+    backgroundColor: "#f8fafc",
     fontSize: 16,
+    color: "#1e293b",
   },
   row: {
     flexDirection: "row",
@@ -601,20 +641,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     marginHorizontal: 8,
+    color: "#1e293b",
   },
   dateInput: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 12,
     paddingHorizontal: 12,
-    backgroundColor: "#FAFBFF",
-    borderWidth: 1,
-    borderColor: "#E8E8E8",
+    backgroundColor: "#f8fafc",
+    borderWidth: 1.5,
+    borderColor: "#e2e8f0",
   },
   dateText: {
-    color: "#333",
+    color: "#1e293b",
   },
   datePickerContainer: {
     marginTop: 12,
@@ -626,9 +667,14 @@ const styles = StyleSheet.create({
   addItemButton: {
     marginTop: 14,
     backgroundColor: "#14b8a6",
-    borderRadius: 12,
+    borderRadius: 16,
     paddingVertical: 12,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   addItemButtonText: {
     color: "#fff",

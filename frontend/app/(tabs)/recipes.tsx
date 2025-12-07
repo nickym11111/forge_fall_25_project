@@ -13,9 +13,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Text, View } from "@/components/Themed";
 import React, { useState, useEffect } from "react";
-import CustomHeader from "@/components/CustomHeader";
 import { useAuth } from "../context/authContext";
 import { supabase } from "../utils/client";
+import ProfileIcon from "@/components/ProfileIcon";
 
 interface ItemProps {
   title: string;
@@ -110,7 +110,7 @@ const FavoriteRecipeItem = ({
         onPress={() => onRemove(recipeId, recipe_name)}
         style={styles.removeButton}
       >
-        <Ionicons name="trash-outline" size={24} color="#ef4444" />
+        <Ionicons name="heart" size={28} color="#E91E63" />
       </TouchableOpacity>
     </View>
   );
@@ -447,7 +447,7 @@ export default function recipes() {
             <Ionicons 
               name={isFavorite ? "heart" : "heart-outline"} 
               size={28} 
-              color={isFavorite ? "#E91E63" : "#888"} 
+              color={isFavorite ? "#E91E63" : "#94a3b8"} 
             />
           </TouchableOpacity>
         </View>
@@ -462,10 +462,10 @@ export default function recipes() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader 
-        title="Share Recipes!  "
-        logo={require('../../assets/images/FridgeIcon.png')}
-      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Share Recipes</Text>
+        <ProfileIcon className="" style={styles.profileIconContainer} />
+      </View>
 
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -474,8 +474,8 @@ export default function recipes() {
         >
           <MaterialCommunityIcons
             name={activeTab === 'ingredients' ? "shaker" : "shaker-outline"}
-            size={28}
-            color={activeTab === 'ingredients' ? '#666' : 'white'}
+            size={24}
+            color={activeTab === 'ingredients' ? 'white' : '#64748b'}
           />
           <Text style={[styles.tabText, activeTab === 'ingredients' && styles.activeTabText]}>
             Get Ingredients
@@ -488,8 +488,8 @@ export default function recipes() {
         >
           <MaterialCommunityIcons
             name={activeTab === 'recipes' ? "food" : "food-outline"}
-            size={28}
-            color={activeTab === 'recipes' ? '#666' : 'white'}
+            size={24}
+            color={activeTab === 'recipes' ? 'white' : '#64748b'}
           />
           <Text style={[styles.tabText, activeTab === 'recipes' && styles.activeTabText]}>
             Get Recipes
@@ -502,8 +502,8 @@ export default function recipes() {
         >
           <Ionicons 
             name={activeTab === 'favorites' ? "heart" : "heart-outline"}
-            size={28} 
-            color={activeTab === 'favorites' ? '#666' : 'white'} 
+            size={24} 
+            color={activeTab === 'favorites' ? 'white' : '#64748b'} 
           />
           <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>
             Favorites
@@ -515,10 +515,19 @@ export default function recipes() {
         {activeTab === 'ingredients' && (
           <View style={styles.contentSection}>
             <View style={styles.boxContainer}>
-              <Text>Generate a list of ingredients for a certain recipe!</Text>
-              <Text style={styles.noteText}>
-                NOTE: the list only shows what you don't already have
+              <View style={styles.sectionHeader}>
+                <Ionicons name="restaurant-outline" size={22} color="#14b8a6" />
+                <Text style={styles.sectionTitle}>Find Missing Ingredients</Text>
+              </View>
+              <Text style={styles.instructionText}>
+                Enter a dish name to see which ingredients you're missing from your kitchen.
               </Text>
+              <View style={styles.infoBadge}>
+                <Ionicons name="information-circle-outline" size={16} color="#64748b" />
+                <Text style={styles.infoBadgeText}>
+                  Only shows ingredients you don't have
+                </Text>
+              </View>
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
@@ -558,14 +567,18 @@ export default function recipes() {
         {activeTab === 'recipes' && (
           <View style={styles.contentSection}>
             <View style={styles.boxContainer}>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="sparkles-outline" size={22} color="#14b8a6" />
+                <Text style={styles.sectionTitle}>AI Recipe Generator</Text>
+              </View>
               <Text style={styles.instructionText}>
-                Generate recipes you can make based on your current food inventory!
+                Get personalized recipe suggestions based on what's in your kitchen!
               </Text>
 
               {isLoadingRecipes ? (
-                <View style={{ alignItems: 'center', marginTop: 20 }}>
+                <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#14b8a6" />
-                  <Text style={styles.loadingText}>Loading recipes...</Text>
+                  <Text style={styles.loadingText}>Generating recipes...</Text>
                 </View>
               ) : (
                 <>
@@ -600,17 +613,24 @@ export default function recipes() {
         {activeTab === 'favorites' && (
           <View style={styles.contentSection}>
             <View style={styles.boxContainer}>
-              <Text style={styles.instructionText}>
-                Your favorite recipes
-              </Text>
+              <View style={styles.sectionHeader}>
+                <Ionicons name="heart" size={22} color="#E91E63" />
+                <Text style={styles.sectionTitle}>Your Favorite Recipes</Text>
+              </View>
 
               {isLoadingFavorite && !refreshingFavorite ? (
-                <ActivityIndicator size="large" color="#14b8a6" style={{ marginTop: 20 }} />
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#14b8a6" />
+                  <Text style={styles.loadingText}>Loading favorites...</Text>
+                </View>
               ) : favoriteRecipes.length === 0 ? (
-                <View style={{ marginTop: 20 }}>
+                <View style={styles.emptyStateContainer}>
+                  <View style={styles.emptyStateIcon}>
+                    <Ionicons name="heart-outline" size={48} color="#cbd5e1" />
+                  </View>
                   <Text style={styles.emptyText}>No favorite recipes yet</Text>
                   <Text style={styles.emptySubtext}>
-                    Heart recipes from the "Get Recipes" tab to save them here
+                    Tap the heart icon on recipes to save them here
                   </Text>
                 </View>
               ) : (
@@ -647,44 +667,77 @@ export default function recipes() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  profileIconContainer: {
+    position: "absolute",
+    right: 10,
+    top: 50,
   },
 
   tabContainer: {
     flexDirection: 'row',
     justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
 
   tabButton: {
-    minWidth: "33%",
+    flex: 1,
     height: 60,
     paddingVertical: 10,
     alignItems: 'center',
-    backgroundColor: '#14b8a6',
+    justifyContent: 'center',
+    backgroundColor: '#f0fdfa',
     marginHorizontal: 4,
     marginTop: 8,
-    borderRadius: 8,
-    borderBottomColor: 'transparent',
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   }, 
 
   activeIconTab: {
-    borderBottomColor: '#666',
+    backgroundColor: '#14b8a6',
+    borderColor: '#14b8a6',
   },
 
   tabText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'white',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#64748b',
+    marginTop: 4,
   },
 
   activeTabText: {
-    color: '#666',
+    color: 'white',
     fontWeight: '700',
   },
 
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 20, 
+    paddingTop: 16, 
     paddingBottom: 40,
     alignItems: 'center', 
   },
@@ -699,32 +752,37 @@ const styles = StyleSheet.create({
     width: "100%", 
     maxWidth: 400, 
     backgroundColor: "white",
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 24, 
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
 
   instructionText: {
     fontSize: 15,
-    color: '#333',
+    color: '#1e293b',
     marginBottom: 8,
+    fontWeight: "500",
   },
   
   noteText: {
     fontSize: 13,
-    color: '#666',
+    color: '#64748b',
     fontStyle: 'italic',
     marginBottom: 16,
   },
   
   loadingText: {
     textAlign: 'center',
-    color: '#666',
+    color: '#64748b',
     marginTop: 20,
+    fontSize: 16,
+    fontWeight: "500",
   },
   
   searchContainer: {
@@ -737,20 +795,27 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 50,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    borderRadius: 16,
     paddingHorizontal: 15,
-    backgroundColor: 'white',
+    backgroundColor: '#f8fafc',
+    fontSize: 16,
+    color: '#1e293b',
   },
   
   submitButton: {
     width: 50,
     height: 50,
     backgroundColor: '#14b8a6',
-    borderRadius: 8,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   
   submitButtonText: {
@@ -763,23 +828,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: '#fff',
+    padding: 16,
+    borderRadius: 16,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
   },
   
   ingredientText: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: '#1e293b',
+    fontWeight: "500",
   },
   
   addButton: {
     backgroundColor: '#14b8a6',
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   
   addButtonText: {
@@ -789,22 +867,31 @@ const styles = StyleSheet.create({
   },
   
   item: {
-    backgroundColor: "#f0f0f0",
-    padding: 15,
-    marginVertical: 5,
-    borderRadius: 8,
+    backgroundColor: "#f8fafc",
+    padding: 16,
+    marginVertical: 6,
+    borderRadius: 16,
     width: "100%",
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
   
   itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between', 
-    alignItems: 'center', 
-    backgroundColor: "#f0f0f0",
-    padding: 15,
-    marginVertical: 5,
-    borderRadius: 8,
-    width: "100%", 
+    alignItems: 'flex-start', 
+    backgroundColor: "#fff",
+    padding: 20,
+    marginVertical: 8,
+    borderRadius: 20,
+    width: "100%",
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   
   heartButton: {
@@ -813,54 +900,65 @@ const styles = StyleSheet.create({
   
   itemText: {
     fontSize: 18,
-    color: "#333",
+    color: "#1e293b",
   },
   
   recipeTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 6,
   },
   
   recipeDescription: {
     fontSize: 14,
-    color: '#666',
-    marginVertical: 4,
+    color: '#64748b',
+    marginTop: 4,
+    marginBottom: 8,
+    lineHeight: 20,
   },
   
   recipeIngredients: {
-    fontSize: 12,
-    color: '#888',
+    fontSize: 13,
+    color: '#94a3b8',
     fontStyle: 'italic',
+    marginTop: 4,
   },
 
   favoriteRecipeCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    padding: 15,
-    marginVertical: 5,
-    borderRadius: 8,
+    alignItems: 'flex-start',
+    backgroundColor: '#fff',
+    padding: 20,
+    marginVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
   favoriteRecipeTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '700',
+    color: '#1e293b',
   },
 
   favoriteRecipeMeta: {
     fontSize: 13,
-    color: '#666',
+    color: '#64748b',
     marginLeft: 8,
   },
 
   profilePhoto: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#ddd',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#f0fdfa',
   },
 
   defaultProfileIcon: {
@@ -879,17 +977,68 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 
+  emptyStateContainer: {
+    alignItems: 'center',
+    marginTop: 32,
+    marginBottom: 20,
+    paddingVertical: 32,
+  },
+  emptyStateIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f8fafc',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
   emptyText: {
     textAlign: 'center',
-    fontSize: 16,
-    color: '#666',
+    fontSize: 18,
+    color: '#1e293b',
     marginBottom: 8,
+    fontWeight: "700",
   },
 
   emptySubtext: {
     textAlign: 'center',
     fontSize: 14,
-    color: '#999',
+    color: '#64748b',
+    paddingHorizontal: 20,
+    lineHeight: 20,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    marginTop: 32,
+    paddingVertical: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  infoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0fdfa',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  infoBadgeText: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
   },
 
   retryButton: {
@@ -899,9 +1048,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#14b8a6',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 16,
     marginTop: 20,
     gap: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
 
   retryButtonText: {

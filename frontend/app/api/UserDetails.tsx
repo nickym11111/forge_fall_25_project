@@ -15,8 +15,8 @@ function fixProfilePhotoUrl(url: string | null | undefined): string {
 }
 
 export async function fetchUserDetails() {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
 
     // Fetch user info from your API
@@ -33,12 +33,12 @@ export async function fetchUserDetails() {
       
       if (error || !newSession) {
         console.error("Session refresh failed:", error);
-        return null;
-      }
+          return null;
+        }
       
       // Retry with new token
       response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/userInfo`, {
-        headers: {
+          headers: {
           Authorization: `Bearer ${newSession.access_token}`,
         },
       });
@@ -91,27 +91,27 @@ export async function fetchUserDetails() {
       fridgeMates: data.fridgeMates ?? [],
       profile_photo: profilePhoto || null,
     };
-  } catch (error) {
+      } catch (error) {
     console.error("Error fetching user:", error);
-    return null;
-  }
+        return null;
+      }
 }
 
 export async function leaveFridge(fridgeId: string) {
-  try {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      return null;
-    }
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          return null;
+        }
     
     let response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/fridge/leave-fridge`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${session.access_token}`
-      },
-      body: JSON.stringify({ fridgeId, userId: session.user.id })
-    });
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({ fridgeId, userId: session.user.id })
+        });
     
     // If 401, try to refresh token and retry
     if (response.status === 401) {
@@ -133,12 +133,12 @@ export async function leaveFridge(fridgeId: string) {
         body: JSON.stringify({ fridgeId, userId: session.user.id })
       });
     }
-    
-    if (response.ok) {
-      return(await response.json());
-    }
-  } catch (error) {
+        
+        if (response.ok) {
+          return(await response.json());
+        }
+      } catch (error) {
     console.error('Error leaving fridge:', error);
-    return null;
-  }
+        return null;
+      }
 }
