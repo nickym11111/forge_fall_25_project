@@ -39,10 +39,12 @@ def add_item(recipe: Recipe, user: User):
 
 @app.get("/get-favorite-recipes/")
 def get_items():
-    response = supabase.table("favorite_recipes").select("*").execute()
-    print("Retrieved recipes:", response.data)
-    return {"data": response.data}
+    response = supabase.table("favorite_recipes").select(
+        "id, recipe_name, added_by:users!favorite_recipes_added_by_fkey(id, email, first_name, last_name)"
+    ).execute()
 
+    print("Retrieved:", response.data)
+    return {"data": response.data}
 
 class RecipeDelete(BaseModel):
     recipe_name: str
