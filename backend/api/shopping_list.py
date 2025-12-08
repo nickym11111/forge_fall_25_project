@@ -87,7 +87,13 @@ async def add_shopping_item(
         # Override fridge_id to ensure it matches user's fridge
         item_data = item.dict()
         item_data["fridge_id"] = fridge_id
-        item_data["requested_by"] = current_user.get("id")
+        first = current_user.get("first_name", "") or ""
+        last = current_user.get("last_name", "") or ""
+        user_name = f"{first} {last}".strip()
+        if not user_name:
+             user_name = "Unknown"
+             
+        item_data["requested_by"] = user_name
         
         response = supabase.table("shopping_list").insert(item_data).select().execute()
         

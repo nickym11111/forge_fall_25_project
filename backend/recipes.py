@@ -59,12 +59,25 @@ async def add_to_grocery_list(grocery_item: GroceryItem):
     Add an ingredient to the shopping list
     """
     try:
-        print(f"Adding '{grocery_item.ingredient}' to shopping list for user {grocery_item.userId}")
+        # Fetch user details to get name
+        user_response = supabase.table("users").select("first_name, last_name").eq("id", grocery_item.userId).execute()
+        
+        user_name = "Unknown"
+        if user_response.data and len(user_response.data) > 0:
+            user = user_response.data[0]
+            first = user.get("first_name", "") or ""
+            last = user.get("last_name", "") or ""
+            user_name = f"{first} {last}".strip()
+            
+        if not user_name:
+            user_name = grocery_item.userId # Fallback to ID if no name found, though unlikely for valid user
+            
+        print(f"Adding '{grocery_item.ingredient}' to shopping list for user {user_name} ({grocery_item.userId})")
         
         # Insert into shopping_list table
         result = supabase.table("shopping_list").insert({
             "name": grocery_item.ingredient,
-            "requested_by": grocery_item.userId,
+            "requested_by": user_name,
             "fridge_id": grocery_item.fridgeId,
             "checked": False,
             "quantity": 1,
