@@ -484,6 +484,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  search_bar: {
+    height: 40,
+    marginTop: -25,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    padding: 8,
+    width: "100%",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    fontSize: 16,
+  },
   inputContainer: {
     flex: 1,
     flexDirection: "row",
