@@ -104,6 +104,13 @@ async def create_fridge_item(
         if not fridge_id:
             raise HTTPException(status_code=403, detail="User has no fridge assigned")
         
+        user_id = current_user["id"]
+        
+        final_shared_by = list(item.shared_by) if item.shared_by else []
+        
+        if user_id not in final_shared_by:
+            final_shared_by.append(user_id)
+        
         # insert new item to fridge
         response = supabase.table("fridge_items").insert({
             "name": item.name.strip(),
@@ -111,7 +118,7 @@ async def create_fridge_item(
             "days_till_expiration": days_till_expiration,
             "fridge_id": fridge_id,
             "added_by": current_user["id"],
-            "shared_by": item.shared_by,
+            "shared_by": final_shared_by,
             "price": item.price
         }).execute()
 
@@ -185,7 +192,6 @@ def get_fridge_items(current_user = Depends(get_current_user)):
             # Handle shared_by - it's stored as a JSONB array of user_ids
             shared_by = []
             shared_by_ids = item.get("shared_by")
-
             if shared_by_ids and isinstance(shared_by_ids, list) and len(shared_by_ids) > 0:
                 for user_id in shared_by_ids:
                     print(f"  Looking up user_id: {user_id}")
