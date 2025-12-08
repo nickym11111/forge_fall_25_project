@@ -18,7 +18,8 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
-import { File } from "expo-file-system";
+import * as FileSystem from "expo-file-system/legacy";
+import * as ImageManipulator from "expo-image-manipulator";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
 import CustomButton from "@/components/CustomButton";
 import ProfileIcon from "@/components/ProfileIcon";
@@ -26,9 +27,7 @@ import ProfileIcon from "@/components/ProfileIcon";
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import { Modal } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../context/authContext";
-import { router } from "expo-router";
 
 // Conditionally import react-datepicker for web
 let DatePicker: any;
@@ -76,14 +75,19 @@ export default function ParseReceiptScreen() {
   const [itemAiSuggested, setItemAiSuggested] = useState<boolean>(false);
 
   const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: "images",
-      allowsEditing: false,
-      quality: 1,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+      });
 
-    if (!result.canceled) {
-      setImageUri(result.assets[0].uri);
+      if (!result.canceled) {
+        setImageUri(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error("Error picking image:", error);
+      Alert.alert("Error", "Failed to pick image from library");
     }
   };
 
@@ -255,8 +259,15 @@ export default function ParseReceiptScreen() {
           reader.readAsDataURL(blob);
         });
       } else {
-        const file = new File(imageUri);
-        base64Image = file.base64Sync();
+        // Convert to compatible format (JPEG)
+        const manipResult = await ImageManipulator.manipulateAsync(
+          imageUri,
+          [],
+          { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+        );
+        base64Image = await FileSystem.readAsStringAsync(manipResult.uri, {
+          encoding: "base64",
+        });
       }
       const response = await CreateParseReceiptRequest(base64Image);
 
