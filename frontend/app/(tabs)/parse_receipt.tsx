@@ -517,7 +517,10 @@ export default function ParseReceiptScreen() {
       >
         <TouchableOpacity
           style={styles.addItemButton}
-          onPress={() => setShowAddItemModal(true)}
+          onPress={() => {
+            setShowAddItemModal(true);
+            setItemAiSuggested(false);
+          }}
         >
           <Ionicons
             name="add"
@@ -1022,14 +1025,15 @@ export default function ParseReceiptScreen() {
                     {/* Expiry Date */}
                     <Text style={styles.addItemModalLabel}>
                       Expiry Date:{" "}
-                      <Text
-                        style={{
-                          visibility: itemAiSuggested ? "visible" : "hidden",
-                          color: "#14b8a6",
-                        }}
-                      >
-                        AI Suggested
-                      </Text>
+                      {itemAiSuggested && (
+                        <Text
+                          style={{
+                            color: "#14b8a6",
+                          }}
+                        >
+                          AI Suggested
+                        </Text>
+                      )}
                     </Text>
                     {Platform.OS === "web" && DatePicker ? (
                       <View style={styles.addItemModalInputContainer}>
@@ -1089,6 +1093,7 @@ export default function ParseReceiptScreen() {
                     <TouchableOpacity
                       style={styles.addItemModalInputContainer}
                       onPress={() => {
+                        Keyboard.dismiss();
                         if (itemUsers.length === 0) fetchItemUsers();
                         setShowItemUserPicker(true);
                       }}
@@ -1229,28 +1234,36 @@ export default function ParseReceiptScreen() {
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.addItemUserPickerModalList}>
-                {itemUsers.map((user) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={styles.addItemUserPickerOption}
-                    onPress={() => toggleItemUserSelection(user.id)}
-                  >
-                    <View
-                      style={[
-                        styles.addItemUserPickerCheckbox,
-                        itemSharedByUserIds.includes(user.id) &&
-                          styles.addItemUserPickerCheckboxSelected,
-                      ]}
-                    >
-                      {itemSharedByUserIds.includes(user.id) && (
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      )}
-                    </View>
-                    <Text style={styles.addItemUserPickerOptionText}>
-                      {getItemUserDisplayName(user)}
+                {itemUsers.length === 0 ? (
+                  <View style={{ padding: 20, alignItems: "center" }}>
+                    <Text style={{ color: "#64748b", textAlign: "center" }}>
+                      No fridge mates found. Add friends to share items!
                     </Text>
-                  </TouchableOpacity>
-                ))}
+                  </View>
+                ) : (
+                  itemUsers.map((user) => (
+                    <TouchableOpacity
+                      key={user.id}
+                      style={styles.addItemUserPickerOption}
+                      onPress={() => toggleItemUserSelection(user.id)}
+                    >
+                      <View
+                        style={[
+                          styles.addItemUserPickerCheckbox,
+                          itemSharedByUserIds.includes(user.id) &&
+                            styles.addItemUserPickerCheckboxSelected,
+                        ]}
+                      >
+                        {itemSharedByUserIds.includes(user.id) && (
+                          <Ionicons name="checkmark" size={16} color="#fff" />
+                        )}
+                      </View>
+                      <Text style={styles.addItemUserPickerOptionText}>
+                        {getItemUserDisplayName(user)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))
+                )}
               </ScrollView>
             </View>
           </View>
