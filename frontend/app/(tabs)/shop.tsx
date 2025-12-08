@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -19,6 +19,7 @@ import { Ionicons } from "@expo/vector-icons";
 import CustomCheckbox from "@/components/CustomCheckbox";
 import { useAuth } from "../context/authContext";
 import { supabase } from "../utils/client";
+import { useIsFocused } from "@react-navigation/native";
 import ProfileIcon from "@/components/ProfileIcon";
 
 interface ShoppingItem {
@@ -31,8 +32,6 @@ interface ShoppingItem {
   need_by?: string;
   fridge_id?: string;
 }
-
-const API_URL = `${process.env.EXPO_PUBLIC_API_URL}/shopping`;
 
 //Helper Functions
 const formatShortDate = (d: Date) => {
@@ -49,21 +48,54 @@ const isoToShort = (iso?: string) => {
   return formatShortDate(d);
 };
 
+// Component
 export default function SharedListScreen() {
   const { user } = useAuth();
   const user_id = user?.id;
+  const isFocused = useIsFocused();
 
-  // ---------- State ----------
   const [items, setItems] = useState<ShoppingItem[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
 
-  // Add form
+  const [modalOpen, setModalOpen] = useState(false);
   const [formName, setFormName] = useState("");
-  const [formQuantity, setFormQuantity] = useState<number>(1);
+  const [formQuantity, setFormQuantity] = useState(1);
   const [formNeedBy, setFormNeedBy] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  // Filter items based on search
+  const filteredItems = items.filter((item) =>
+    item.name.toLowerCase().includes(searchValue.toLowerCase())
+  );
+
+  // Load Items
+  const loadItems = async () => {
+    if (!user?.fridge_id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("shopping_list")
+        .select("*")
+        .eq("fridge_id", user.fridge_id)
+        .order("id", { ascending: true });
+
+      if (!error) setItems(data || []);
+      else throw error;
+    } catch (err) {
+      console.error("loadItems:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadItems();
+  }, [user?.fridge_id]);
+
+  useEffect(() => {
+    if (isFocused) loadItems();
+  }, [isFocused]);
+
   const resetForm = () => {
+    setFormName("");
     setFormQuantity(1);
     setFormNeedBy(null);
     setShowDatePicker(false);
@@ -89,7 +121,7 @@ export default function SharedListScreen() {
       name: formName.trim(),
       quantity: Math.max(1, Math.floor(formQuantity)),
       need_by: formNeedBy ? formNeedBy.toISOString().split("T")[0] : undefined,
-      requested_by: user?.id,
+      requested_by: user?.first_name + " " + user?.last_name || "",
       bought_by: null,
       checked: false,
       fridge_id,
@@ -97,7 +129,7 @@ export default function SharedListScreen() {
 
     try {
       const { data, error } = await supabase
-        .from("shopping_list") // <-- your Supabase table name
+        .from("shopping_list")
         .insert([newItem])
         .select();
 
@@ -235,7 +267,11 @@ export default function SharedListScreen() {
                 onPress={() => changeItemQuantity(item, -1)}
                 style={styles.controlIcon}
               >
-                <Ionicons name="remove-circle-outline" size={22} color="#1e293b" />
+                <Ionicons
+                  name="remove-circle-outline"
+                  size={22}
+                  color="#1e293b"
+                />
               </TouchableOpacity>
             )}
 
@@ -247,7 +283,7 @@ export default function SharedListScreen() {
               onPress={() => changeItemQuantity(item, 1)}
               style={styles.controlIcon}
             >
-                <Ionicons name="add-circle-outline" size={22} color="#1e293b" />
+              <Ionicons name="add-circle-outline" size={22} color="#1e293b" />
             </TouchableOpacity>
           </View>
         </View>
@@ -265,51 +301,43 @@ export default function SharedListScreen() {
         <Text style={styles.headerTitle}>Shared Shopping List</Text>
         <ProfileIcon className="" style={styles.profileIconContainer} />
       </View>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View>
-          {/* Top Card (Add Item quick input) */}
-          <View style={styles.topCard}>
-            <Text style={styles.cardTitle}>Add Item</Text>
 
-            <View style={styles.topRow}>
-              <View style={styles.inputContainer}>
-                <Ionicons
-                  name="cube-outline"
-                  size={20}
-                  color="#94a3b8"
-                  style={styles.inputIcon}
-                />
-                <TextInput
-                  style={styles.topInput}
-                  placeholder="Item name..."
-                  placeholderTextColor="#94a3b8"
-                  value={formName}
-                  onChangeText={setFormName}
-                />
-              </View>
-              <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
-                <Ionicons name="add" size={28} color="#fff" />
-              </TouchableOpacity>
-            </View>
+      {/* Top Card (Add Item quick input) */}
+      <View style={styles.topCard}>
+        <Text style={styles.cardTitle}>Add Item</Text>
+
+        <View style={styles.topRow}>
+          <View style={styles.inputContainer}>
+            <Ionicons
+              name="cube-outline"
+              size={20}
+              color="#94a3b8"
+              style={styles.inputIcon}
+            />
+            <TextInput
+              style={styles.topInput}
+              placeholder="Item name..."
+              placeholderTextColor="#94a3b8"
+              value={formName}
+              onChangeText={setFormName}
+            />
           </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Your Items</Text>
-          </View>
-
-          <FlatList
-            data={items}
-            keyExtractor={(it, i) =>
-              it.id ? String(it.id) : `${it.name}-${i}`
-            }
-            renderItem={renderItemCard}
-            contentContainerStyle={styles.itemsList}
-            keyboardShouldPersistTaps="handled"
-          />
+          <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
+            <Ionicons name="add" size={28} color="#fff" />
+          </TouchableOpacity>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
 
-      {/* Popup (Add Item) */}
+      {/* Items List */}
+      <FlatList
+        data={filteredItems}
+        keyExtractor={(it, i) => (it.id ? String(it.id) : `${it.name}-${i}`)}
+        renderItem={renderItemCard}
+        contentContainerStyle={styles.itemsList}
+        keyboardShouldPersistTaps="handled"
+      />
+
+      {/* Modal for adding item with details */}
       <Modal
         visible={modalOpen}
         transparent
@@ -412,6 +440,10 @@ export default function SharedListScreen() {
 //Styles
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#FAFBFC" },
+  modalScrollContent: {
+    paddingBottom: 10,
+  },
+
   header: {
     flexDirection: "row",
     alignItems: "center",
