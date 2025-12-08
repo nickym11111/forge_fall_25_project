@@ -194,7 +194,6 @@ def get_fridge_items(current_user = Depends(get_current_user)):
                         print(f"Found user: {users_map[user_id]}")
                     else:
                         print(f"User {user_id} not in users_map")
-            print(f"🔍 Final shared_by for '{item.get('name')}':", shared_by) 
             transformed_items.append({
                 "id": item["id"],
                 "name": item["name"],
