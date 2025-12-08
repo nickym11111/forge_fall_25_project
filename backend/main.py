@@ -471,6 +471,15 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
         
         fridge_id = response.data[0].get("id")
 
+        # NEW: Add creator as a member of the fridge
+        membership_response = supabase.table("fridge_memberships").insert({
+            "user_id": user_id,
+            "fridge_id": fridge_id
+        }).execute()
+        
+        if not membership_response.data:
+            print(f"Warning: Failed to add creator membership for fridge {fridge_id}")
+
 
         # Gets the response for updating the fridge id for a user
         updateFridgeID_response = supabase.table("users").update({
