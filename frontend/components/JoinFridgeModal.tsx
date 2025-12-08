@@ -56,7 +56,7 @@ const JoinFridgeModal = ({ onClose, onSwitchToCreate }: JoinFridgeModalProps) =>
       const data = await response.json();
 
       if (!response.ok || data.status !== "success") {
-        throw new Error(data.message || "Failed to join kitchen");
+        throw new Error(data.message || "Failed to join kitchen. Check your join code and try again!");
       }
 
       Alert.alert(
@@ -67,7 +67,7 @@ const JoinFridgeModal = ({ onClose, onSwitchToCreate }: JoinFridgeModalProps) =>
       setFridgeCode("");
 
     } catch (error) {
-      console.error("Error:", error);
+      //console.error("Error:", error);
       Alert.alert(
         "Error",
         error instanceof Error ? error.message : "An unexpected error occurred"
@@ -75,7 +75,7 @@ const JoinFridgeModal = ({ onClose, onSwitchToCreate }: JoinFridgeModalProps) =>
     } finally {
       setIsLoading(false);
     }
-  };
+  }; 
 
   return (
     <View style={styles.container}>
