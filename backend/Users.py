@@ -177,25 +177,6 @@ async def get_user_fridges(current_user = Depends(get_current_user)):
     try:
         user_id = current_user.get("id") if isinstance(current_user, dict) else current_user.id
         
-        # SELF-HEALING: Check for fridges created by user but missing membership
-        # This fixes the issue for users affected by the previous bug
-        try:
-            created_fridges = supabase.table("fridges").select("id").eq("created_by", user_id).execute()
-            if created_fridges.data:
-                for created_fridge in created_fridges.data:
-                    c_fridge_id = created_fridge["id"]
-                    # Check if membership exists
-                    mem_check = supabase.table("fridge_memberships").select("id").eq("user_id", user_id).eq("fridge_id", c_fridge_id).execute()
-                    
-                    if not mem_check.data:
-                        print(f"Healing missing membership for fridge {c_fridge_id}")
-                        supabase.table("fridge_memberships").insert({
-                            "user_id": user_id,
-                            "fridge_id": c_fridge_id
-                        }).execute()
-        except Exception as heal_err:
-            print(f"Auto-healing warning: {str(heal_err)}")
-
         memberships_response = supabase.table("fridge_memberships").select(
             "fridge_id"
         ).eq("user_id", user_id).execute()
