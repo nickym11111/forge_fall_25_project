@@ -112,13 +112,13 @@ export default function ParseReceiptScreen() {
 
   // fetches the user's session
   const getSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) {
-        console.error("Error getting session:", error);
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error("Error getting session:", error);
       return null;
-      }
+    }
     setUserSession(data.session);
-    };
+  };
 
   useEffect(() => {
     getSession();
@@ -165,14 +165,14 @@ export default function ParseReceiptScreen() {
     const newExpiryDate = new Date(); // Default to today
 
     try {
-    const ExpiryDateResponse = await PredictExpiryDate(item.name);
-    const ExpiryDateData = await ExpiryDateResponse.json();
+      const ExpiryDateResponse = await PredictExpiryDate(item.name);
+      const ExpiryDateData = await ExpiryDateResponse.json();
       console.log(" Response data:", ExpiryDateData);
 
-    if (ExpiryDateData.days) {
-      const days = parseInt(ExpiryDateData.days);
+      if (ExpiryDateData.days) {
+        const days = parseInt(ExpiryDateData.days);
         console.log(" AI predicted", days, "days for", item.name);
-      newExpiryDate.setDate(newExpiryDate.getDate() + days);
+        newExpiryDate.setDate(newExpiryDate.getDate() + days);
       }
     } catch (expiryError) {
       console.warn(
@@ -303,10 +303,12 @@ export default function ParseReceiptScreen() {
       if (response.ok) {
         const result = await response.json();
         if (result.data && Array.isArray(result.data)) {
+          console.log("Fridge members:", result.data);
           setItemUsers(result.data);
         } else {
           // Fallback to fridgeMates from user context
           if (user?.fridgeMates) {
+            console.log("Fridge mates:", user.fridgeMates);
             setItemUsers(
               user.fridgeMates.map((mate: any) => ({
                 id: mate.id,
@@ -471,6 +473,29 @@ export default function ParseReceiptScreen() {
     setShowItemDatePicker(false);
   };
 
+  const handleAutoPredictExpiry = async () => {
+    if (itemTitle.trim() && itemQuantity.trim()) {
+      try {
+        setIsLoadingItemAI(true);
+        const response = await PredictExpiryDate(itemTitle);
+        const data = await response.json();
+        if (data.days) {
+          const days = parseInt(data.days);
+          console.log("Days:", days);
+          const newDate = new Date();
+          newDate.setDate(newDate.getDate() + days);
+          setItemExpiryDate(newDate);
+          setTempItemExpiryDate(newDate);
+          setItemAiSuggested(true);
+        }
+      } catch (error) {
+        console.warn("Failed to auto-predict expiry:", error);
+      } finally {
+        setIsLoadingItemAI(false);
+      }
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -488,7 +513,10 @@ export default function ParseReceiptScreen() {
       >
         <TouchableOpacity
           style={styles.addItemButton}
-          onPress={() => setShowAddItemModal(true)}
+          onPress={() => {
+            setShowAddItemModal(true);
+            setItemAiSuggested(false);
+          }}
         >
           <Ionicons
             name="add"
@@ -500,16 +528,16 @@ export default function ParseReceiptScreen() {
         </TouchableOpacity>
 
         <View style={styles.uploadSection}>
-      <View style={styles.imageContainer}>
-        <TouchableOpacity
-          onPress={pickImage}
+          <View style={styles.imageContainer}>
+            <TouchableOpacity
+              onPress={pickImage}
               activeOpacity={0.8}
               style={styles.imageTouchable}
-        >
-          {imageUri ? (
-            <View style={styles.imageWrapper}>
-              <Image source={{ uri: imageUri }} style={styles.image} />
-              <View style={styles.imageOverlay}>
+            >
+              {imageUri ? (
+                <View style={styles.imageWrapper}>
+                  <Image source={{ uri: imageUri }} style={styles.image} />
+                  <View style={styles.imageOverlay}>
                     <View style={styles.overlayContent}>
                       <View style={styles.overlayIconCircle}>
                         <Ionicons
@@ -518,33 +546,33 @@ export default function ParseReceiptScreen() {
                           color="#14b8a6"
                         />
                       </View>
-                <Text style={styles.imageOverlayText}>
+                      <Text style={styles.imageOverlayText}>
                         Tap to change image
-                </Text>
+                      </Text>
                     </View>
-              </View>
-            </View>
-          ) : (
-            <View style={styles.imageSkeleton}>
-              <View style={styles.imageTextContainer}>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.imageSkeleton}>
+                  <View style={styles.imageTextContainer}>
                     <View style={styles.iconCircle}>
                       <Ionicons name="camera" size={36} color="#14b8a6" />
                     </View>
                     <Text style={styles.skeletonTitle}>
-                  Scan Receipt or Take Photo
-                </Text>
+                      Scan Receipt or Take Photo
+                    </Text>
                     <Text style={styles.skeletonSubtitle}>
                       AI will automatically detect items and expiry dates
-                </Text>
+                    </Text>
                     <View style={styles.hintBadge}>
                       <Ionicons name="sparkles" size={16} color="#14b8a6" />
                       <Text style={styles.hintText}>Powered by AI</Text>
                     </View>
-              </View>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
+                  </View>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
           {!imageUri && (
             <View style={styles.tipsCard}>
               <View style={styles.tipsHeader}>
@@ -612,7 +640,7 @@ export default function ParseReceiptScreen() {
                     style={styles.fridgeMateItem}
                     onPress={() => toggleFridgeMate(mate.id)}
                   >
-            <View
+                    <View
                       style={[
                         styles.checkbox,
                         sharingWith.includes(mate.id) && styles.checkboxChecked,
@@ -762,15 +790,15 @@ export default function ParseReceiptScreen() {
                     const results = await Promise.all(
                       selectedItems.map(async (index) => {
                         const item = parsedItems[index];
-                    const itemName = Object.keys(item)[0];
-                    const itemData = item[itemName];
+                        const itemName = Object.keys(item)[0];
+                        const itemData = item[itemName];
 
                         try {
                           await sendItemToFridge({
-                      name: itemName,
-                      quantity: Math.ceil(itemData.quantity),
+                            name: itemName,
+                            quantity: Math.ceil(itemData.quantity),
                             price: itemData.price,
-                      index,
+                            index,
                             sharedWith: [...sharingWith],
                           });
                           return { success: true, index };
@@ -850,7 +878,7 @@ export default function ParseReceiptScreen() {
                     <View style={styles.itemMeta}>
                       <Text style={styles.itemMetaText}>
                         Qty: {itemData.quantity}
-                    </Text>
+                      </Text>
                       {itemData.price && (
                         <>
                           <Text style={styles.itemMetaDivider}>•</Text>
@@ -859,7 +887,7 @@ export default function ParseReceiptScreen() {
                           </Text>
                         </>
                       )}
-                  </View>
+                    </View>
                   </View>
                   <View style={styles.buttonGroup}>
                     <TouchableOpacity
@@ -944,6 +972,7 @@ export default function ParseReceiptScreen() {
                         placeholderTextColor="#94a3b8"
                         value={itemTitle}
                         onChangeText={setItemTitle}
+                        onBlur={handleAutoPredictExpiry}
                         editable={!isAddingItem}
                       />
                     </View>
@@ -963,6 +992,7 @@ export default function ParseReceiptScreen() {
                         placeholderTextColor="#94a3b8"
                         value={itemQuantity}
                         onChangeText={setItemQuantity}
+                        onBlur={handleAutoPredictExpiry}
                         keyboardType="numeric"
                         editable={!isAddingItem}
                       />
@@ -989,7 +1019,18 @@ export default function ParseReceiptScreen() {
                     </View>
 
                     {/* Expiry Date */}
-                    <Text style={styles.addItemModalLabel}>Expiry Date</Text>
+                    <Text style={styles.addItemModalLabel}>
+                      Expiry Date:{" "}
+                      {itemAiSuggested && (
+                        <Text
+                          style={{
+                            color: "#14b8a6",
+                          }}
+                        >
+                          AI Suggested
+                        </Text>
+                      )}
+                    </Text>
                     {Platform.OS === "web" && DatePicker ? (
                       <View style={styles.addItemModalInputContainer}>
                         <Ionicons
@@ -1048,8 +1089,12 @@ export default function ParseReceiptScreen() {
                     <TouchableOpacity
                       style={styles.addItemModalInputContainer}
                       onPress={() => {
+                        Keyboard.dismiss();
                         if (itemUsers.length === 0) fetchItemUsers();
-                        setShowItemUserPicker(true);
+                        // Small delay to allow keyboard to dismiss before showing modal
+                        setTimeout(() => {
+                          setShowItemUserPicker(true);
+                        }, 100);
                       }}
                       disabled={isAddingItem}
                     >
@@ -1079,9 +1124,9 @@ export default function ParseReceiptScreen() {
                         className=""
                         disabled={isAddingItem}
                       />
+                    </View>
                   </View>
                 </View>
-          </View>
               </TouchableWithoutFeedback>
 
               {/* Date Picker Modal for Add Item - iOS Overlay inside Modal */}
@@ -1120,7 +1165,7 @@ export default function ParseReceiptScreen() {
                           Done
                         </Text>
                       </TouchableOpacity>
-      </View>
+                    </View>
                     <View style={styles.addItemDatePickerModalPickerWrapper}>
                       <DateTimePicker
                         value={tempItemExpiryDate}
@@ -1148,71 +1193,96 @@ export default function ParseReceiptScreen() {
                   minimumDate={new Date()}
                 />
               )}
+              {/* User Picker Overlay (Replacing nested Modal) */}
+              {showItemUserPicker && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    zIndex: 2000,
+                  }}
+                >
+                  <View style={styles.addItemUserPickerModalCard}>
+                    <View style={styles.addItemUserPickerModalHeader}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setItemSharedByUserIds([]);
+                          setShowItemUserPicker(false);
+                        }}
+                        style={styles.addItemUserPickerModalButton}
+                      >
+                        <Text style={styles.addItemUserPickerModalButtonText}>
+                          Clear All
+                        </Text>
+                      </TouchableOpacity>
+                      <Text style={styles.addItemUserPickerModalTitle}>
+                        Select Users
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setShowItemUserPicker(false)}
+                        style={styles.addItemUserPickerModalButton}
+                      >
+                        <Text style={styles.addItemUserPickerModalButtonText}>
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <ScrollView style={styles.addItemUserPickerModalList}>
+                      {itemUsers.length === 0 ? (
+                        <View
+                          style={{
+                            padding: 20,
+                            alignItems: "center",
+                            minHeight: 100,
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Text
+                            style={{ color: "#64748b", textAlign: "center" }}
+                          >
+                            No fridge mates found. Add friends to share items!
+                          </Text>
+                        </View>
+                      ) : (
+                        itemUsers.map((user) => (
+                          <TouchableOpacity
+                            key={user.id}
+                            style={styles.addItemUserPickerOption}
+                            onPress={() => toggleItemUserSelection(user.id)}
+                          >
+                            <View
+                              style={[
+                                styles.addItemUserPickerCheckbox,
+                                itemSharedByUserIds.includes(user.id) &&
+                                  styles.addItemUserPickerCheckboxSelected,
+                              ]}
+                            >
+                              {itemSharedByUserIds.includes(user.id) && (
+                                <Ionicons
+                                  name="checkmark"
+                                  size={16}
+                                  color="#fff"
+                                />
+                              )}
+                            </View>
+                            <Text style={styles.addItemUserPickerOptionText}>
+                              {getItemUserDisplayName(user)}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                </View>
+              )}
             </Pressable>
           </Pressable>
-        </Modal>
-      )}
-
-      {/* User Picker Modal for Add Item */}
-      {showItemUserPicker && (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showItemUserPicker}
-          onRequestClose={() => setShowItemUserPicker(false)}
-        >
-          <View style={styles.addItemUserPickerModalOverlay}>
-            <View style={styles.addItemUserPickerModalCard}>
-              <View style={styles.addItemUserPickerModalHeader}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setItemSharedByUserIds([]);
-                    setShowItemUserPicker(false);
-                  }}
-                  style={styles.addItemUserPickerModalButton}
-                >
-                  <Text style={styles.addItemUserPickerModalButtonText}>
-                    Clear All
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.addItemUserPickerModalTitle}>
-                  Select Users
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowItemUserPicker(false)}
-                  style={styles.addItemUserPickerModalButton}
-                >
-                  <Text style={styles.addItemUserPickerModalButtonText}>
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.addItemUserPickerModalList}>
-                {itemUsers.map((user) => (
-                  <TouchableOpacity
-                    key={user.id}
-                    style={styles.addItemUserPickerOption}
-                    onPress={() => toggleItemUserSelection(user.id)}
-                  >
-                    <View
-                      style={[
-                        styles.addItemUserPickerCheckbox,
-                        itemSharedByUserIds.includes(user.id) &&
-                          styles.addItemUserPickerCheckboxSelected,
-                      ]}
-                    >
-                      {itemSharedByUserIds.includes(user.id) && (
-                        <Ionicons name="checkmark" size={16} color="#fff" />
-                      )}
-                    </View>
-                    <Text style={styles.addItemUserPickerOptionText}>
-                      {getItemUserDisplayName(user)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-    </ScrollView>
-            </View>
-          </View>
         </Modal>
       )}
     </KeyboardAvoidingView>
@@ -1837,9 +1907,16 @@ const styles = StyleSheet.create({
   },
   addItemUserPickerModalCard: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
+    width: "90%",
+    maxWidth: 400,
     maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: "hidden",
   },
   addItemUserPickerModalHeader: {
     flexDirection: "row",

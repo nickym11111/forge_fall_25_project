@@ -41,7 +41,7 @@ async def get_current_user(
         print(f"DEBUG: Auth user found: {response.user.id}")
         
         user_response = supabase.table("users").select(
-            "id, email, active_fridge_id, first_name, last_name, profile_photo"
+            "id, email, active_fridge_id, fridge_id, first_name, last_name, profile_photo"
         ).eq("id", response.user.id).execute()
         
         if not user_response.data or len(user_response.data) == 0:
@@ -51,7 +51,7 @@ async def get_current_user(
         user_data = user_response.data[0]
         print(f"DEBUG: User data retrieved: {user_data.get('email')}, Active Fridge: {user_data.get('active_fridge_id')}")
         
-        user_data["fridge_id"] = user_data.get("active_fridge_id")
+        user_data["fridge_id"] = user_data.get("active_fridge_id") or user_data.get("fridge_id")
         
         return user_data
         

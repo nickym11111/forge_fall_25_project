@@ -474,7 +474,8 @@ def create_fridge(fridge: FridgeCreate, current_user = Depends(get_current_user)
 
         # Gets the response for updating the fridge id for a user
         updateFridgeID_response = supabase.table("users").update({
-            "fridge_id": fridge_id
+            "fridge_id": fridge_id,
+            "active_fridge_id": fridge_id
         }).eq("id", user_id).execute()
 
         if not updateFridgeID_response.data or len(updateFridgeID_response.data) == 0:

@@ -158,6 +158,8 @@ export default function CreateFridgeScreen() {
   const [isLoading, setIsLoading] = useState<boolean>(false); // loading indicator
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
+  const { refreshUser } = useAuth();
+
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
@@ -235,8 +237,8 @@ export default function CreateFridgeScreen() {
         throw new Error("No active session. Please log in again.");
       }
 
-      console.log("User ID from session:", user?.id);
-      console.log("User email from session:", user?.email);
+      console.log("User ID from session:", session.user.id);
+      console.log("User email from session:", session.user.email);
 
       // Create the fridge
       const createFridgeResponse = await fetch(API_URL, {
