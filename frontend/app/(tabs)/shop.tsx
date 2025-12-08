@@ -302,26 +302,19 @@ export default function SharedListScreen() {
         <ProfileIcon className="" style={styles.profileIconContainer} />
       </View>
 
+
       {/* Top Card (Add Item quick input) */}
       <View style={styles.topCard}>
-        <Text style={styles.cardTitle}>Add Item</Text>
-
         <View style={styles.topRow}>
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="cube-outline"
-              size={20}
-              color="#94a3b8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.topInput}
-              placeholder="Item name..."
-              placeholderTextColor="#94a3b8"
-              value={formName}
-              onChangeText={setFormName}
-            />
-          </View>
+         
+                 {/* Search */}
+          <TextInput
+                  style={styles.search_bar}
+                  value={searchValue}
+                  placeholder="Search food items..."
+                  placeholderTextColor="#999"
+                />
+          
           <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
             <Ionicons name="add" size={28} color="#fff" />
           </TouchableOpacity>
@@ -351,7 +344,7 @@ export default function SharedListScreen() {
             contentContainerStyle={{ padding: 10 }}
             nestedScrollEnabled
           >
-            <Text style={styles.modalTitle}>Add Item</Text>
+            
 
             {/* Name */}
             <Text style={styles.inputLabel}>Item Name *</Text>
@@ -487,6 +480,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  search_bar: {
+    height: 40,
+    marginTop: -25,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "#14b8a6",
+    padding: 8,
+    width: "100%",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    fontSize: 16,
+  },
   inputContainer: {
     flex: 1,
     flexDirection: "row",
