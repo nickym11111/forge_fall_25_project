@@ -324,8 +324,7 @@ export default function ParseReceiptScreen() {
 
   useEffect(() => {
     if (showAddItemModal) {
-      // Always fetch when modal opens to handle fridge switching
-      setItemSharedByUserIds([]); // Optional: Clear previous selections to avoid bugs
+      setItemSharedByUserIds([]);
       fetchItemUsers();
     }
   }, [showAddItemModal]);
