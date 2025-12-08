@@ -562,18 +562,19 @@ export default function TabOneScreen() {
   };
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
-    // Current user
-
-    const username = "John Doe";
+    const currentUserName = user?.first_name && user?.last_name 
+      ? `${user.first_name} ${user.last_name}` 
+      : user?.email || "";
+    
     let temp_data = data;
-
+  
     // If user presses 'expiring soon'
     if (selectedFilters.includes("Expiring Soon")) {
       temp_data = temp_data.filter(
         (item) => (item.days_till_expiration || 0) <= 7
       );
     }
-
+  
     // If user presses 'my items'
     if (selectedFilters.includes("My Items")) {
       temp_data = temp_data.filter((item) => {
@@ -583,24 +584,30 @@ export default function TabOneScreen() {
           mate.first_name && mate.last_name
             ? `${mate.first_name} ${mate.last_name}`
             : mate.name || "";
-        return fullName === username;
+        return fullName === currentUserName;
       });
     }
-
+  
     // If user presses 'shared'
     if (selectedFilters.includes("Shared")) {
       temp_data = temp_data.filter((item) => {
-        if (!item.shared_by || item.shared_by.length <= 1) return false;
-        return item.shared_by.some((mate) => {
+        if (!item.shared_by || item.shared_by.length <= 1) { 
+          console.log(`    - SKIP: Not shared (${item.shared_by?.length || 0} people)`);
+          return false;
+        }
+
+        const isShared = item.shared_by.some((mate) => {
           const fullName =
             mate.first_name && mate.last_name
               ? `${mate.first_name} ${mate.last_name}`
               : mate.name || "";
-          return fullName === username;
+          return fullName === currentUserName;
         });
+        console.log(`    - Is shared with current user?`, isShared);
+        return isShared;
       });
+      console.log("  - Items after Shared filter:", temp_data.length);
     }
-
     return temp_data;
   };
 
