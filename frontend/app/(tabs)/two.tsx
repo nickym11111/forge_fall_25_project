@@ -27,6 +27,7 @@ import { useAuth } from "../context/authContext";
 import CustomHeader from "@/components/CustomHeader";
 import { useFocusEffect } from "@react-navigation/native";
 
+
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
 
 // just to note, we should prob figure out what to do when the food goes past the expiration date
@@ -45,7 +46,7 @@ interface FridgeMate {
 interface FoodItem {
   id: number;
   name: string;
-  price?: number;
+  price?: number
   added_by?: FridgeMate | null;
   shared_by?: FridgeMate[] | null;
   quantity?: number;
@@ -72,7 +73,7 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
     if (mate.name) return mate.name;
     if (mate.email) {
       // Use email prefix as fallback
-      return mate.email.split("@")[0];
+      return mate.email.split('@')[0];
     }
     return "Unknown";
   };
@@ -87,10 +88,14 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
   const qty = item.quantity ?? 1;
 
   const handleDelete = () => {
-    Alert.alert("Delete Item", `Are you sure you want to delete ${item}?`, [
-      { text: "Cancel", style: "cancel" },
-      { text: "Yes", style: "destructive", onPress: () => onDelete(item) },
-    ]);
+    Alert.alert(
+      "Delete Item",
+      `Are you sure you want to delete ${item.name}?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Yes", style: "destructive", onPress: () => onDelete(item) },
+      ]
+    );
   };
 
   return (
@@ -139,11 +144,7 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
               onPress={() => onQuantityChange(item, -1)}
               style={styles.controlBtn}
             >
-              <Ionicons
-                name="remove-circle-outline"
-                size={20}
-                color="#14b8a6"
-              />
+              <Ionicons name="remove-circle-outline" size={20} color="#14b8a6" />
             </TouchableOpacity>
           )}
 
@@ -159,7 +160,10 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
           </TouchableOpacity>
         </View>
       </View>
-      <TouchableOpacity onPress={() => onEdit(item)} style={styles.editButton}>
+      <TouchableOpacity 
+        onPress={() => onEdit(item)}
+        style={styles.editButton}
+      >
         <Ionicons name="create-outline" size={18} color="#666" />
       </TouchableOpacity>
     </View>
@@ -167,15 +171,17 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
 };
 
 export default function TabOneScreen() {
-  const { user } = useAuth();
-  const [data, setData] = useState<FoodItem[]>([]);
-  const [searchValue, setSearchValue] = useState<string>("");
 
+  const { user } = useAuth();
+  const [data, setData] = useState<FoodItem[]>([]); 
+  const [searchValue, setSearchValue] = useState<string>("");
+  
   // Edit modal state
   const [editItem, setEditItem] = useState<FoodItem | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editName, setEditName] = useState("");
   const [editQuantity, setEditQuantity] = useState("");
+  const [editPrice, setEditPrice] = useState("");
   const [editExpiryDate, setEditExpiryDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [editSharedBy, setEditSharedBy] = useState<string[]>([]);
@@ -188,7 +194,8 @@ export default function TabOneScreen() {
     setEditItem(item);
     setEditName(item.name);
     setEditQuantity(item.quantity?.toString() || "1");
-
+    setEditPrice(item.price?.toString() || "0"); 
+    
     // Calculate expiry date from days_till_expiration
     if (item.days_till_expiration !== undefined) {
       const expiryDate = new Date();
@@ -197,17 +204,15 @@ export default function TabOneScreen() {
     } else {
       setEditExpiryDate(new Date());
     }
-
+    
     // Set shared by user IDs
     if (item.shared_by && item.shared_by.length > 0) {
-      const userIds = item.shared_by
-        .map((mate: any) => mate.id)
-        .filter(Boolean);
+      const userIds = item.shared_by.map((mate: any) => mate.id).filter(Boolean);
       setEditSharedBy(userIds);
     } else {
       setEditSharedBy([]);
     }
-
+    
     setShowEditModal(true);
   };
 
@@ -222,9 +227,7 @@ export default function TabOneScreen() {
     if (isLoadingUsers) return;
     setIsLoadingUsers(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
       const response = await fetch(`${API_URL}/fridge-members/`, {
@@ -275,21 +278,17 @@ export default function TabOneScreen() {
 
   const getSelectedUsersDisplayText = () => {
     if (editSharedBy.length === 0) return "Select who's sharing (optional)...";
-
+    
     const selectedUsers = users.filter((u) => editSharedBy.includes(u.id));
     if (selectedUsers.length === 0) return "Select who's sharing (optional)...";
-
+    
     if (selectedUsers.length === 1) {
       return getUserDisplayName(selectedUsers[0]);
     }
     if (selectedUsers.length === 2) {
-      return `${getUserDisplayName(selectedUsers[0])} and ${getUserDisplayName(
-        selectedUsers[1]
-      )}`;
+      return `${getUserDisplayName(selectedUsers[0])} and ${getUserDisplayName(selectedUsers[1])}`;
     }
-    return `${getUserDisplayName(selectedUsers[0])}, ${getUserDisplayName(
-      selectedUsers[1]
-    )}, and ${selectedUsers.length - 2} more`;
+    return `${getUserDisplayName(selectedUsers[0])}, ${getUserDisplayName(selectedUsers[1])}, and ${selectedUsers.length - 2} more`;
   };
 
   const handleSaveEdit = async () => {
@@ -300,23 +299,17 @@ export default function TabOneScreen() {
 
     setIsLoadingEdit(true);
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         Alert.alert("Error", "You must be logged in to edit items");
         setIsLoadingEdit(false);
         return;
       }
 
-      // Calculate days till expiration
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const expiry = new Date(editExpiryDate);
-      expiry.setHours(0, 0, 0, 0);
-      const daysTillExpiration = Math.ceil(
-        (expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
+      const year = editExpiryDate.getFullYear();
+      const month = String(editExpiryDate.getMonth() + 1).padStart(2, '0');
+      const day = String(editExpiryDate.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
 
       // Note: You'll need to create a PUT endpoint at /fridge_items/{item_id} on the backend
       const response = await fetch(`${API_URL}/fridge_items/${editItem.id}`, {
@@ -328,8 +321,9 @@ export default function TabOneScreen() {
         body: JSON.stringify({
           name: editName.trim(),
           quantity: editQuantity ? Number(editQuantity) : 1,
-          expiry_date: editExpiryDate.toISOString().split("T")[0],
+          expiry_date: formattedDate,
           shared_by: editSharedBy.length > 0 ? editSharedBy : null,
+          price: parseFloat(editPrice) || 0 
         }),
       });
 
@@ -339,16 +333,13 @@ export default function TabOneScreen() {
 
       // Refresh the items list
       await fetchFridgeItems(false);
-
+      
       setShowEditModal(false);
       setEditItem(null);
       Alert.alert("Success", "Item updated successfully!");
     } catch (error) {
       console.error("Error updating item:", error);
-      Alert.alert(
-        "Error",
-        error instanceof Error ? error.message : "Failed to update item"
-      );
+      Alert.alert("Error", error instanceof Error ? error.message : "Failed to update item");
     } finally {
       setIsLoadingEdit(false);
     }
@@ -371,11 +362,8 @@ export default function TabOneScreen() {
   // Refresh when tab is focused, but only show refreshing indicator (not full loading screen)
   const handleDelete = async (item: FoodItem) => {
     try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
       if (error || !session) {
         Alert.alert("Error", "Please log in to delete items");
         return;
@@ -384,8 +372,8 @@ export default function TabOneScreen() {
       const response = await fetch(`${API_URL}/items/${item.id}`, {
         method: "DELETE",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
+          "Authorization": `Bearer ${session.access_token}`
+        }
       });
 
       if (!response.ok) {
@@ -394,9 +382,8 @@ export default function TabOneScreen() {
 
       // Update local state after successful backend delete
       setData((prev) => prev.filter((i) => i.id !== item.id));
-      originalHolder.current = originalHolder.current.filter(
-        (i) => i.id !== item.id
-      );
+      originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
+      
     } catch (err) {
       console.error("Error deleting item:", err);
       Alert.alert("Error", "Could not delete item. Please try again.");
@@ -405,6 +392,7 @@ export default function TabOneScreen() {
     }
   };
 
+
   const handleQuantityChange = async (item: FoodItem, delta: number) => {
     const newQty = Math.max(1, (item.quantity || 1) + delta);
     const updated = { ...item, quantity: newQty };
@@ -412,28 +400,24 @@ export default function TabOneScreen() {
     const getExpiryDateString = (days: number | undefined) => {
       const date = new Date();
       date.setDate(date.getDate() + (days || 0));
-
-      // Use local time methods instead of toISOString()
+      
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-indexed
-      const day = String(date.getDate()).padStart(2, "0");
-
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
       return `${year}-${month}-${day}`;
     };
 
-    const getSharedByIds = (
-      mates: FridgeMate[] | null | undefined
-    ): string[] | null => {
+
+    const getSharedByIds = (mates: FridgeMate[] | null | undefined): string[] | null => {
       if (!mates || mates.length === 0) return null;
       return mates.map((mate) => mate.id);
     };
 
+    
     try {
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
-
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
       if (error || !session) {
         Alert.alert("Error", "Please log in to update items");
         return;
@@ -443,15 +427,15 @@ export default function TabOneScreen() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+          "Authorization": `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
           name: item.name,
           quantity: newQty,
           expiry_date: getExpiryDateString(item.days_till_expiration),
           shared_by: getSharedByIds(item.shared_by),
-          price: item.price ?? 0,
-        }),
+          price: item.price ?? 0
+        })
       });
 
       if (!response.ok) {
@@ -463,12 +447,15 @@ export default function TabOneScreen() {
       originalHolder.current = originalHolder.current.map((it) =>
         it.id === item.id ? updated : it
       );
+      
     } catch (err) {
       console.error("Error updating quantity:", err);
       Alert.alert("Error", "Could not update quantity");
-      fetchFridgeItems(); // Refresh to sync with backend
+      fetchFridgeItems();  // Refresh to sync with backend
     }
   };
+
+
 
   // Auto-refresh when tab is focused
   useFocusEffect(
@@ -480,6 +467,7 @@ export default function TabOneScreen() {
     }, [hasLoadedOnce])
   );
 
+
   const fetchFridgeItems = async (showFullLoading: boolean = true) => {
     try {
       if (showFullLoading) {
@@ -490,10 +478,7 @@ export default function TabOneScreen() {
       }
       console.log("Fetching data from:", `${API_URL}/fridge_items/`);
 
-      const {
-        data: { session },
-        error,
-      } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
 
       if (error || !session) {
         setData([]);
@@ -508,8 +493,8 @@ export default function TabOneScreen() {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
+          "Authorization": `Bearer ${session.access_token}`
+        }
       });
 
       if (!response.ok) {
@@ -557,7 +542,7 @@ export default function TabOneScreen() {
   // Manual refresh handler - only refresh items, don't show full screen loading
   const onRefresh = () => {
     fetchFridgeItems(false);
-  };
+  }; 
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
     // Current user
@@ -636,34 +621,17 @@ export default function TabOneScreen() {
 
   if (error === "NO_FRIDGE") {
     return (
-      <View style={{ width: "100%", height: "100%" }}>
+      <View style={{width: '100%', height: '100%'}}>
         <CustomHeader title="What's In Our Fridge?" />
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text
-            style={{
-              fontSize: 18,
-              textAlign: "center",
-              padding: 20,
-              color: "#666",
-            }}
-          >
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             You haven't joined a fridge yet!
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              textAlign: "center",
-              paddingHorizontal: 20,
-              color: "#999",
-            }}
-          >
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
             Create or join a fridge to start tracking your food items.
           </Text>
           <TouchableOpacity
-            style={[
-              styles.filter_button,
-              { marginTop: 20, alignSelf: "center", minWidth: "60%" },
-            ]}
+            style={[styles.filter_button, { marginTop: 20, alignSelf: "center", minWidth: "60%" }]}
             onPress={() => {
               router.push("/(tabs)/create_fridge");
             }}
@@ -694,27 +662,13 @@ export default function TabOneScreen() {
 
   if (data.length === 0) {
     return (
-      <View style={{ width: "100%", height: "100%" }}>
-        <CustomHeader title="What's In Our Fridge?" />
+      <View style={{width: '100%', height: '100%'}}>
+        <CustomHeader title="What's In Our Fridge? PLOY" />
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text
-            style={{
-              fontSize: 18,
-              textAlign: "center",
-              padding: 20,
-              color: "#666",
-            }}
-          >
+          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
             Your fridge is empty!
           </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              textAlign: "center",
-              paddingHorizontal: 20,
-              color: "#999",
-            }}
-          >
+          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
             Add some items to get started.
           </Text>
         </View>
@@ -723,316 +677,216 @@ export default function TabOneScreen() {
   }
 
   return (
-    <View
-      style={{
-        width: "100%",
-        height: "100%",
-      }}
-    >
-      <CustomHeader title="What's In Our Kitchen?" />
-
-      <View style={styles.container}>
-        <View style={styles.searchContainer}>
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="search-outline"
-              size={20}
-              color="#94a3b8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.searchInput}
-              onChangeText={searchFunction}
-              value={searchValue}
-              placeholder="Search food items..."
-              placeholderTextColor="#94a3b8"
-            />
-          </View>
-        </View>
-
-        <PreviewLayout
-          values={["All Items", "Expiring Soon", "My Items", "Shared"]}
-          selectedValue={selectedFilters}
-          setSelectedValue={setSelectedFilters}
-        />
-
-        <FlatList
-          data={finalListData}
-          renderItem={({ item }) => (
-            <Item
-              item={item}
-              onDelete={handleDelete}
-              onQuantityChange={handleQuantityChange}
-              onEdit={handleEdit}
-            />
-          )}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={["#14b8a6"]}
-              tintColor="#14b8a6"
-            />
-          }
-        />
-      </View>
-
-      {/* Edit Modal */}
-      {showEditModal && editItem && (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showEditModal}
-          onRequestClose={() => setShowEditModal(false)}
-        >
-          <Pressable
-            style={styles.modalOverlay}
-            onPress={() => setShowEditModal(false)}
+  <View style={{
+    width: '100%', height: '100%',
+  }}>
+    <CustomHeader title="What's In Our Kitchen?" />
+    
+    <View style={styles.container}>
+      <View style={styles.searchContainer}>
+        <View style={styles.inputContainer}>
+          <Ionicons name="search-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
+          <TextInput
+            style={styles.searchInput}
+            onChangeText={searchFunction}
+            value={searchValue}
+            placeholder="Search food items..."
+            placeholderTextColor="#94a3b8"
           />
-          <View style={styles.editModalCard}>
-            <ScrollView
-              contentContainerStyle={styles.modalScrollContent}
-              nestedScrollEnabled
-              keyboardShouldPersistTaps="handled"
-            >
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Edit Item</Text>
-                <TouchableOpacity
-                  onPress={() => setShowEditModal(false)}
-                  style={styles.modalCloseButton}
-                >
-                  <Ionicons name="close" size={24} color="#64748b" />
-                </TouchableOpacity>
-              </View>
+        </View>
+      </View>
+      
+      <PreviewLayout
+        values={["All Items", "Expiring Soon", "My Items", "Shared"]}
+        selectedValue={selectedFilters}
+        setSelectedValue={setSelectedFilters}
+      />
+      
+      <FlatList
+        data={finalListData}
+        renderItem={({ item }) => (
+          <Item
+            item={item}
+            onDelete={handleDelete}
+            onQuantityChange={handleQuantityChange}
+            onEdit={handleEdit}
+          />
+        )}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={["#14b8a6"]}
+            tintColor="#14b8a6"
+          />
+        }
+      />
+    </View>
 
-              {/* Item Name */}
-              <Text style={styles.modalInputLabel}>Item Name *</Text>
-              <View style={styles.modalInputContainer}>
-                <Ionicons
-                  name="cube-outline"
-                  size={20}
-                  color="#94a3b8"
-                  style={styles.modalInputIcon}
-                />
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Item name"
-                  placeholderTextColor="#94a3b8"
-                  value={editName}
-                  onChangeText={setEditName}
-                  editable={!isLoadingEdit}
-                />
-              </View>
-
-              {/* Quantity */}
-              <Text style={styles.modalInputLabel}>Quantity</Text>
-              <View style={styles.modalInputContainer}>
-                <Ionicons
-                  name="calculator-outline"
-                  size={20}
-                  color="#94a3b8"
-                  style={styles.modalInputIcon}
-                />
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder="Quantity"
-                  placeholderTextColor="#94a3b8"
-                  value={editQuantity}
-                  onChangeText={setEditQuantity}
-                  keyboardType="numeric"
-                  editable={!isLoadingEdit}
-                />
-              </View>
-
-              {/* Expiry Date */}
-              <Text style={styles.modalInputLabel}>Expiry Date</Text>
+    {/* Edit Modal */}
+    {showEditModal && editItem && (
+      <Modal
+        transparent={true}
+        animationType="slide"
+        visible={showEditModal}
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <Pressable 
+          style={styles.modalOverlay} 
+          onPress={() => setShowEditModal(false)} 
+        />
+        <View style={styles.editModalCard}>
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Item</Text>
               <TouchableOpacity
-                style={styles.modalInputContainer}
-                onPress={() => setShowDatePicker(true)}
-                disabled={isLoadingEdit}
+                onPress={() => setShowEditModal(false)}
+                style={styles.modalCloseButton}
               >
-                <Ionicons
-                  name="calendar-outline"
-                  size={20}
-                  color="#94a3b8"
-                  style={styles.modalInputIcon}
-                />
-                <Text
-                  style={[
-                    styles.modalInput,
-                    { color: editExpiryDate ? "#1e293b" : "#94a3b8" },
-                  ]}
-                >
-                  {formatDate(editExpiryDate)}
-                </Text>
+                <Ionicons name="close" size={24} color="#64748b" />
               </TouchableOpacity>
+            </View>
 
-              {/* Shared By */}
-              <Text style={styles.modalInputLabel}>Shared By</Text>
-              <TouchableOpacity
-                style={styles.modalInputContainer}
-                onPress={() => {
-                  if (users.length === 0) fetchUsers();
-                  setShowUserPicker(true);
-                }}
-                disabled={isLoadingEdit}
-              >
-                <Ionicons
-                  name="people-outline"
-                  size={20}
-                  color="#94a3b8"
-                  style={styles.modalInputIcon}
-                />
-                <Text
-                  style={[
-                    styles.modalInput,
-                    { color: editSharedBy.length > 0 ? "#1e293b" : "#94a3b8" },
-                  ]}
-                >
-                  {getSelectedUsersDisplayText()}
-                </Text>
-              </TouchableOpacity>
-
-              {/* Save Button */}
-              <TouchableOpacity
-                style={[
-                  styles.modalSaveButton,
-                  isLoadingEdit && styles.modalSaveButtonDisabled,
-                ]}
-                onPress={handleSaveEdit}
-                disabled={isLoadingEdit}
-              >
-                <Text style={styles.modalSaveButtonText}>
-                  {isLoadingEdit ? "Saving..." : "Save Changes"}
-                </Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </Modal>
-      )}
-
-      {/* Date Picker Modal */}
-      {showDatePicker && Platform.OS === "ios" && (
-        <Modal
-          transparent={true}
-          animationType="fade"
-          visible={showDatePicker}
-          onRequestClose={() => setShowDatePicker(false)}
-        >
-          <View style={styles.datePickerModalOverlay}>
-            <View style={styles.datePickerModalCard}>
-              <View style={styles.datePickerModalHeader}>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(false)}
-                  style={styles.datePickerModalButton}
-                >
-                  <Text style={styles.datePickerModalButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <Text style={styles.datePickerModalTitle}>Select Date</Text>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(false)}
-                  style={styles.datePickerModalButton}
-                >
-                  <Text style={styles.datePickerModalButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-              <DateTimePicker
-                value={editExpiryDate}
-                mode="date"
-                display="inline"
-                onChange={(event, date) => {
-                  if (date) setEditExpiryDate(date);
-                }}
-                minimumDate={new Date()}
+            {/* Item Name */}
+            <Text style={styles.modalInputLabel}>Item Name *</Text>
+            <View style={styles.modalInputContainer}>
+              <Ionicons name="cube-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Item name"
+                placeholderTextColor="#94a3b8"
+                value={editName}
+                onChangeText={setEditName}
+                editable={!isLoadingEdit}
               />
             </View>
-          </View>
-        </Modal>
-      )}
 
-      {showDatePicker && Platform.OS === "android" && (
-        <DateTimePicker
-          value={editExpiryDate}
-          mode="date"
-          display="default"
-          onChange={(event, date) => {
-            if (date) setEditExpiryDate(date);
-            setShowDatePicker(false);
-          }}
-          minimumDate={new Date()}
-        />
-      )}
-
-      {/* User Picker Modal */}
-      {showUserPicker && (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showUserPicker}
-          onRequestClose={() => setShowUserPicker(false)}
-        >
-          <View style={styles.userPickerModalOverlay}>
-            <View style={styles.userPickerModalCard}>
-              <View style={styles.userPickerModalHeader}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setEditSharedBy([]);
-                    setShowUserPicker(false);
-                  }}
-                  style={styles.userPickerModalButton}
-                >
-                  <Text style={styles.userPickerModalButtonText}>
-                    Clear All
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.userPickerModalTitle}>Select Users</Text>
-                <TouchableOpacity
-                  onPress={() => setShowUserPicker(false)}
-                  style={styles.userPickerModalButton}
-                >
-                  <Text style={styles.userPickerModalButtonText}>Done</Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.userPickerModalList}>
-                {isLoadingUsers ? (
-                  <ActivityIndicator
-                    size="large"
-                    color="#14b8a6"
-                    style={{ marginTop: 20 }}
-                  />
-                ) : (
-                  users.map((user) => (
-                    <TouchableOpacity
-                      key={user.id}
-                      style={styles.userPickerOption}
-                      onPress={() => toggleUserSelection(user.id)}
-                    >
-                      <View
-                        style={[
-                          styles.userPickerCheckbox,
-                          editSharedBy.includes(user.id) &&
-                            styles.userPickerCheckboxSelected,
-                        ]}
-                      >
-                        {editSharedBy.includes(user.id) && (
-                          <Ionicons name="checkmark" size={16} color="#fff" />
-                        )}
-                      </View>
-                      <Text style={styles.userPickerOptionText}>
-                        {getUserDisplayName(user)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                )}
-              </ScrollView>
+            {/* Quantity */}
+            <Text style={styles.modalInputLabel}>Quantity</Text>
+            <View style={styles.modalInputContainer}>
+              <Ionicons name="calculator-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="Quantity"
+                placeholderTextColor="#94a3b8"
+                value={editQuantity}
+                onChangeText={setEditQuantity}
+                keyboardType="numeric"
+                editable={!isLoadingEdit}
+              />
             </View>
-          </View>
-        </Modal>
-      )}
-    </View>
-  );
+
+            {/* Price Input */}
+            <Text style={styles.modalInputLabel}>Price</Text>
+            <View style={styles.modalInputContainer}>
+              <Ionicons name="pricetag-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <TextInput
+                style={styles.modalInput}
+                placeholder="0.00"
+                placeholderTextColor="#94a3b8"
+                value={editPrice}
+                onChangeText={setEditPrice}
+                keyboardType="numeric"
+                editable={!isLoadingEdit}
+              />
+            </View>
+
+            {/* Expiry Date */}
+            <Text style={styles.modalInputLabel}>Expiry Date</Text>
+            <TouchableOpacity
+              style={styles.modalInputContainer}
+              onPress={() => setShowDatePicker(true)}
+              disabled={isLoadingEdit}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <Text style={[styles.modalInput, { color: editExpiryDate ? "#1e293b" : "#94a3b8" }]}>
+                {formatDate(editExpiryDate)}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Shared By */}
+            <Text style={styles.modalInputLabel}>Shared By</Text>
+            <TouchableOpacity
+              style={styles.modalInputContainer}
+              onPress={() => {
+                if (users.length === 0) fetchUsers();
+                setShowUserPicker(true);
+              }}
+              disabled={isLoadingEdit}
+            >
+              <Ionicons name="people-outline" size={20} color="#94a3b8" style={styles.modalInputIcon} />
+              <Text style={[styles.modalInput, { color: editSharedBy.length > 0 ? "#1e293b" : "#94a3b8" }]}>
+                {getSelectedUsersDisplayText()}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Save Button */}
+            <TouchableOpacity
+              style={[styles.modalSaveButton, isLoadingEdit && styles.modalSaveButtonDisabled]}
+              onPress={handleSaveEdit}
+              disabled={isLoadingEdit}
+            >
+              <Text style={styles.modalSaveButtonText}>
+                {isLoadingEdit ? "Saving..." : "Save Changes"}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          {/* IOS Date Picker*/}
+          {showDatePicker && Platform.OS === "ios" && (
+            <View style={styles.iosDatePickerOverlay}>
+              <View style={styles.datePickerModalCard}>
+                <View style={styles.datePickerModalHeader}>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(false)}
+                    style={styles.datePickerModalButton}
+                  >
+                    <Text style={styles.datePickerModalButtonText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.datePickerModalTitle}>Select Date</Text>
+                  <TouchableOpacity
+                    onPress={() => setShowDatePicker(false)}
+                    style={styles.datePickerModalButton}
+                  >
+                    <Text style={styles.datePickerModalButtonText}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+                <DateTimePicker
+                  value={editExpiryDate}
+                  mode="date"
+                  display="inline"
+                  onChange={(event, date) => {
+                    if (date) setEditExpiryDate(date);
+                  }}
+                />
+              </View>
+            </View>
+          )}
+
+          {/* Android Date Picker */}
+          {showDatePicker && Platform.OS === "android" && (
+            <DateTimePicker
+              value={editExpiryDate}
+              mode="date"
+              display="default"
+              onChange={(event, date) => {
+                setShowDatePicker(false);
+                if (date) setEditExpiryDate(date);
+              }}
+            />
+          )}
+
+        </View>
+      </Modal>
+    )}
+  </View>
+);
 }
 
 type PreviewLayoutProps = PropsWithChildren<{
@@ -1150,7 +1004,7 @@ const styles = StyleSheet.create({
     padding: 20,
     color: "#333",
   },
-
+  
   searchContainer: {
     width: "100%",
     alignItems: "center",
@@ -1196,7 +1050,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     alignItems: "center",
   },
-
+  
   // Item Card Styles
   item: {
     backgroundColor: "#ffffff",
@@ -1233,6 +1087,7 @@ const styles = StyleSheet.create({
     padding: 4,
     marginTop: -11,
     marginRight: -8,
+
   },
   infoText: {
     fontSize: 15,
@@ -1245,7 +1100,7 @@ const styles = StyleSheet.create({
   redText: {
     color: "#dc2626",
   },
-
+  
   itemRight: {
     flexDirection: "row",
     alignItems: "center",
@@ -1400,6 +1255,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#14b8a6",
+  },
+  iosDatePickerOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'flex-end',
+    zIndex: 2000,
+    borderRadius: 24,
+    overflow: 'hidden',
   },
   userPickerModalOverlay: {
     flex: 1,
