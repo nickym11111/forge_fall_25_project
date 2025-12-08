@@ -355,18 +355,20 @@ export default function ParseReceiptScreen() {
       /*const {
         data: { session },
       } = await supabase.auth.getSession();*/
-      const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
+      const {
+        data: { session: refreshedSession },
+        error,
+      } = await supabase.auth.refreshSession();
 
       let finalSession = refreshedSession;
 
       if (!finalSession || error) {
-         const { data } = await supabase.auth.getSession();
-         finalSession = data.session;
+        const { data } = await supabase.auth.getSession();
+        finalSession = data.session;
       }
-      if (!finalSession){
+      if (!finalSession) {
         console.log("No session found");
         return;
-
       }
 
       const response = await fetch(`${API_URL}/fridge-members/`, {
@@ -955,7 +957,7 @@ export default function ParseReceiptScreen() {
                       <Text style={styles.itemMetaText}>
                         Qty: {itemData.quantity}
                       </Text>
-                      {itemData.price && (
+                      {typeof itemData.price === "number" && (
                         <>
                           <Text style={styles.itemMetaDivider}>•</Text>
                           <Text style={styles.itemMetaText}>
@@ -1209,7 +1211,9 @@ export default function ParseReceiptScreen() {
                       {isAddingItem ? (
                         <ActivityIndicator color="#fff" />
                       ) : (
-                        <Text style={styles.addItemModalAddButtonText}>Add Item</Text>
+                        <Text style={styles.addItemModalAddButtonText}>
+                          Add Item
+                        </Text>
                       )}
                     </TouchableOpacity>
 
@@ -1221,7 +1225,9 @@ export default function ParseReceiptScreen() {
                       }}
                       style={styles.addItemModalCancelButton}
                     >
-                      <Text style={styles.addItemModalCancelButtonText}>Cancel</Text>
+                      <Text style={styles.addItemModalCancelButtonText}>
+                        Cancel
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -2027,7 +2033,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
-    
   },
   addItemUserPickerModalCard: {
     backgroundColor: "#fff",
@@ -2058,7 +2063,6 @@ const styles = StyleSheet.create({
   },
   addItemUserPickerModalButton: {
     padding: 8,
-    
   },
   addItemUserPickerModalButtonText: {
     fontSize: 16,

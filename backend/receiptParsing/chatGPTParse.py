@@ -44,7 +44,7 @@ def getChatGPTResponse(base64_image: str):
     )
 
     print("raw response", response.choices[0].message.content)
-    return response.choices[0].message.content
+    return sanitize_json_response(response.choices[0].message.content)
 
 def clean_item_names(item_names: str):
     response = client.chat.completions.create(
@@ -61,7 +61,14 @@ def clean_item_names(item_names: str):
     )
 
     print("cleaned response", response.choices[0].message.content)
-    return response.choices[0].message.content
+    return sanitize_json_response(response.choices[0].message.content)
+
+def sanitize_json_response(response_text: str) -> str:
+    if not response_text:
+        return "[]"
+    # Remove markdown code blocks if present
+    cleaned = response_text.replace("```json", "").replace("```", "").strip()
+    return cleaned
 
 @app.post("/parse-receipt")
 def parse_receipt(receipt: Receipt):
