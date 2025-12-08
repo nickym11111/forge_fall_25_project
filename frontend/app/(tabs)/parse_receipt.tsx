@@ -769,7 +769,7 @@ export default function ParseReceiptScreen() {
 
                       Alert.alert(
                         "Success",
-                        `Successfully added all ${successCount} items to your fridge!`
+                        `Successfully added all ${successCount} items to your kitchen!`
                       );
                     }
                     // If some failed, only remove successful ones
@@ -863,7 +863,7 @@ export default function ParseReceiptScreen() {
                     if (successCount > 0) {
                       Alert.alert(
                         "Success",
-                        `Successfully added ${successCount} item(s) to your fridge!`
+                        `Successfully added ${successCount} item(s) to your kitchen!`
                       );
                     }
 
@@ -1161,15 +1161,28 @@ export default function ParseReceiptScreen() {
                     </TouchableOpacity>
 
                     {/* Add Button */}
-                    <View style={styles.addItemModalButtonContainer}>
-                      <CustomButton
-                        title={isAddingItem ? "Adding..." : "Add Item"}
-                        onPress={handleAddItemSubmit}
-                        style={styles.addItemModalAddButton}
-                        className=""
-                        disabled={isAddingItem}
-                      />
-                    </View>
+                    <TouchableOpacity
+                      style={styles.addItemModalAddButton}
+                      onPress={handleAddItemSubmit}
+                      disabled={isAddingItem}
+                    >
+                      {isAddingItem ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.addItemModalAddButtonText}>Add Item</Text>
+                      )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => {
+                        Keyboard.dismiss();
+                        resetAddItemForm();
+                        setShowAddItemModal(false);
+                      }}
+                      style={styles.addItemModalCancelButton}
+                    >
+                      <Text style={styles.addItemModalCancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </TouchableWithoutFeedback>
@@ -1183,10 +1196,13 @@ export default function ParseReceiptScreen() {
                     left: 0,
                     right: 0,
                     bottom: 0,
+                    borderRadius: 24,
                     justifyContent: "center",
                     alignItems: "center",
                     backgroundColor: "rgba(0,0,0,0.5)",
                     zIndex: 1000,
+                    paddingHorizontal: 20,
+                    paddingVertical: 40,
                   }}
                 >
                   <View style={styles.addItemDatePickerModalPopupBox}>
@@ -1247,6 +1263,7 @@ export default function ParseReceiptScreen() {
                     left: 0,
                     right: 0,
                     bottom: 0,
+                    borderRadius: 24,
                     justifyContent: "center",
                     alignItems: "center",
                     backgroundColor: "rgba(0,0,0,0.5)",
@@ -1291,7 +1308,7 @@ export default function ParseReceiptScreen() {
                           <Text
                             style={{ color: "#64748b", textAlign: "center" }}
                           >
-                            No fridge mates found. Add friends to share items!
+                            No kitchen mates found. Add friends to share items!
                           </Text>
                         </View>
                       ) : (
@@ -1807,7 +1824,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 4,
-    paddingBottom: 40,
+    paddingBottom: 30,
     borderWidth: 1,
     borderColor: "#e2e8f0",
   },
@@ -1884,11 +1901,12 @@ const styles = StyleSheet.create({
   },
   addItemDatePickerModalPopupBox: {
     backgroundColor: "#fff",
-    borderRadius: 20,
+    borderRadius: 24,
     paddingVertical: 0,
     paddingHorizontal: 0,
-    width: "90%",
-    maxWidth: 400,
+    width: "110%",
+    maxWidth: 500,
+    maxHeight: 420,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     shadowColor: "#000",
@@ -1927,28 +1945,49 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 5,
-    paddingTop: 5,
-    paddingBottom: 15,
+    paddingVertical: 0,
+    paddingBottom: 16,
     backgroundColor: "#FAFBFC",
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
   },
   addItemDatePickerIOS: {
-    alignSelf: "center",
     width: "100%",
+    height: 300,
   },
   addItemModalButtonContainer: {
     alignItems: "center",
-    marginTop: 16,
+    marginTop: 10,
   },
   addItemModalAddButton: {
-    width: 217,
+    width: 300,
+    marginTop: 14,
+    backgroundColor: "#14b8a6",
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  addItemModalAddButtonText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  addItemModalCancelButton: {
+    marginTop: 8,
+    alignSelf: "center",
+  },
+  addItemModalCancelButtonText: {
+    color: "#64748b",
+    fontSize: 14,
   },
   addItemUserPickerModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
+    
   },
   addItemUserPickerModalCard: {
     backgroundColor: "#fff",
@@ -1979,6 +2018,7 @@ const styles = StyleSheet.create({
   },
   addItemUserPickerModalButton: {
     padding: 8,
+    
   },
   addItemUserPickerModalButtonText: {
     fontSize: 16,
