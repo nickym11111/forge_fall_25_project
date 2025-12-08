@@ -95,18 +95,42 @@ export default function ParseReceiptScreen() {
 
   // fetches the user's fridge mates
   const fetchFridgeMates = async () => {
-    if (!user || !user.fridgeMates) return;
-
     try {
-      const mates =
-        user.fridgeMates?.map((mate) => ({
-          id: mate.id,
-          name: `${mate.first_name} ${mate.last_name}` || "Unknown User",
-        })) || [];
-      setFridgeMates(mates);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await fetch(`${API_URL}/fridge-members/`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.members && Array.isArray(result.members)) {
+          const mates = result.members.map((mate: any) => ({
+            id: mate.id,
+            name:
+              `${mate.first_name || ""} ${mate.last_name || ""}`.trim() ||
+              mate.email ||
+              "Unknown User",
+          }));
+          setFridgeMates(mates);
+        }
+      }
     } catch (error) {
       console.error("Error fetching fridge mates:", error);
-      setFridgeMates([]);
+      // Fallback to user context if API fails
+      if (user && user.fridgeMates) {
+        const mates =
+          user.fridgeMates?.map((mate) => ({
+            id: mate.id,
+            name: `${mate.first_name} ${mate.last_name}` || "Unknown User",
+          })) || [];
+        setFridgeMates(mates);
+      }
     }
   };
 
@@ -302,9 +326,9 @@ export default function ParseReceiptScreen() {
 
       if (response.ok) {
         const result = await response.json();
-        if (result.data && Array.isArray(result.data)) {
-          console.log("Fridge members:", result.data);
-          setItemUsers(result.data);
+        if (result.members && Array.isArray(result.members)) {
+          console.log("Fridge members:", result.members);
+          setItemUsers(result.members);
         } else {
           // Fallback to fridgeMates from user context
           if (user?.fridgeMates) {
@@ -476,6 +500,7 @@ export default function ParseReceiptScreen() {
   const handleAutoPredictExpiry = async () => {
     if (itemTitle.trim() && itemQuantity.trim()) {
       try {
+        setItemAiSuggested(false);
         setIsLoadingItemAI(true);
         const response = await PredictExpiryDate(itemTitle);
         const data = await response.json();
@@ -1028,6 +1053,15 @@ export default function ParseReceiptScreen() {
                           }}
                         >
                           AI Suggested
+                        </Text>
+                      )}
+                      {isLoadingItemAI && (
+                        <Text
+                          style={{
+                            color: "#14b8a6",
+                          }}
+                        >
+                          Loading...
                         </Text>
                       )}
                     </Text>
