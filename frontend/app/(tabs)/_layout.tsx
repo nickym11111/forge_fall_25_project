@@ -163,7 +163,7 @@ export default function TabLayout() {
         options={{
           title: "Settle Up",
           tabBarIcon: ({ color, focused }) => (
-            <TabBarIcon name="link" color={color} focused={focused} />
+            <TabBarIcon name="currency-usd" color={color} focused={focused} />
           ),
         }}
       />
