@@ -46,7 +46,7 @@ contains the string "Need more ingredients for sufficient meals.".
         
         print("=== Calling OpenAI API ===")
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful recipe assistant that only responds with valid JSON."},
                 {"role": "user", "content": prompt}
