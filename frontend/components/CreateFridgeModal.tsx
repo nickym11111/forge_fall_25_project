@@ -123,7 +123,7 @@ const CreateFridgeModal = ({ onClose, onSwitchToJoin }: CreateFridgeModalProps) 
           contentContainerStyle={styles.formContainer}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.form}>
+        <View style={styles.form}>
             <Text style={styles.title}>Create Kitchen</Text>
             <Text style={styles.description}>
               Enter a name for your kitchen to get started.
@@ -134,54 +134,54 @@ const CreateFridgeModal = ({ onClose, onSwitchToJoin }: CreateFridgeModalProps) 
               focusedInput === "fridgeName" && styles.inputContainerFocused
             ]} collapsable={false}>
               <Ionicons name="restaurant-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
+          <TextInput
+            style={styles.input}
                 placeholder="Kitchen name"
                 placeholderTextColor="#94a3b8"
-                value={fridgeName}
-                onChangeText={setFridgeName}
-                editable={!isLoading}
+            value={fridgeName}
+            onChangeText={setFridgeName}
+            editable={!isLoading}
                 onFocus={() => setFocusedInput("fridgeName")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
                 returnKeyType="default"
                 blurOnSubmit={true}
-              />
+          />
             </View>
 
-            {emails.map((email, index) => (
-              <View key={index} style={styles.inputRow}>
+          {emails.map((email, index) => (
+            <View key={index} style={styles.inputRow}>
                 <View style={[
                   styles.inputContainer,
                   { flex: 1 },
                   focusedInput === `email-${index}` && styles.inputContainerFocused
                 ]} collapsable={false}>
                   <Ionicons name="mail-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="friend@example.com"
+              <TextInput
+                style={styles.input}
+                placeholder="friend@example.com"
                     placeholderTextColor="#94a3b8"
-                    value={email}
-                    onChangeText={(text) => enterEmail(text, index)}
-                    editable={!isLoading}
+                value={email}
+                onChangeText={(text) => enterEmail(text, index)}
+                editable={!isLoading}
                     onFocus={() => setFocusedInput(`email-${index}`)}
                     onBlur={() => setFocusedInput(null)}
                     onSubmitEditing={Keyboard.dismiss}
                     returnKeyType="default"
                     blurOnSubmit={true}
-                  />
+              />
                 </View>
-                {emails.length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => removeEmail(index)}
-                    style={styles.removeButton}
-                    disabled={isLoading}
-                  >
-                    <Ionicons name="remove-circle" size={24} color="#e63946" />
-                  </TouchableOpacity>
-                )}
-              </View>
-            ))}
+              {emails.length > 1 && (
+                <TouchableOpacity
+                  onPress={() => removeEmail(index)}
+                  style={styles.removeButton}
+                  disabled={isLoading}
+                >
+                  <Ionicons name="remove-circle" size={24} color="#e63946" />
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
 
           <Text style={styles.addEmailText} onPress={addEmailField}>
             + Add Another Email
@@ -201,8 +201,8 @@ const CreateFridgeModal = ({ onClose, onSwitchToJoin }: CreateFridgeModalProps) 
           >
             Join a kitchen instead
           </Text>
-          </View>
-        </ScrollView>
+        </View>
+      </ScrollView>
       </TouchableWithoutFeedback>
     </View>
   );

@@ -609,7 +609,7 @@ export default function AddItemManual() {
     // Fallback to email if no name available
     return user.email;
   };
-
+  
   const handleAddItem = async (retryCount = 0) => {
     const MAX_RETRIES = 1; // Will try twice total (initial + 1 retry)
     

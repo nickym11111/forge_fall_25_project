@@ -106,7 +106,7 @@ async def create_fridge_item(
         
         # insert new item to fridge
         response = supabase.table("fridge_items").insert({
-            "name": item.name.strip().lower(),
+            "name": item.name.strip(),
             "quantity": item.quantity,
             "days_till_expiration": days_till_expiration,
             "fridge_id": fridge_id,
@@ -118,7 +118,7 @@ async def create_fridge_item(
         #check off matching item in shopping_list
         supabase.table("shopping_list") \
             .update({"checked": True}) \
-            .ilike("name", item.name.strip().lower()) \
+            .ilike("name", item.name.strip()) \
             .eq("fridge_id", fridge_id) \
             .eq("checked", False) \
             .execute()

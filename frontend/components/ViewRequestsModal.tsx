@@ -6,12 +6,12 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
-  Alert,
   RefreshControl,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../app/utils/client";
 import CustomButton from "./CustomButton";
+import { CustomAlert } from "./CustomAlert";
 
 interface FridgeRequest {
   id: string;
@@ -60,7 +60,7 @@ const RequestCard = ({
       } = await supabase.auth.getSession();
 
       if (!session) {
-        Alert.alert("Error", "Please log in again");
+        CustomAlert.alert("Error", "Please log in again");
         return;
       }
 
@@ -82,14 +82,14 @@ const RequestCard = ({
 
       const result = await response.json();
 
-      Alert.alert("Success", result.message);
+      CustomAlert.alert("Success", result.message);
       onStatusChange();
     } catch (error) {
       console.error(
         `Error ${status === "ACCEPTED" ? "accepting" : "declining"} request:`,
         error
       );
-      Alert.alert(
+      CustomAlert.alert(
         "Error",
         error instanceof Error
           ? error.message
@@ -112,13 +112,29 @@ const RequestCard = ({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.cardTitle}>Join Request</Text>
-      <Text style={styles.cardText}>
-        <Text style={styles.label}>User:</Text> {getUserName()}
-      </Text>
-      <Text style={styles.cardText}>
-        <Text style={styles.label}>Email:</Text> {request.users?.email || "N/A"}
-      </Text>
+      <View style={styles.cardHeader}>
+        <Ionicons name="person-add-outline" size={24} color="#14b8a6" />
+        <Text style={styles.cardTitle}>Join Request</Text>
+      </View>
+      
+      <View style={styles.infoSection}>
+        <View style={styles.infoRow}>
+          <Ionicons name="person-outline" size={18} color="#64748b" style={styles.infoIcon} />
+          <View style={styles.infoContent}>
+            <Text style={styles.infoLabel}>User</Text>
+            <Text style={styles.infoValue}>{getUserName()}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.infoRow}>
+          <Ionicons name="mail-outline" size={18} color="#64748b" style={styles.infoIcon} />
+          <View style={styles.infoContent}>
+            <Text style={styles.infoLabel}>Email</Text>
+            <Text style={styles.infoValue}>{request.users?.email || "N/A"}</Text>
+          </View>
+        </View>
+      </View>
+
       <View style={styles.buttonContainer}>
         <TouchableOpacity
           style={[
@@ -129,9 +145,14 @@ const RequestCard = ({
           onPress={() => handleResponse("ACCEPTED")}
           disabled={isProcessing}
         >
-          <Text style={styles.buttonText}>
-            {isProcessing ? "Processing..." : "Accept"}
-          </Text>
+          {isProcessing ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <>
+              <Ionicons name="checkmark-circle-outline" size={20} color="#ffffff" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Accept</Text>
+            </>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           style={[
@@ -142,9 +163,14 @@ const RequestCard = ({
           onPress={() => handleResponse("REJECTED")}
           disabled={isProcessing}
         >
-          <Text style={styles.buttonText}>
-            {isProcessing ? "Processing..." : "Decline"}
-          </Text>
+          {isProcessing ? (
+            <ActivityIndicator size="small" color="#ffffff" />
+          ) : (
+            <>
+              <Ionicons name="close-circle-outline" size={20} color="#ffffff" style={styles.buttonIcon} />
+              <Text style={styles.buttonText}>Decline</Text>
+            </>
+          )}
         </TouchableOpacity>
       </View>
     </View>
@@ -187,7 +213,7 @@ const ViewRequestsModal = ({
       setRequests(result.data || []);
     } catch (err) {
       console.error("Error fetching requests:", err);
-      Alert.alert("Error", "Failed to load requests");
+      CustomAlert.alert("Error", "Failed to load requests");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -230,7 +256,9 @@ const ViewRequestsModal = ({
           </View>
         ) : requests.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No pending requests</Text>
+            <Ionicons name="document-text-outline" size={64} color="#cbd5e1" />
+            <Text style={styles.emptyTitle}>No Pending Requests</Text>
+            <Text style={styles.emptyText}>There are no join requests for this kitchen at the moment.</Text>
           </View>
         ) : (
           requests.map((request) => (
@@ -249,7 +277,7 @@ const ViewRequestsModal = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
   header: {
     flexDirection: "row",
@@ -280,7 +308,7 @@ const styles = StyleSheet.create({
   closeButton: {
     position: "absolute",
     right: 20,
-    top: 80,
+    top: 58,
     zIndex: 1000,
     width: 40,
     height: 40,
@@ -294,68 +322,119 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   loadingContainer: {
-    padding: 40,
+    padding: 60,
     alignItems: "center",
     justifyContent: "center",
   },
   loadingText: {
-    marginTop: 12,
+    marginTop: 16,
     fontSize: 16,
-    color: "#666",
+    color: "#64748b",
+    fontWeight: "500",
   },
   emptyState: {
-    padding: 40,
+    padding: 60,
     alignItems: "center",
     justifyContent: "center",
   },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginTop: 20,
+    marginBottom: 8,
+  },
   emptyText: {
-    fontSize: 16,
-    color: "#999",
+    fontSize: 14,
+    color: "#64748b",
+    textAlign: "center",
+    lineHeight: 20,
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 24,
     marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 12,
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#1e293b",
+    marginLeft: 12,
   },
-  cardText: {
-    fontSize: 14,
-    color: "#555",
-    marginBottom: 8,
+  infoSection: {
+    marginBottom: 20,
   },
-  label: {
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 16,
+  },
+  infoIcon: {
+    marginTop: 2,
+  },
+  infoContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  infoLabel: {
+    fontSize: 13,
     fontWeight: "600",
+    color: "#64748b",
+    marginBottom: 4,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#1e293b",
+    lineHeight: 22,
   },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 16,
+    marginTop: 8,
     gap: 12,
   },
   button: {
     flex: 1,
-    padding: 12,
-    borderRadius: 8,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: 44,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    minHeight: 48,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   acceptButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#14b8a6",
   },
   declineButton: {
-    backgroundColor: "#f44336",
+    backgroundColor: "#ef4444",
+  },
+  buttonIcon: {
+    marginRight: 8,
   },
   buttonText: {
     color: "#fff",

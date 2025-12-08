@@ -20,8 +20,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
-import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
+import ProfileIcon from "@/components/ProfileIcon";
 
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
@@ -501,14 +501,10 @@ export default function ParseReceiptScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <CustomHeader
-        title="Scan Receipt"
-        subtitle="Take a photo or upload a receipt to automatically add items"
-        noShadow={true}
-        style={{
-          marginBottom: 10,
-        }}
-      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Scan Receipt</Text>
+        <ProfileIcon className="" style={styles.profileIconContainer} />
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -526,7 +522,7 @@ export default function ParseReceiptScreen() {
             name="add"
             size={20}
             color="white"
-            style={{ marginRight: 6 }}
+            style={{ marginRight: 8 }}
           />
           <Text style={styles.addItemButtonText}>Add Item Manually</Text>
         </TouchableOpacity>
@@ -1234,7 +1230,7 @@ export default function ParseReceiptScreen() {
                 </TouchableOpacity>
               </View>
               <ScrollView style={styles.addItemUserPickerModalList}>
-                {itemUsers.length === 0 ? (
+                {itemUsers.length === 0 || true ? (
                   <View style={{ padding: 20, alignItems: "center" }}>
                     <Text style={{ color: "#64748b", textAlign: "center" }}>
                       No fridge mates found. Add friends to share items!
@@ -1278,26 +1274,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FAFBFC",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  profileIconContainer: {
+    position: "absolute",
+    right: 10,
+    top: 50,
+  },
   scrollView: {
     flex: 1,
-    marginTop: -32,
   },
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
-    paddingTop: 40,
+    padding: 20,
+    paddingTop: 24,
   },
   uploadSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingTop: 0,
   },
   imageContainer: {
     height: 300,
-    shadowColor: "#14b8a6",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: 16,
   },
   imageTouchable: {
     width: "100%",
@@ -1390,7 +1408,7 @@ const styles = StyleSheet.create({
   },
   skeletonTitle: {
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
     fontSize: 18,
     textAlign: "center",
   },
@@ -1403,13 +1421,24 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: "center",
     gap: 12,
+    backgroundColor: "white",
+    borderRadius: 24,
+    marginHorizontal: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   loadingText: {
     color: "#64748b",
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "500",
   },
   itemsContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingBottom: 100,
   },
   headerRow: {
@@ -1422,7 +1451,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   addAllButton: {
     // Inherits from addButton
@@ -1434,17 +1463,19 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     backgroundColor: "#ffffff",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 12,
+    padding: 24,
+    borderRadius: 24,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   itemInfo: {
     flex: 1,
@@ -1453,7 +1484,7 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
     marginBottom: 6,
   },
   itemMeta: {
@@ -1471,13 +1502,18 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: "#14b8a6",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 16,
     width: 120,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   addButtonDisabled: {
     opacity: 0.6,
@@ -1502,12 +1538,17 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     backgroundColor: "#ffffff",
     width: 120,
     height: 44,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   shareButtonText: {
     color: "#14b8a6",
@@ -1539,9 +1580,16 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "white",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
     maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   modalHeader: {
     flexDirection: "row",
@@ -1552,7 +1600,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   modalCloseButton: {
     padding: 5,
@@ -1567,7 +1615,7 @@ const styles = StyleSheet.create({
   fridgeMateName: {
     marginLeft: 12,
     fontSize: 16,
-    color: "#0f172a",
+    color: "#1e293b",
     flex: 1,
   },
   checkbox: {
@@ -1603,7 +1651,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#14b8a6",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   confirmButtonText: {
     color: "#ffffff",
@@ -1612,14 +1665,16 @@ const styles = StyleSheet.create({
   },
   tipsCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
     marginTop: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   tipsHeader: {
     flexDirection: "row",
@@ -1630,7 +1685,7 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   tipsList: {
     gap: 10,
@@ -1646,16 +1701,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   addItemButton: {
-    width: 200,
+    width: "100%",
     backgroundColor: "#14b8a6",
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    marginHorizontal: 20,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   addItemButtonText: {
     color: "white",
@@ -1674,16 +1733,18 @@ const styles = StyleSheet.create({
   },
   addItemModalCard: {
     backgroundColor: "#fff",
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 25,
     width: "100%",
     maxWidth: 350,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
     paddingBottom: 40,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   addItemModalScrollContent: {
     width: "100%",
@@ -1698,7 +1759,7 @@ const styles = StyleSheet.create({
   addItemModalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   addItemModalCloseButton: {
     padding: 4,
@@ -1712,7 +1773,7 @@ const styles = StyleSheet.create({
   addItemModalLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#1e293b",
     width: "100%",
     marginBottom: 5,
     marginTop: 6,
