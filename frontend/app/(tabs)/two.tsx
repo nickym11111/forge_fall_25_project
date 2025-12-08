@@ -1555,4 +1555,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#1e293b",
   },
+  // Missing styles added:
+  emptyUserList: {
+    padding: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyUserListText: {
+    fontSize: 15,
+    color: "#64748b",
+    textAlign: "center",
+  },
 });
