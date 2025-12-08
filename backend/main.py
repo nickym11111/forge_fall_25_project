@@ -150,22 +150,23 @@ def get_fridge_items(current_user = Depends(get_current_user)):
         items_response = supabase.table("fridge_items").select(
             "*, added_by_user:users!fridge_items_added_by_fkey(id, email, first_name, last_name)"
         ).eq("fridge_id", fridge_id).execute()
-        
-        # Get all users in this fridge for shared_by lookup
-        fridge_users_response = supabase.table("users").select(
-            "id, email, first_name, last_name"
+
+        memberships_response = supabase.table("fridge_memberships").select(
+            "users(id, email, first_name, last_name)"
         ).eq("fridge_id", fridge_id).execute()
-        
-        # Create a lookup map of user_id -> user data
+
         users_map = {}
-        for user_data in fridge_users_response.data:
-            users_map[user_data["id"]] = {
-                "id": user_data["id"],
-                "email": user_data.get("email"),
-                "first_name": user_data.get("first_name"),
-                "last_name": user_data.get("last_name"),
-            }
-        
+        if memberships_response.data:
+            for membership in memberships_response.data:
+                if membership.get("users"):
+                    user_data = membership["users"]
+                    users_map[user_data["id"]] = {
+                        "id": user_data["id"],
+                        "email": user_data.get("email"),
+                        "first_name": user_data.get("first_name"),
+                        "last_name": user_data.get("last_name"),
+                    }
+
         # Transform the data to populate shared_by with user details
         transformed_items = []
         for item in items_response.data:
@@ -180,20 +181,19 @@ def get_fridge_items(current_user = Depends(get_current_user)):
                 }
             else:
                 added_by = None
-            
+
             # Handle shared_by - it's stored as a JSONB array of user_ids
             shared_by = []
             shared_by_ids = item.get("shared_by")
-            
-            if shared_by_ids and isinstance(shared_by_ids, list):
-                # Map user IDs to full user objects
+
+            if shared_by_ids and isinstance(shared_by_ids, list) and len(shared_by_ids) > 0:
                 for user_id in shared_by_ids:
+                    print(f"  Looking up user_id: {user_id}")
                     if user_id in users_map:
                         shared_by.append(users_map[user_id])
-            elif not shared_by_ids or shared_by_ids == []:
-                # If shared_by is null or empty, it's a receipt item - shared by all
-                shared_by = list(users_map.values())
-            
+                        print(f"Found user: {users_map[user_id]}")
+                    else:
+                        print(f"User {user_id} not in users_map")
             transformed_items.append({
                 "id": item["id"],
                 "name": item["name"],
@@ -202,7 +202,7 @@ def get_fridge_items(current_user = Depends(get_current_user)):
                 "price": item.get("price", 0.0),
                 "fridge_id": item["fridge_id"],
                 "added_by": added_by,
-                "shared_by": shared_by if shared_by else None,
+                "shared_by": shared_by if len(shared_by) > 0 else None,
                 "created_at": item.get("created_at")
             })
         
