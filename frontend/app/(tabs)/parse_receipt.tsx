@@ -316,22 +316,42 @@ export default function ParseReceiptScreen() {
   // Add Item Modal Helper Functions
   const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (showAddItemModal && itemUsers.length === 0) {
+      fetchItemUsers();
+    }
+  }, [showAddItemModal]); */
+
+  useEffect(() => {
+    if (showAddItemModal) {
+      // Always fetch when modal opens to handle fridge switching
+      setItemSharedByUserIds([]); // Optional: Clear previous selections to avoid bugs
       fetchItemUsers();
     }
   }, [showAddItemModal]);
 
   const fetchItemUsers = async () => {
     try {
-      const {
+      /*const {
         data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) return;
+      } = await supabase.auth.getSession();*/
+      const { data: { session: refreshedSession }, error } = await supabase.auth.refreshSession();
+
+      let finalSession = refreshedSession;
+
+      if (!finalSession || error) {
+         const { data } = await supabase.auth.getSession();
+         finalSession = data.session;
+      }
+      if (!finalSession){
+        console.log("No session found");
+        return;
+
+      }
 
       const response = await fetch(`${API_URL}/fridge-members/`, {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${finalSession.access_token}`,
         },
       });
 
