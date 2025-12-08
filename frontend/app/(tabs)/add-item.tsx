@@ -655,7 +655,7 @@ export default function AddItemManual() {
       console.log("Response data:", data);
 
       if (response.ok) {
-        Alert.alert("Success!", "Item added to fridge!");
+        Alert.alert("Success!", "Item added to kitchen!");
 
         setTitle("");
         setQuantity("");
@@ -960,8 +960,8 @@ export default function AddItemManual() {
                 <View style={styles.emptyUserList}>
                   <Text style={styles.emptyUserListText}>
                     {user?.fridge_id
-                      ? "No fridge members found yet. Invite friends to share items."
-                      : "Join or create a fridge to select who shares this item."}
+                      ? "No kitchen members found yet. Invite friends to share items."
+                      : "Join or create a kitchen to select who shares this item."}
                   </Text>
                 </View>
               ) : (

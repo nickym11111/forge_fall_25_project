@@ -60,7 +60,7 @@ const FridgeCard = ({
         {fridgeMates.length > 0 && (
           <View style={styles.fridgeMatesSection}>
             <Text style={styles.fridgeMatesTitle}>
-              Fridgemates ({fridgeMates.length}):
+              Kitchen Mates ({fridgeMates.length}):
             </Text>
             {displayedMates.map((mate) => (
               <Text key={mate.id} style={styles.fridgeMateName}>
@@ -86,7 +86,7 @@ const FridgeCard = ({
       <CustomButton
         className="Select Fridge"
         onPress={() => onSelect(fridge.id)}
-        title="Select This Fridge"
+        title="Select This Kitchen"
         style={styles.selectButton}
       />
     </View>
@@ -136,7 +136,7 @@ export default function SelectFridgeScreen() {
       console.error("Error fetching fridges:", err);
       Alert.alert(
         "Error",
-        "Could not load your fridges. Please try again.",
+        "Could not load your kitchens. Please try again.",
         [
           {
             text: "Retry",
@@ -182,7 +182,7 @@ export default function SelectFridgeScreen() {
 
     } catch (err) {
       console.error("Error selecting fridge:", err);
-      Alert.alert("Error", "Could not select fridge. Please try again.");
+      Alert.alert("Error", "Could not select kitchen. Please try again.");
     } finally {
       setSelecting(false);
     }
@@ -204,14 +204,14 @@ export default function SelectFridgeScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No Fridges Found</Text>
+          <Text style={styles.emptyTitle}>No Kitchens Found</Text>
           <Text style={styles.emptyText}>
-            Create or join a fridge to get started
+            Create or join a kitchen to get started
           </Text>
           <CustomButton
             className="Create Fridge"
             onPress={() => router.replace("/(tabs)/create_fridge")}
-            title="Create or Join Fridge"
+            title="Create or Join Kitchen"
             style={styles.actionButton}
           />
         </View>
@@ -223,9 +223,9 @@ export default function SelectFridgeScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Select Your Fridge</Text>
+        <Text style={styles.headerTitle}>Select Your Kitchen</Text>
         <Text style={styles.headerSubtitle}>
-          Choose which fridge you'd like to use
+          Choose which kitchen you'd like to use
         </Text>
       </View>
 
@@ -244,7 +244,7 @@ export default function SelectFridgeScreen() {
       {selecting && (
         <View style={styles.selectingOverlay}>
           <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.selectingText}>Setting up your fridge...</Text>
+          <Text style={styles.selectingText}>Setting up your kitchen...</Text>
         </View>
       )}
     </View>

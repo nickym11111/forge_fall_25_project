@@ -302,29 +302,26 @@ export default function SharedListScreen() {
         <ProfileIcon className="" style={styles.profileIconContainer} />
       </View>
 
-      {/* Top Card (Add Item quick input) */}
-      <View style={styles.topCard}>
-        <Text style={styles.cardTitle}>Add Item</Text>
-        <View style={styles.topRow}>
-          <View style={styles.inputContainer}>
-            <Ionicons
-              name="cube-outline"
-              size={20}
-              color="#94a3b8"
-              style={styles.inputIcon}
-            />
-            <TextInput
-              style={styles.topInput}
-              placeholder="Item name..."
-              placeholderTextColor="#94a3b8"
-              value={formName}
-              onChangeText={setFormName}
-            />
-          </View>
-          <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
-            <Ionicons name="add" size={28} color="#fff" />
-          </TouchableOpacity>
+      {/* Search Container */}
+      <View style={styles.searchContainer}>
+        <View style={styles.inputContainer}>
+          <Ionicons
+            name="search-outline"
+            size={20}
+            color="#94a3b8"
+            style={styles.inputIcon}
+          />
+          <TextInput
+            style={styles.searchInput}
+            onChangeText={setSearchValue}
+            value={searchValue}
+            placeholder="Search food items..."
+            placeholderTextColor="#94a3b8"
+          />
         </View>
+        <TouchableOpacity style={styles.plusBtn} onPress={openModal}>
+          <Ionicons name="add" size={28} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       {/* Items List */}
@@ -462,39 +459,14 @@ const styles = StyleSheet.create({
     right: 10,
     top: 50,
   },
-  //Header top card
-  topCard: {
-    margin: 20,
-    marginTop: 24,
-    backgroundColor: "#fff",
-    borderRadius: 24,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-  },
-  cardTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1e293b",
-    marginBottom: 8,
-  },
-  topRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  search_bar: {
-    height: 40,
-    marginTop: -25,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: "#14b8a6",
-    padding: 8,
+  searchContainer: {
     width: "100%",
-    borderRadius: 10,
-    backgroundColor: "#ffffff",
-    fontSize: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 16,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+    gap: 12,
   },
   inputContainer: {
     flex: 1,
@@ -510,14 +482,13 @@ const styles = StyleSheet.create({
   inputIcon: {
     marginRight: 12,
   },
-  topInput: {
+  searchInput: {
     flex: 1,
     paddingVertical: 14,
     fontSize: 16,
     color: "#1e293b",
   },
   plusBtn: {
-    marginLeft: 12,
     width: 46,
     height: 46,
     borderRadius: 23,

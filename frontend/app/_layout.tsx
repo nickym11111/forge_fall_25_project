@@ -47,19 +47,19 @@ function RootLayoutNav() {
   return (
     <AuthProvider>
       <AlertProvider>
-        <ThemeProvider value={DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen 
-              name="modal" 
-              options={{ 
-                presentation: 'transparentModal',
-                animation: 'fade',
-                gestureEnabled: true,
-              }} 
-            />
-          </Stack>
-        </ThemeProvider>
+      <ThemeProvider value={DefaultTheme}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen 
+            name="modal" 
+            options={{ 
+              presentation: 'transparentModal',
+              animation: 'fade',
+              gestureEnabled: true,
+            }} 
+          />
+        </Stack>
+      </ThemeProvider>
       </AlertProvider>
     </AuthProvider>
   );

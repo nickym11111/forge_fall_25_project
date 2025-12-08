@@ -83,7 +83,7 @@ const FridgeCard = ({
         {fridgeMates.length > 0 && (
           <View style={styles.fridgeMatesSection}>
             <Text style={styles.fridgeMatesTitle}>
-              Fridgemates ({fridgeMates.length}):
+              Kitchen Mates ({fridgeMates.length}):
             </Text>
             {displayedMates.map((mate) => (
               <Text key={mate.id} style={styles.fridgeMateName}>
@@ -185,7 +185,7 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
       }
     } catch (err) {
       console.error("Error fetching fridges:", err);
-      Alert.alert("Error", "Could not load your fridges");
+      Alert.alert("Error", "Could not load your kitchens");
     } finally {
       setLoading(false);
     }
@@ -219,11 +219,11 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
       await new Promise(resolve => setTimeout(resolve, 200));
       await fetchAllFridges();
       
-      Alert.alert("Success", "Switched to fridge successfully!");
+      Alert.alert("Success", "Switched to kitchen successfully!");
 
     } catch (err) {
       console.error("Error switching fridge:", err);
-      Alert.alert("Error", "Could not switch fridge");
+      Alert.alert("Error", "Could not switch kitchen");
     } finally {
       setSwitching(false);
     }
@@ -337,7 +337,7 @@ const ManageFridgesScreen = ({ onClose }: ManageFridgesScreenProps) => {
       <ScrollView style={styles.content}>
         {fridges.length === 0 ? (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No fridges yet</Text>
+            <Text style={styles.emptyText}>No kitchens yet</Text>
           </View>
         ) : (
           fridges.map((fridge) => (
