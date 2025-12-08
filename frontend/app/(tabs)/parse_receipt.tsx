@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -28,6 +28,7 @@ import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
 import { Modal } from "react-native";
 import { useAuth } from "../context/authContext";
+import { useFocusEffect } from "@react-navigation/native";
 
 // Conditionally import react-datepicker for web
 let DatePicker: any;
@@ -100,14 +101,28 @@ export default function ParseReceiptScreen() {
   // fetches the user's fridge mates
   const fetchFridgeMates = async () => {
     try {
-      const {
+      /*const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session) return; */
+
+      const {
+        data: { session: refreshedSession },
+        error,
+      } = await supabase.auth.refreshSession();
+
+      let finalSession = refreshedSession;
+
+      if (!finalSession || error) {
+        const { data } = await supabase.auth.getSession();
+        finalSession = data.session;
+      }
+
+      if (!finalSession) return;
 
       const response = await fetch(`${API_URL}/fridge-members/`, {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${finalSession.access_token}`,
         },
       });
 
@@ -152,11 +167,17 @@ export default function ParseReceiptScreen() {
     getSession();
   }, []);
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (userSession) {
       fetchFridgeMates();
     }
-  }, [userSession]);
+  }, [userSession]);*/
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchFridgeMates();
+    }, [])
+  );
 
   interface ApiResponse {
     data?: any;
