@@ -302,7 +302,6 @@ export default function recipes() {
 
               const result = await response.json();
               console.log('Delete successful:', result);
-              alert(`✓ ${recipeName} removed from favorites`);
             } catch (err) {
               console.error("Error removing recipe:", err);
               fetchFavoriteRecipes();
@@ -341,7 +340,7 @@ export default function recipes() {
       console.log('Response:', data);
       
       if (response.ok) {
-        alert(`✓ ${ingredient} added to grocery list!`);
+        Alert.alert(`✓ ${ingredient} added to grocery list!`);
         setResponseMessage(prev => prev.filter(item => item !== ingredient));
       } else {
         throw new Error(data.detail || data.message || 'Failed to add item');
