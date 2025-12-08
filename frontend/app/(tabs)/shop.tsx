@@ -302,7 +302,6 @@ export default function SharedListScreen() {
         <ProfileIcon className="" style={styles.profileIconContainer} />
       </View>
 
-
       {/* Search Container */}
       <View style={styles.searchContainer}>
         <View style={styles.inputContainer}>
@@ -348,8 +347,6 @@ export default function SharedListScreen() {
             contentContainerStyle={{ padding: 10 }}
             nestedScrollEnabled
           >
-            
-
             {/* Name */}
             <Text style={styles.inputLabel}>Item Name *</Text>
             <TextInput

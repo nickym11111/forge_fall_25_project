@@ -1,10 +1,12 @@
 from dotenv import load_dotenv
+from pydantic import BaseModel
 import os
 import json
 from fastapi import APIRouter, HTTPException, Depends
 from database import supabase 
 from openai import OpenAI
 from service import get_current_user 
+from typing import Dict, List, Optional, Any
 
 #Load environment variables and configure OpenAI client
 load_dotenv()
@@ -14,19 +16,15 @@ api_key = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
 
 
-def getChatGPTResponse():
+def getChatGPTResponse(ingredients_list):
     print("=== Starting getChatGPTResponse ===")
 
     try:
-        existing_ingredients = (supabase.table("fridge_items").select("name").execute())
-        print(f"=== Got ingredients from DB: {existing_ingredients.data} ===")
+        print(f"=== Ingredients list: {ingredients_list} ===")
     except Exception as e:
         print(f"=== Database error: {e} ===")
         raise
     
-    ingredients_list = [item['name'] for item in existing_ingredients.data] if existing_ingredients.data else []
-    print(f"=== Ingredients list: {ingredients_list} ===")
-
     if not ingredients_list:
         print("=== No ingredients found ===")
         return {
@@ -76,12 +74,15 @@ contains the string "Need more ingredients for sufficient meals.".
         import traceback
         traceback.print_exc()
         raise
+    
+class GenerateRecipesRequest(BaseModel):
+    fridgeItems: List[str]
 
-@app.get("/generate-recipes/")
-def generate_recipes2():
+@app.post("/generate-recipes/")
+def generate_recipes2(request: GenerateRecipesRequest):
     print("=== generate_recipes2 endpoint called ===")
     try:
-        result = getChatGPTResponse()
+        result = getChatGPTResponse(request.fridgeItems)
         print(f"=== Returning result: {result} ===")
         return result
     

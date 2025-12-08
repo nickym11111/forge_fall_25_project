@@ -562,19 +562,20 @@ export default function TabOneScreen() {
   };
 
   const filterData = (data: FoodItem[], selectedFilters: string[]) => {
-    const currentUserName = user?.first_name && user?.last_name 
-      ? `${user.first_name} ${user.last_name}` 
-      : user?.email || "";
-    
+    const currentUserName =
+      user?.first_name && user?.last_name
+        ? `${user.first_name} ${user.last_name}`
+        : user?.email || "";
+
     let temp_data = data;
-  
+
     // If user presses 'expiring soon'
     if (selectedFilters.includes("Expiring Soon")) {
       temp_data = temp_data.filter(
         (item) => (item.days_till_expiration || 0) <= 7
       );
     }
-  
+
     // If user presses 'my items'
     if (selectedFilters.includes("My Items")) {
       temp_data = temp_data.filter((item) => {
@@ -587,12 +588,14 @@ export default function TabOneScreen() {
         return fullName === currentUserName;
       });
     }
-  
+
     // If user presses 'shared'
     if (selectedFilters.includes("Shared")) {
       temp_data = temp_data.filter((item) => {
-        if (!item.shared_by || item.shared_by.length <= 1) { 
-          console.log(`    - SKIP: Not shared (${item.shared_by?.length || 0} people)`);
+        if (!item.shared_by || item.shared_by.length <= 1) {
+          console.log(
+            `    - SKIP: Not shared (${item.shared_by?.length || 0} people)`
+          );
           return false;
         }
 
