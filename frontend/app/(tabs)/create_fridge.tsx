@@ -177,7 +177,7 @@ export default function CreateFridgeScreen() {
           
           if (error || !session) {
             console.log("No session found!");
-            Alert.alert("Error", "You must be logged in to create a fridge");
+            Alert.alert("Error", "You must be logged in to create a kitchen");
             // Optionally navigate to login
             // navigate("/(auth)/login");
             return;
@@ -318,7 +318,7 @@ export default function CreateFridgeScreen() {
 
       router.replace(`/(tabs)/two`);
 
-      Alert.alert("Success!", "Fridge created successfully!");
+      Alert.alert("Success!", "Kitchen created successfully!");
     } catch (error) {
       console.error("Error:", error);
       setIsLoading(false);

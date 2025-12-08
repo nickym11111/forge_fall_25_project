@@ -643,7 +643,7 @@ export default function TabOneScreen() {
         </View>
         <View style={[styles.container, { justifyContent: "center" }]}>
           <ActivityIndicator size="large" color="#14b8a6" />
-          <Text style={styles.loadingText}>Loading fridge items...</Text>
+          <Text style={styles.loadingText}>Loading kitchen items...</Text>
         </View>
       </View>
     );
@@ -658,10 +658,10 @@ export default function TabOneScreen() {
         </View>
         <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={styles.emptyStateText}>
-            You haven't joined a fridge yet!
+            You haven't joined a kitchen yet!
           </Text>
           <Text style={styles.emptyStateSubtext}>
-            Create or join a fridge to start tracking your food items.
+            Create or join a kitchen to start tracking your food items.
           </Text>
           <TouchableOpacity
             style={[
@@ -672,7 +672,7 @@ export default function TabOneScreen() {
               router.push("/(tabs)/create_fridge");
             }}
           >
-            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
+            <Text style={styles.buttonLabel}>Create or Join a Kitchen</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -708,7 +708,7 @@ export default function TabOneScreen() {
           <ProfileIcon className="" style={styles.profileIconContainer} />
         </View>
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={styles.emptyStateText}>Your fridge is empty!</Text>
+          <Text style={styles.emptyStateText}>Your kitchen is empty!</Text>
           <Text style={styles.emptyStateSubtext}>
             Add some items to get started.
           </Text>
@@ -1006,8 +1006,8 @@ export default function TabOneScreen() {
                       <View style={styles.emptyUserList}>
                         <Text style={styles.emptyUserListText}>
                           {user?.fridge_id
-                            ? "No fridge members found yet. Invite friends to share items."
-                            : "Join or create a fridge to select who shares this item."}
+                            ? "No kitchen members found yet. Invite friends to share items."
+                            : "Join or create a kitchen to select who shares this item."}
                         </Text>
                       </View>
                     ) : (

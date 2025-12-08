@@ -151,7 +151,7 @@ export default function ManageAccount() {
           
           {!showManageFridges && fridgeMates.length > 0 && (
             <View style={styles.fridgeMatesContainer}>
-              <Text style={styles.fridgeMatesLabel}>Fridge Mates:</Text>
+              <Text style={styles.fridgeMatesLabel}>Kitchen Mates:</Text>
               <Text style={styles.fridgeMatesText}>
                 {fridgeMates
                   .map((f) => `${f.first_name} ${f.last_name}`)

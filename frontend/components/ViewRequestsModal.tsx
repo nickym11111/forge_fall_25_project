@@ -91,8 +91,8 @@ const RequestCard = ({
       );
       CustomAlert.alert(
         "Error",
-        error instanceof Error
-          ? error.message
+        error instanceof Error 
+          ? error.message 
           : `Failed to ${status === "ACCEPTED" ? "accept" : "decline"} request`
       );
     } finally {
@@ -114,7 +114,7 @@ const RequestCard = ({
     <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Ionicons name="person-add-outline" size={24} color="#14b8a6" />
-        <Text style={styles.cardTitle}>Join Request</Text>
+      <Text style={styles.cardTitle}>Join Request</Text>
       </View>
       
       <View style={styles.infoSection}>
@@ -229,8 +229,8 @@ const ViewRequestsModal = ({
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Join Requests</Text>
-          <Text style={styles.headerSubtitle}>{fridgeName}</Text>
+        <Text style={styles.headerTitle}>Join Requests</Text>
+        <Text style={styles.headerSubtitle}>{fridgeName}</Text>
         </View>
         <TouchableOpacity style={styles.closeButton} onPress={onClose}>
           <Ionicons name="close" size={28} color="#64748b" />

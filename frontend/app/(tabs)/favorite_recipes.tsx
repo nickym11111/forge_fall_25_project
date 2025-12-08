@@ -252,7 +252,7 @@ export default function TabOneScreen() {
               color: "#666",
             }}
           >
-            You haven't joined a fridge yet!
+            You haven't joined a kitchen yet!
           </Text>
           <Text
             style={{
@@ -262,7 +262,7 @@ export default function TabOneScreen() {
               color: "#999",
             }}
           >
-            Create or join a fridge to start tracking your food items.
+            Create or join a kitchen to start tracking your food items.
           </Text>
           <TouchableOpacity
             style={[
@@ -273,7 +273,7 @@ export default function TabOneScreen() {
               router.push("/(tabs)/create_fridge");
             }}
           >
-            <Text style={styles.buttonLabel}>Create or Join a Fridge</Text>
+            <Text style={styles.buttonLabel}>Create or Join a Kitchen</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -325,7 +325,7 @@ export default function TabOneScreen() {
               color: "#666",
             }}
           >
-            Your fridge is empty!
+            Your kitchen is empty!
           </Text>
           <Text
             style={{
