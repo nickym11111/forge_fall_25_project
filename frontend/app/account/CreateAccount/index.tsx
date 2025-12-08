@@ -11,7 +11,6 @@ import {
 import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
-import CustomHeader from "@/components/CustomHeader";
 import { navigate } from "expo-router/build/global-state/routing";
 import { CreateAccountRequest } from "../../api/CreateAccount";
 import { Alert } from "react-native";
@@ -34,10 +33,9 @@ export default function CreateAccount() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader
-        title="Create Account"
-        subtitle="Join Food Flow and start managing your kitchen"
-      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Create Account</Text>
+      </View>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           contentContainerStyle={styles.createAccountContainer}
@@ -243,6 +241,22 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FAFBFC",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
   createAccountContainer: {
     flexGrow: 1,
     justifyContent: "center",
@@ -262,6 +276,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   inputContainer: {
     flexDirection: "row",

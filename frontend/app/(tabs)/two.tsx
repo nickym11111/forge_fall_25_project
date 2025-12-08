@@ -24,8 +24,8 @@ import React, { useState, useRef, useEffect, useCallback } from "react";
 import type { PropsWithChildren } from "react";
 import { supabase } from "../utils/client";
 import { useAuth } from "../context/authContext";
-import CustomHeader from "@/components/CustomHeader";
 import { useFocusEffect } from "@react-navigation/native";
+import ProfileIcon from "@/components/ProfileIcon";
 
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`; // Backend API endpoint
@@ -108,7 +108,7 @@ const Item = ({ item, onDelete, onQuantityChange, onEdit }: ItemProps) => {
               {item.name}
             </Text>
             <TouchableOpacity onPress={handleDelete} style={styles.deleteIcon}>
-              <Ionicons name="trash-outline" size={20} color="#666" />
+              <Ionicons name="trash-outline" size={20} color="#64748b" />
             </TouchableOpacity>
           </View>
 
@@ -381,8 +381,8 @@ export default function TabOneScreen() {
       }
 
       // Update local state after successful backend delete
-      setData((prev) => prev.filter((i) => i.id !== item.id));
-      originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
+    setData((prev) => prev.filter((i) => i.id !== item.id));
+    originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
       
     } catch (err) {
       console.error("Error deleting item:", err);
@@ -396,7 +396,7 @@ export default function TabOneScreen() {
   const handleQuantityChange = async (item: FoodItem, delta: number) => {
     const newQty = Math.max(1, (item.quantity || 1) + delta);
     const updated = { ...item, quantity: newQty };
-
+    
     const getExpiryDateString = (days: number | undefined) => {
       const date = new Date();
       date.setDate(date.getDate() + (days || 0));
@@ -443,10 +443,10 @@ export default function TabOneScreen() {
       }
 
       // Update local state after successful backend update
-      setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
-      originalHolder.current = originalHolder.current.map((it) =>
-        it.id === item.id ? updated : it
-      );
+    setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
+    originalHolder.current = originalHolder.current.map((it) =>
+      it.id === item.id ? updated : it
+    );
       
     } catch (err) {
       console.error("Error updating quantity:", err);
@@ -471,7 +471,7 @@ export default function TabOneScreen() {
   const fetchFridgeItems = async (showFullLoading: boolean = true) => {
     try {
       if (showFullLoading) {
-        setLoading(true);
+      setLoading(true);
       } else {
         // For pull-to-refresh, only use refreshing state
         setRefreshing(true);
@@ -612,22 +612,31 @@ export default function TabOneScreen() {
   // Loading state
   if (loading) {
     return (
+      <View style={styles.screenContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
+          <ProfileIcon className="" style={styles.profileIconContainer} />
+        </View>
       <View style={[styles.container, { justifyContent: "center" }]}>
         <ActivityIndicator size="large" color="#14b8a6" />
-        <Text style={{ marginTop: 10 }}>Loading fridge items...</Text>
+          <Text style={styles.loadingText}>Loading fridge items...</Text>
+        </View>
       </View>
     );
   }
 
   if (error === "NO_FRIDGE") {
     return (
-      <View style={{width: '100%', height: '100%'}}>
-        <CustomHeader title="What's In Our Fridge?" />
+      <View style={styles.screenContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
+          <ProfileIcon className="" style={styles.profileIconContainer} />
+        </View>
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+          <Text style={styles.emptyStateText}>
             You haven't joined a fridge yet!
           </Text>
-          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+          <Text style={styles.emptyStateSubtext}>
             Create or join a fridge to start tracking your food items.
           </Text>
           <TouchableOpacity
@@ -646,29 +655,38 @@ export default function TabOneScreen() {
   // Error state
   if (error) {
     return (
+      <View style={styles.screenContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
+          <ProfileIcon className="" style={styles.profileIconContainer} />
+        </View>
       <View style={[styles.container, { justifyContent: "center" }]}>
-        <Text style={{ color: "red", textAlign: "center", padding: 20 }}>
+          <Text style={styles.errorText}>
           {error}
         </Text>
         <TouchableOpacity
           style={styles.filter_button}
-          onPress={() => fetchFridgeItems(true)}
+            onPress={() => fetchFridgeItems(true)}
         >
           <Text style={styles.buttonLabel}>Retry</Text>
         </TouchableOpacity>
+        </View>
       </View>
     );
   }
 
   if (data.length === 0) {
-    return (
-      <View style={{width: '100%', height: '100%'}}>
-        <CustomHeader title="What's In Our Fridge? PLOY" />
+  return (
+      <View style={styles.screenContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
+          <ProfileIcon className="" style={styles.profileIconContainer} />
+        </View>
         <View style={[styles.container, { justifyContent: "center" }]}>
-          <Text style={{ fontSize: 18, textAlign: "center", padding: 20, color: "#666" }}>
+          <Text style={styles.emptyStateText}>
             Your fridge is empty!
           </Text>
-          <Text style={{ fontSize: 14, textAlign: "center", paddingHorizontal: 20, color: "#999" }}>
+          <Text style={styles.emptyStateSubtext}>
             Add some items to get started.
           </Text>
         </View>
@@ -677,22 +695,23 @@ export default function TabOneScreen() {
   }
 
   return (
-  <View style={{
-    width: '100%', height: '100%',
-  }}>
-    <CustomHeader title="What's In Our Kitchen?" />
+  <View style={styles.screenContainer}>
+    <View style={styles.header}>
+      <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
+      <ProfileIcon className="" style={styles.profileIconContainer} />
+    </View>
     
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <View style={styles.inputContainer}>
           <Ionicons name="search-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+      <TextInput
             style={styles.searchInput}
-            onChangeText={searchFunction}
-            value={searchValue}
-            placeholder="Search food items..."
+        onChangeText={searchFunction}
+        value={searchValue}
+        placeholder="Search food items..."
             placeholderTextColor="#94a3b8"
-          />
+      />
         </View>
       </View>
       
@@ -900,7 +919,7 @@ const PreviewLayout = ({
   selectedValue,
   setSelectedValue,
 }: PreviewLayoutProps) => (
-  <View style={{ padding: 10 }}>
+  <View style={{ padding: 5, backgroundColor: 'transparent' }}>
     <View style={styles.row}>
       {values.map((value) => (
         <TouchableOpacity
@@ -957,6 +976,57 @@ const PreviewLayout = ({
 );
 
 const styles = StyleSheet.create({
+  screenContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: "#FAFBFC",
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  profileIconContainer: {
+    position: "absolute",
+    right: 10,
+    top: 50,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  emptyStateText: {
+    fontSize: 18,
+    textAlign: "center",
+    padding: 20,
+    color: "#1e293b",
+    fontWeight: "600",
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    textAlign: "center",
+    paddingHorizontal: 20,
+    color: "#64748b",
+  },
+  errorText: {
+    color: "#dc2626",
+    textAlign: "center",
+    padding: 20,
+    fontSize: 16,
+  },
   box: {
     width: 50,
     height: 50,
@@ -967,14 +1037,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   filter_button: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 16,
     backgroundColor: "#14b8a6",
     marginHorizontal: 4,
     marginBottom: 8,
     minWidth: "45%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   selected_filter_button: {
     backgroundColor: "#0d9488",
@@ -997,6 +1072,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     width: "100%",
+    backgroundColor: "#FAFBFC",
   },
   title: {
     fontSize: 20,
@@ -1054,15 +1130,17 @@ const styles = StyleSheet.create({
   // Item Card Styles
   item: {
     backgroundColor: "#ffffff",
-    padding: 22,
+    padding: 24,
     marginVertical: 8,
-    borderRadius: 16,
+    borderRadius: 24,
     width: "95%",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   itemContent: {
     flexDirection: "row",
@@ -1077,9 +1155,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   itemTitle: {
-    fontSize: 25,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#1e293b",
     flex: 1,
     paddingRight: 8,
   },
@@ -1091,7 +1169,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: 15,
-    color: "#333",
+    color: "#475569",
     marginBottom: 6,
   },
   infoLabel: {
@@ -1107,7 +1185,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#f0fdfa",
     marginLeft: -125,
-    borderRadius: 10,
+    borderRadius: 16,
     paddingVertical: 6,
     paddingHorizontal: 6,
     alignSelf: "center",
@@ -1117,7 +1195,7 @@ const styles = StyleSheet.create({
   },
   qtyBadge: {
     backgroundColor: "#ffffff",
-    borderRadius: 8,
+    borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 6,
     marginHorizontal: 10,
@@ -1126,8 +1204,8 @@ const styles = StyleSheet.create({
   },
   qtyText: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#333",
+    fontWeight: "700",
+    color: "#1e293b",
   },
   editButton: {
     position: "absolute",
@@ -1151,9 +1229,12 @@ const styles = StyleSheet.create({
     maxHeight: "90%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.08,
     shadowRadius: 16,
-    elevation: 8,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderBottomWidth: 0,
     zIndex: 1000,
   },
   modalScrollContent: {
@@ -1213,6 +1294,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   modalSaveButtonDisabled: {
     opacity: 0.6,
@@ -1233,6 +1319,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 24,
     paddingTop: 16,
     paddingBottom: 24,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderBottomWidth: 0,
   },
   datePickerModalHeader: {
     flexDirection: "row",
@@ -1278,6 +1367,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     maxHeight: "80%",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
+    borderBottomWidth: 0,
   },
   userPickerModalHeader: {
     flexDirection: "row",

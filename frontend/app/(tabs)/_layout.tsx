@@ -59,7 +59,7 @@ export default function TabLayout() {
           flex: 1,
           justifyContent: "center",
           alignItems: "center",
-          backgroundColor: "#F8F9FF",
+          backgroundColor: "#FAFBFC",
         }}
       >
         <ActivityIndicator size="large" color="#14b8a6" />
@@ -90,7 +90,7 @@ export default function TabLayout() {
                 shadowOffset: { width: 0, height: -2 },
                 shadowOpacity: 0.08,
                 shadowRadius: 8,
-                elevation: 8,
+                elevation: 4,
               }
             : { display: "none" },
       }}
@@ -194,8 +194,8 @@ export default function TabLayout() {
         name="add-item"
         options={{
           href: null,
-        }}
-      />
+    }}
+  />
     </Tabs>
   );
 }

@@ -9,9 +9,10 @@ import {
   RefreshControl,
   Image,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "../utils/client";
-import CustomHeader from "@/components/CustomHeader";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, router } from "expo-router";
+import ProfileIcon from "@/components/ProfileIcon";
 
 const API_URL = `${process.env.EXPO_PUBLIC_API_URL}`;
 
@@ -246,7 +247,9 @@ export default function SettleUpScreen() {
   if (loading && !refreshing) {
     return (
       <View style={styles.container}>
-        <CustomHeader title="Settle Up" />
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settle Up</Text>
+        </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color="#14b8a6" />
           <Text style={styles.loadingText}>Loading balances...</Text>
@@ -258,7 +261,9 @@ export default function SettleUpScreen() {
   if (error) {
     return (
       <View style={styles.container}>
-        <CustomHeader title="Settle Up" />
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settle Up</Text>
+        </View>
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={fetchBalances}>
@@ -271,7 +276,10 @@ export default function SettleUpScreen() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader title="Settle Up" />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Settle Up</Text>
+        <ProfileIcon className="" style={styles.profileIconContainer} />
+      </View>
       {loading && !refreshing && (
         <View style={styles.loadingOverlay}>
           <ActivityIndicator size="small" color="#14b8a6" />
@@ -456,10 +464,28 @@ export default function SettleUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FF",
+    backgroundColor: "#FAFBFC",
   },
-  headerContainer: {
-    textAlign: "center"
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  profileIconContainer: {
+    position: "absolute",
+    right: 10,
+    top: 50,
   },
   centerContainer: {
     flex: 1,
@@ -476,32 +502,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: 20,
+    paddingTop: 24,
   },
   loadingText: {
-    marginTop: 10,
+    marginTop: 16,
     fontSize: 16,
-    color: "#666",
-    marginLeft: "auto",
-    marginRight: "auto",
+    color: "#64748b",
+    fontWeight: "500",
   },
   errorText: {
     fontSize: 16,
     textAlign: "center",
     color: "#dc2626",
     paddingHorizontal: 20,
+    marginBottom: 16,
   },
   retryButton: {
-    marginTop: 16,
+    marginTop: 8,
     backgroundColor: "#14b8a6",
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
-    shadowColor: "#0f766e",
+    borderRadius: 16,
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   retryButtonText: {
     color: "white",
@@ -510,20 +537,25 @@ const styles = StyleSheet.create({
   },
   emptyState: {
     backgroundColor: "white",
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 32,
     alignItems: "center",
     marginVertical: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
   },
   emptyStateText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#666",
+    color: "#1e293b",
     marginBottom: 8,
   },
   emptyStateSubtext: {
     fontSize: 14,
-    color: "#999",
+    color: "#64748b",
     textAlign: "center",
   },
   balanceList: {
@@ -531,14 +563,16 @@ const styles = StyleSheet.create({
   },
   balanceCard: {
     backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    borderRadius: 24,
+    padding: 24,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   balanceCardHeader: {
     flexDirection: "row",
@@ -553,7 +587,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#333",
+    color: "#1e293b",
     flexShrink: 1,
   },
   userIdentity: {
@@ -563,16 +597,16 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   userAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 12,
-    backgroundColor: "#d1fae5",
+    backgroundColor: "#f0fdfa",
   },
   userAvatarFallback: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 12,
     backgroundColor: "#14b8a6",
     justifyContent: "center",
@@ -584,26 +618,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   balanceBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 16,
   },
   balanceAmount: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
     color: "white",
   },
   payButton: {
     marginLeft: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 10,
     borderRadius: 16,
     backgroundColor: "#14b8a6",
-    shadowColor: "#0f766e",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   payButtonDisabled: {
     opacity: 0.5,
@@ -614,40 +648,43 @@ const styles = StyleSheet.create({
   },
   lastPaidText: {
     fontSize: 12,
-    color: "#888",
+    color: "#64748b",
     marginBottom: 8,
+    marginTop: 4,
   },
   balanceStatus: {
     fontSize: 14,
-    color: "#666",
+    color: "#64748b",
   },
   breakdownContainer: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: "#e2e8f0",
   },
   breakdownTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 8,
+    color: "#64748b",
+    marginBottom: 10,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   breakdownItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 8,
     paddingLeft: 8,
   },
   breakdownText: {
-    fontSize: 13,
-    color: "#666",
+    fontSize: 14,
+    color: "#475569",
     flex: 1,
   },
   breakdownName: {
     fontWeight: "600",
-    color: "#333",
+    color: "#1e293b",
   },
   breakdownAmount: {
     fontSize: 13,
@@ -661,10 +698,10 @@ const styles = StyleSheet.create({
     color: "#4CAF50",
   },
   itemsContainer: {
-    marginTop: 12,
-    paddingTop: 12,
+    marginTop: 16,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
+    borderTopColor: "#e2e8f0",
   },
   itemsHeaderButton: {
     flexDirection: "row",
@@ -673,13 +710,15 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   itemsTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#333",
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   expandIcon: {
     fontSize: 12,
-    color: "#666",
+    color: "#64748b",
   },
   itemsList: {
     marginTop: 8,
@@ -688,25 +727,27 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    backgroundColor: "#F8F9FF",
-    borderRadius: 6,
-    marginBottom: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: "#f8fafc",
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   itemMainInfo: {
     flex: 1,
     marginRight: 8,
   },
   itemTitle: {
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
-    color: "#333",
-    marginBottom: 2,
+    color: "#1e293b",
+    marginBottom: 4,
   },
   itemSubtext: {
-    fontSize: 11,
-    color: "#666",
+    fontSize: 12,
+    color: "#64748b",
   },
   itemTypeBadge: {
     paddingHorizontal: 8,

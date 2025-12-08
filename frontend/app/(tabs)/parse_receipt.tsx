@@ -20,8 +20,8 @@ import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { File } from "expo-file-system";
 import { CreateParseReceiptRequest } from "../api/ParseReceipt";
-import CustomHeader from "@/components/CustomHeader";
 import CustomButton from "@/components/CustomButton";
+import ProfileIcon from "@/components/ProfileIcon";
 
 import { supabase } from "../utils/client";
 import { AddItemToFridge, PredictExpiryDate } from "../api/AddItemToFridge";
@@ -112,13 +112,13 @@ export default function ParseReceiptScreen() {
 
   // fetches the user's session
   const getSession = async () => {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error("Error getting session:", error);
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error getting session:", error);
       return null;
-    }
+      }
     setUserSession(data.session);
-  };
+    };
 
   useEffect(() => {
     getSession();
@@ -165,14 +165,14 @@ export default function ParseReceiptScreen() {
     const newExpiryDate = new Date(); // Default to today
 
     try {
-      const ExpiryDateResponse = await PredictExpiryDate(item.name);
-      const ExpiryDateData = await ExpiryDateResponse.json();
+    const ExpiryDateResponse = await PredictExpiryDate(item.name);
+    const ExpiryDateData = await ExpiryDateResponse.json();
       console.log(" Response data:", ExpiryDateData);
 
-      if (ExpiryDateData.days) {
-        const days = parseInt(ExpiryDateData.days);
+    if (ExpiryDateData.days) {
+      const days = parseInt(ExpiryDateData.days);
         console.log(" AI predicted", days, "days for", item.name);
-        newExpiryDate.setDate(newExpiryDate.getDate() + days);
+      newExpiryDate.setDate(newExpiryDate.getDate() + days);
       }
     } catch (expiryError) {
       console.warn(
@@ -476,14 +476,10 @@ export default function ParseReceiptScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <CustomHeader
-        title="Scan Receipt"
-        subtitle="Take a photo or upload a receipt to automatically add items"
-        noShadow={true}
-        style={{
-          marginBottom: 10,
-        }}
-      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Scan Receipt</Text>
+        <ProfileIcon className="" style={styles.profileIconContainer} />
+      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -498,22 +494,22 @@ export default function ParseReceiptScreen() {
             name="add"
             size={20}
             color="white"
-            style={{ marginRight: 6 }}
+            style={{ marginRight: 8 }}
           />
           <Text style={styles.addItemButtonText}>Add Item Manually</Text>
         </TouchableOpacity>
 
         <View style={styles.uploadSection}>
-          <View style={styles.imageContainer}>
-            <TouchableOpacity
-              onPress={pickImage}
+      <View style={styles.imageContainer}>
+        <TouchableOpacity
+          onPress={pickImage}
               activeOpacity={0.8}
               style={styles.imageTouchable}
-            >
-              {imageUri ? (
-                <View style={styles.imageWrapper}>
-                  <Image source={{ uri: imageUri }} style={styles.image} />
-                  <View style={styles.imageOverlay}>
+        >
+          {imageUri ? (
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: imageUri }} style={styles.image} />
+              <View style={styles.imageOverlay}>
                     <View style={styles.overlayContent}>
                       <View style={styles.overlayIconCircle}>
                         <Ionicons
@@ -522,33 +518,33 @@ export default function ParseReceiptScreen() {
                           color="#14b8a6"
                         />
                       </View>
-                      <Text style={styles.imageOverlayText}>
+                <Text style={styles.imageOverlayText}>
                         Tap to change image
-                      </Text>
+                </Text>
                     </View>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.imageSkeleton}>
-                  <View style={styles.imageTextContainer}>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.imageSkeleton}>
+              <View style={styles.imageTextContainer}>
                     <View style={styles.iconCircle}>
                       <Ionicons name="camera" size={36} color="#14b8a6" />
                     </View>
                     <Text style={styles.skeletonTitle}>
-                      Scan Receipt or Take Photo
-                    </Text>
+                  Scan Receipt or Take Photo
+                </Text>
                     <Text style={styles.skeletonSubtitle}>
                       AI will automatically detect items and expiry dates
-                    </Text>
+                </Text>
                     <View style={styles.hintBadge}>
                       <Ionicons name="sparkles" size={16} color="#14b8a6" />
                       <Text style={styles.hintText}>Powered by AI</Text>
                     </View>
-                  </View>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
           {!imageUri && (
             <View style={styles.tipsCard}>
               <View style={styles.tipsHeader}>
@@ -616,7 +612,7 @@ export default function ParseReceiptScreen() {
                     style={styles.fridgeMateItem}
                     onPress={() => toggleFridgeMate(mate.id)}
                   >
-                    <View
+            <View
                       style={[
                         styles.checkbox,
                         sharingWith.includes(mate.id) && styles.checkboxChecked,
@@ -766,15 +762,15 @@ export default function ParseReceiptScreen() {
                     const results = await Promise.all(
                       selectedItems.map(async (index) => {
                         const item = parsedItems[index];
-                        const itemName = Object.keys(item)[0];
-                        const itemData = item[itemName];
+                    const itemName = Object.keys(item)[0];
+                    const itemData = item[itemName];
 
                         try {
                           await sendItemToFridge({
-                            name: itemName,
-                            quantity: Math.ceil(itemData.quantity),
+                      name: itemName,
+                      quantity: Math.ceil(itemData.quantity),
                             price: itemData.price,
-                            index,
+                      index,
                             sharedWith: [...sharingWith],
                           });
                           return { success: true, index };
@@ -854,7 +850,7 @@ export default function ParseReceiptScreen() {
                     <View style={styles.itemMeta}>
                       <Text style={styles.itemMetaText}>
                         Qty: {itemData.quantity}
-                      </Text>
+                    </Text>
                       {itemData.price && (
                         <>
                           <Text style={styles.itemMetaDivider}>•</Text>
@@ -863,7 +859,7 @@ export default function ParseReceiptScreen() {
                           </Text>
                         </>
                       )}
-                    </View>
+                  </View>
                   </View>
                   <View style={styles.buttonGroup}>
                     <TouchableOpacity
@@ -1083,9 +1079,9 @@ export default function ParseReceiptScreen() {
                         className=""
                         disabled={isAddingItem}
                       />
-                    </View>
                   </View>
                 </View>
+          </View>
               </TouchableWithoutFeedback>
 
               {/* Date Picker Modal for Add Item - iOS Overlay inside Modal */}
@@ -1124,7 +1120,7 @@ export default function ParseReceiptScreen() {
                           Done
                         </Text>
                       </TouchableOpacity>
-                    </View>
+      </View>
                     <View style={styles.addItemDatePickerModalPickerWrapper}>
                       <DateTimePicker
                         value={tempItemExpiryDate}
@@ -1214,7 +1210,7 @@ export default function ParseReceiptScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+    </ScrollView>
             </View>
           </View>
         </Modal>
@@ -1228,26 +1224,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FAFBFC",
   },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
+  },
+  profileIconContainer: {
+    position: "absolute",
+    right: 10,
+    top: 50,
+  },
   scrollView: {
     flex: 1,
-    marginTop: 16,
   },
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 40,
-    paddingTop: 40,
+    padding: 20,
+    paddingTop: 24,
   },
   uploadSection: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingTop: 0,
   },
   imageContainer: {
     height: 300,
-    shadowColor: "#14b8a6",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    marginBottom: 16,
   },
   imageTouchable: {
     width: "100%",
@@ -1340,7 +1358,7 @@ const styles = StyleSheet.create({
   },
   skeletonTitle: {
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
     fontSize: 18,
     textAlign: "center",
   },
@@ -1353,13 +1371,24 @@ const styles = StyleSheet.create({
     padding: 32,
     alignItems: "center",
     gap: 12,
+    backgroundColor: "white",
+    borderRadius: 24,
+    marginHorizontal: 0,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   loadingText: {
     color: "#64748b",
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "500",
   },
   itemsContainer: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingBottom: 100,
   },
   headerRow: {
@@ -1372,7 +1401,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   addAllButton: {
     // Inherits from addButton
@@ -1384,17 +1413,19 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     backgroundColor: "#ffffff",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 12,
+    padding: 24,
+    borderRadius: 24,
+    marginBottom: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   itemInfo: {
     flex: 1,
@@ -1403,7 +1434,7 @@ const styles = StyleSheet.create({
   itemName: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
     marginBottom: 6,
   },
   itemMeta: {
@@ -1421,13 +1452,18 @@ const styles = StyleSheet.create({
   },
   addButton: {
     backgroundColor: "#14b8a6",
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 16,
     width: 120,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   addButtonDisabled: {
     opacity: 0.6,
@@ -1452,12 +1488,17 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#e2e8f0",
     backgroundColor: "#ffffff",
     width: 120,
     height: 44,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   shareButtonText: {
     color: "#14b8a6",
@@ -1489,9 +1530,16 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: "white",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
     maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   modalHeader: {
     flexDirection: "row",
@@ -1502,7 +1550,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   modalCloseButton: {
     padding: 5,
@@ -1517,7 +1565,7 @@ const styles = StyleSheet.create({
   fridgeMateName: {
     marginLeft: 12,
     fontSize: 16,
-    color: "#0f172a",
+    color: "#1e293b",
     flex: 1,
   },
   checkbox: {
@@ -1553,7 +1601,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#14b8a6",
     paddingVertical: 10,
     paddingHorizontal: 20,
-    borderRadius: 8,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   confirmButtonText: {
     color: "#ffffff",
@@ -1562,14 +1615,16 @@ const styles = StyleSheet.create({
   },
   tipsCard: {
     backgroundColor: "#ffffff",
-    borderRadius: 20,
-    padding: 20,
+    borderRadius: 24,
+    padding: 24,
     marginTop: 16,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   tipsHeader: {
     flexDirection: "row",
@@ -1580,7 +1635,7 @@ const styles = StyleSheet.create({
   tipsTitle: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   tipsList: {
     gap: 10,
@@ -1596,16 +1651,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   addItemButton: {
-    width: 200,
+    width: "100%",
     backgroundColor: "#14b8a6",
-    paddingHorizontal: 18,
-    paddingVertical: 9,
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     flexDirection: "row",
-    marginHorizontal: 20,
     marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   addItemButtonText: {
     color: "white",
@@ -1624,16 +1683,18 @@ const styles = StyleSheet.create({
   },
   addItemModalCard: {
     backgroundColor: "#fff",
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 25,
     width: "100%",
     maxWidth: 350,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
     paddingBottom: 40,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   addItemModalScrollContent: {
     width: "100%",
@@ -1648,7 +1709,7 @@ const styles = StyleSheet.create({
   addItemModalTitle: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#1e293b",
   },
   addItemModalCloseButton: {
     padding: 4,
@@ -1662,7 +1723,7 @@ const styles = StyleSheet.create({
   addItemModalLabel: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#1e293b",
     width: "100%",
     marginBottom: 5,
     marginTop: 6,

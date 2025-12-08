@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import "react-native-reanimated";
 
 import { AuthProvider } from "./context/authContext";
+import { AlertProvider } from "@/components/CustomAlert";
 
 export { ErrorBoundary } from "expo-router";
 
@@ -45,19 +46,21 @@ export default function RootLayout() {
 function RootLayoutNav() {
   return (
     <AuthProvider>
-      <ThemeProvider value={DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen 
-            name="modal" 
-            options={{ 
-              presentation: 'transparentModal',
-              animation: 'fade',
-              gestureEnabled: true,
-            }} 
-          />
-        </Stack>
-      </ThemeProvider>
+      <AlertProvider>
+        <ThemeProvider value={DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen 
+              name="modal" 
+              options={{ 
+                presentation: 'transparentModal',
+                animation: 'fade',
+                gestureEnabled: true,
+              }} 
+            />
+          </Stack>
+        </ThemeProvider>
+      </AlertProvider>
     </AuthProvider>
   );
 }

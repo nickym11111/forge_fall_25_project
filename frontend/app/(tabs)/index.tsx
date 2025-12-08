@@ -14,7 +14,6 @@ import { useState, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import CustomButton from "@/components/CustomButton";
 import { navigate } from "expo-router/build/global-state/routing";
-import CustomHeader from "@/components/CustomHeader";
 import { useAuth } from "../context/authContext";
 
 export default function TabOneScreen() {
@@ -34,10 +33,9 @@ export default function TabOneScreen() {
 
   return (
     <View style={styles.container}>
-      <CustomHeader
-        title="Log in"
-        logo={require("../../assets/images/New_Fridge_Logo.png")}
-      />
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Sign In</Text>
+      </View>
 
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
@@ -66,12 +64,12 @@ export default function TabOneScreen() {
                 color="#94a3b8"
                 style={styles.inputIcon}
               />
-              <TextInput
-                onChangeText={setEmail}
-                placeholder="Email"
+          <TextInput
+            onChangeText={setEmail}
+            placeholder="Email"
                 placeholderTextColor="#94a3b8"
-                value={email}
-                style={styles.loginInput}
+            value={email}
+            style={styles.loginInput}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 onFocus={() => setFocusedInput("email")}
@@ -93,15 +91,15 @@ export default function TabOneScreen() {
                 size={20}
                 color="#94a3b8"
                 style={styles.inputIcon}
-              />
-              <TextInput
+          />
+          <TextInput
                 ref={passwordRef}
-                onChangeText={setPassword}
-                placeholder="Password"
+            onChangeText={setPassword}
+            placeholder="Password"
                 placeholderTextColor="#94a3b8"
-                value={password}
+            value={password}
                 secureTextEntry={!showPassword}
-                style={styles.loginInput}
+            style={styles.loginInput}
                 onFocus={() => setFocusedInput("password")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
@@ -119,41 +117,41 @@ export default function TabOneScreen() {
                 />
               </TouchableOpacity>
             </View>
-            <CustomButton
+          <CustomButton
               title="Sign In"
-              onPress={async () => {
-                try {
-                  const result = await login(email, password);
-
+            onPress={async () => {
+              try {
+                const result = await login(email, password);
+                
                   if (!result.success) {
                     setErrorMessage(
                       result.error ||
                         "We're sorry, but something went wrong. Please try again."
                     );
                     setShowErrorModal(true);
-                  }
-                } catch (e) {
+                }
+              } catch (e) {
                   setErrorMessage(
                     "We're sorry, but something went wrong. Please try again."
                   );
                   setShowErrorModal(true);
-                  console.log(e);
-                }
-              }}
-              style={styles.loginButton}
-              className=""
-              disabled={false}
-            />
+                console.log(e);
+              }
+            }}
+            style={styles.loginButton}
+            className="" 
+            disabled={!email || !password}
+          />
             <TouchableOpacity
-              style={styles.createAccountButton}
-              onPress={() => {
-                navigate("/account/CreateAccount");
-              }}
-            >
+            style={styles.createAccountButton}
+            onPress={() => {
+              navigate("/account/CreateAccount");
+            }}
+          >
               <Text style={styles.createAccountText}>
                 Don't have an account?{" "}
                 <Text style={styles.createAccountLink}>Create Account</Text>
-              </Text>
+          </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -190,6 +188,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     marginBottom: 24,
+    marginTop: 20,
   },
   logo: {
     width: 120,
@@ -197,17 +196,33 @@ const styles = StyleSheet.create({
   },
   headline: {
     fontSize: 28,
-    fontWeight: "bold",
-    color: "#0f172a",
+    fontWeight: "700",
+    color: "#1e293b",
     marginTop: 16,
   },
   loginContainer: {
     flexGrow: 1,
-    justifyContent: "center",
+    justifyContent: "flex-start",
     alignItems: "center",
     paddingHorizontal: 24,
     paddingBottom: 100,
-    paddingTop: 20,
+    paddingTop: 40,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: 60,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e2e8f0",
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#1e293b",
   },
   loginCard: {
     width: "100%",
@@ -220,6 +235,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 16,
     elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   inputContainer: {
     flexDirection: "row",
@@ -279,26 +296,28 @@ const styles = StyleSheet.create({
   },
   errorModal: {
     backgroundColor: "#ffffff",
-    borderRadius: 12,
+    borderRadius: 24,
     padding: 24,
     width: "85%",
     maxWidth: 320,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+    borderWidth: 1,
+    borderColor: "#e2e8f0",
   },
   errorTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#000",
+    color: "#1e293b",
     marginBottom: 12,
   },
   errorMessage: {
     fontSize: 14,
-    color: "#666",
+    color: "#64748b",
     textAlign: "center",
     marginBottom: 20,
     lineHeight: 20,
@@ -307,9 +326,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#14b8a6",
     paddingVertical: 12,
     paddingHorizontal: 32,
-    borderRadius: 8,
+    borderRadius: 16,
     minWidth: 100,
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   errorButtonText: {
     color: "#ffffff",
