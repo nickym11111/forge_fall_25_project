@@ -1091,7 +1091,10 @@ export default function ParseReceiptScreen() {
                       onPress={() => {
                         Keyboard.dismiss();
                         if (itemUsers.length === 0) fetchItemUsers();
-                        setShowItemUserPicker(true);
+                        // Small delay to allow keyboard to dismiss before showing modal
+                        setTimeout(() => {
+                          setShowItemUserPicker(true);
+                        }, 100);
                       }}
                       disabled={isAddingItem}
                     >
@@ -1190,79 +1193,96 @@ export default function ParseReceiptScreen() {
                   minimumDate={new Date()}
                 />
               )}
+              {/* User Picker Overlay (Replacing nested Modal) */}
+              {showItemUserPicker && (
+                <View
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    backgroundColor: "rgba(0,0,0,0.5)",
+                    zIndex: 2000,
+                  }}
+                >
+                  <View style={styles.addItemUserPickerModalCard}>
+                    <View style={styles.addItemUserPickerModalHeader}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setItemSharedByUserIds([]);
+                          setShowItemUserPicker(false);
+                        }}
+                        style={styles.addItemUserPickerModalButton}
+                      >
+                        <Text style={styles.addItemUserPickerModalButtonText}>
+                          Clear All
+                        </Text>
+                      </TouchableOpacity>
+                      <Text style={styles.addItemUserPickerModalTitle}>
+                        Select Users
+                      </Text>
+                      <TouchableOpacity
+                        onPress={() => setShowItemUserPicker(false)}
+                        style={styles.addItemUserPickerModalButton}
+                      >
+                        <Text style={styles.addItemUserPickerModalButtonText}>
+                          Done
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    <ScrollView style={styles.addItemUserPickerModalList}>
+                      {itemUsers.length === 0 ? (
+                        <View
+                          style={{
+                            padding: 20,
+                            alignItems: "center",
+                            minHeight: 100,
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Text
+                            style={{ color: "#64748b", textAlign: "center" }}
+                          >
+                            No fridge mates found. Add friends to share items!
+                          </Text>
+                        </View>
+                      ) : (
+                        itemUsers.map((user) => (
+                          <TouchableOpacity
+                            key={user.id}
+                            style={styles.addItemUserPickerOption}
+                            onPress={() => toggleItemUserSelection(user.id)}
+                          >
+                            <View
+                              style={[
+                                styles.addItemUserPickerCheckbox,
+                                itemSharedByUserIds.includes(user.id) &&
+                                  styles.addItemUserPickerCheckboxSelected,
+                              ]}
+                            >
+                              {itemSharedByUserIds.includes(user.id) && (
+                                <Ionicons
+                                  name="checkmark"
+                                  size={16}
+                                  color="#fff"
+                                />
+                              )}
+                            </View>
+                            <Text style={styles.addItemUserPickerOptionText}>
+                              {getItemUserDisplayName(user)}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      )}
+                    </ScrollView>
+                  </View>
+                </View>
+              )}
             </Pressable>
           </Pressable>
-        </Modal>
-      )}
-
-      {/* User Picker Modal for Add Item */}
-      {showItemUserPicker && (
-        <Modal
-          transparent={true}
-          animationType="slide"
-          visible={showItemUserPicker}
-          onRequestClose={() => setShowItemUserPicker(false)}
-        >
-          <View style={styles.addItemUserPickerModalOverlay}>
-            <View style={styles.addItemUserPickerModalCard}>
-              <View style={styles.addItemUserPickerModalHeader}>
-                <TouchableOpacity
-                  onPress={() => {
-                    setItemSharedByUserIds([]);
-                    setShowItemUserPicker(false);
-                  }}
-                  style={styles.addItemUserPickerModalButton}
-                >
-                  <Text style={styles.addItemUserPickerModalButtonText}>
-                    Clear All
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.addItemUserPickerModalTitle}>
-                  Select Users
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowItemUserPicker(false)}
-                  style={styles.addItemUserPickerModalButton}
-                >
-                  <Text style={styles.addItemUserPickerModalButtonText}>
-                    Done
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <ScrollView style={styles.addItemUserPickerModalList}>
-                {itemUsers.length === 0 || true ? (
-                  <View style={{ padding: 20, alignItems: "center" }}>
-                    <Text style={{ color: "#64748b", textAlign: "center" }}>
-                      No fridge mates found. Add friends to share items!
-                    </Text>
-                  </View>
-                ) : (
-                  itemUsers.map((user) => (
-                    <TouchableOpacity
-                      key={user.id}
-                      style={styles.addItemUserPickerOption}
-                      onPress={() => toggleItemUserSelection(user.id)}
-                    >
-                      <View
-                        style={[
-                          styles.addItemUserPickerCheckbox,
-                          itemSharedByUserIds.includes(user.id) &&
-                            styles.addItemUserPickerCheckboxSelected,
-                        ]}
-                      >
-                        {itemSharedByUserIds.includes(user.id) && (
-                          <Ionicons name="checkmark" size={16} color="#fff" />
-                        )}
-                      </View>
-                      <Text style={styles.addItemUserPickerOptionText}>
-                        {getItemUserDisplayName(user)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))
-                )}
-              </ScrollView>
-            </View>
-          </View>
         </Modal>
       )}
     </KeyboardAvoidingView>
@@ -1887,9 +1907,16 @@ const styles = StyleSheet.create({
   },
   addItemUserPickerModalCard: {
     backgroundColor: "#fff",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
+    width: "90%",
+    maxWidth: 400,
     maxHeight: "80%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 16,
+    elevation: 8,
+    overflow: "hidden",
   },
   addItemUserPickerModalHeader: {
     flexDirection: "row",
