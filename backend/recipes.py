@@ -26,7 +26,7 @@ class GroceryItem(BaseModel):
 def getChatGPTResponse(recipe: str):
     existing_ingredients = (supabase.table("fridge_items").select("name").execute())
     response = client.responses.create(
-        model="gpt-4.1-mini",
+        model="gpt-4o-mini",
         input=[
             {
                 "role": "user",
