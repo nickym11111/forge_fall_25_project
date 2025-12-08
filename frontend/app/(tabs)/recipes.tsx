@@ -3,7 +3,7 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
-  ScrollView,
+  ScrollView, 
   Image,
   Alert,
   ActivityIndicator,
@@ -102,7 +102,7 @@ const FavoriteRecipeItem = ({
           ) : null}
           <Text style={styles.favoriteRecipeMeta}>
             Added by {addedByName}
-          </Text>
+      </Text>
         </View>
       </View>
       
@@ -202,28 +202,28 @@ export default function recipes() {
     setIsLoadingRecipes(true);
     try {
       
-      const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/generate-recipes/`);
-      const data2 = await response.json();
+        const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/generate-recipes/`);
+        const data2 = await response.json();
       
-      if (!response.ok) {
-          throw new Error(data2.detail || "Failed to fetch recipes.");
-      }
-
-      if (data2.status === "success") {
-        if (Array.isArray(data2.recipes)) {
-          setRecipes(data2.recipes);
-        } else if (data2.recipes && data2.recipes.message) {
-          setRecipes([{ recipe_name: data2.recipes.message }]);
+        if (!response.ok) {
+            throw new Error(data2.detail || "Failed to fetch recipes.");
         }
-      } else if (data2.status === "info") {
-        setRecipes([{ recipe_name: data2.message }]);
-      } else {
-        setRecipes([{ message: "No recipes found" }]);
-      }
+
+        if (data2.status === "success") {
+          if (Array.isArray(data2.recipes)) {
+            setRecipes(data2.recipes);
+          } else if (data2.recipes && data2.recipes.message) {
+            setRecipes([{ recipe_name: data2.recipes.message }]);
+          }
+        } else if (data2.status === "info") {
+          setRecipes([{ recipe_name: data2.message }]);
+        } else {
+          setRecipes([{ message: "No recipes found" }]);
+        }
       
-    } catch (error) {
-      console.error('Error fetching recipes:', error);
-      setRecipes([{ message: 'Error sending data to backend.' }]);
+      } catch (error) {
+        console.error('Error fetching recipes:', error);
+        setRecipes([{ message: 'Error sending data to backend.' }]);
     } finally {
       setIsLoadingRecipes(false);
     }
@@ -363,24 +363,24 @@ export default function recipes() {
         );
       }
     }
-  };
+    };
 
-  const RecipeItem = ({ 
+const RecipeItem = ({ 
     item, 
     currentUserId,
     currentFridgeId
-  }: { 
+}: { 
     item: any, 
     currentUserId: string, 
     currentFridgeId: string
-  }) => { 
+}) => { 
     const [isFavorite, setIsFavorite] = useState(false);
 
     const handleHeartPress = async () => {
-      const newState = !isFavorite;
-      setIsFavorite(newState);
+        const newState = !isFavorite;
+        setIsFavorite(newState);
 
-      console.log(`Attempting to set '${item.recipe_name}' favorite status to: ${newState}`);
+        console.log(`Attempting to set '${item.recipe_name}' favorite status to: ${newState}`);
       
       try {
         if (newState) {
@@ -388,77 +388,77 @@ export default function recipes() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              recipe: {
+            recipe: {
                 name: item.recipe_name,
                 added_by: currentUserId,
-              },
-              user: {
+            },
+            user: {
                 id: currentUserId,
                 fridge_id: currentFridgeId,
-              }
+            }
             }),
-          });
+                });
 
-          if (!response.ok) {
+                if (!response.ok) {
             const errorData = await response.json();
             console.error('Error response:', errorData);
-            setIsFavorite(false);
+                    setIsFavorite(false);
             throw new Error(errorData.detail || 'Failed to add recipe to favorites.');
-          }
+                }
           
-          const result = await response.json();
-          console.log("Favorite added successfully:", result);
+                const result = await response.json();
+                console.log("Favorite added successfully:", result);
           alert(`✓ ${item.recipe_name} added to favorites!`);
           
           if (activeTab === 'favorites') {
             fetchFavoriteRecipes();
           }
 
-        } else {
-          console.warn("Unfavoriting needs the unique DB record ID. Skipping DELETE API call.");
+            } else {
+                console.warn("Unfavoriting needs the unique DB record ID. Skipping DELETE API call.");
           alert("Unfavoriting not yet implemented");
+            }
+        } catch (error) {
+            console.error('Error in API call:', error);
+            setIsFavorite(!newState); 
+            alert(`Could not ${newState ? 'add' : 'remove'} favorite. Please check your connection.`);
         }
-      } catch (error) {
-        console.error('Error in API call:', error);
-        setIsFavorite(!newState); 
-        alert(`Could not ${newState ? 'add' : 'remove'} favorite. Please check your connection.`);
-      }
     };
 
     if (item.recipe_name) {
-      return (
-        <View style={styles.itemContainer}> 
-          <View style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
-            {item.description && (
-              <Text style={styles.recipeDescription}>{item.description}</Text>
-            )}
-            {item.ingredients_used && Array.isArray(item.ingredients_used) && (
-              <Text style={styles.recipeIngredients}>
-                Ingredients: {item.ingredients_used.join(', ')}
-              </Text>
-            )}
-          </View>
-          
-          <TouchableOpacity 
-            onPress={handleHeartPress}
-            style={styles.heartButton}
-          >
-            <Ionicons 
-              name={isFavorite ? "heart" : "heart-outline"} 
-              size={28} 
+        return (
+            <View style={styles.itemContainer}> 
+                <View style={{ flex: 1, backgroundColor: 'transparent' }}>
+                    <Text style={styles.recipeTitle}>{item.recipe_name}</Text>
+                    {item.description && (
+                        <Text style={styles.recipeDescription}>{item.description}</Text>
+                    )}
+                    {item.ingredients_used && Array.isArray(item.ingredients_used) && (
+                        <Text style={styles.recipeIngredients}>
+                            Ingredients: {item.ingredients_used.join(', ')}
+                        </Text>
+                    )}
+                </View>
+                
+                <TouchableOpacity 
+                    onPress={handleHeartPress}
+                    style={styles.heartButton}
+                >
+                    <Ionicons 
+                        name={isFavorite ? "heart" : "heart-outline"} 
+                        size={28} 
               color={isFavorite ? "#E91E63" : "#94a3b8"} 
-            />
-          </TouchableOpacity>
-        </View>
-      );
+                    />
+                </TouchableOpacity>
+            </View>
+        );
     }
     return (
-      <View style={styles.item}>
-        <Text style={styles.itemText}>{String(item)}</Text>
-      </View>
+        <View style={styles.item}>
+            <Text style={styles.itemText}>{String(item)}</Text>
+        </View>
     );
-  };
+};
 
   return (
     <View style={styles.container}>
@@ -509,12 +509,12 @@ export default function recipes() {
             Favorites
           </Text>
         </TouchableOpacity>
-      </View>
+  </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {activeTab === 'ingredients' && (
-          <View style={styles.contentSection}>
-            <View style={styles.boxContainer}>
+        <View style={styles.contentSection}>
+          <View style={styles.boxContainer}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="restaurant-outline" size={22} color="#14b8a6" />
                 <Text style={styles.sectionTitle}>Find Missing Ingredients</Text>
@@ -529,13 +529,13 @@ export default function recipes() {
                 </Text>
               </View>
               <View style={styles.searchContainer}>
-                <TextInput
+              <TextInput
                   style={styles.searchInput}
                   onChangeText={setInputValue}
-                  value={inputValue}
-                  placeholder="Enter a Dish..."
+                value={inputValue}
+                placeholder="Enter a Dish..."
                   onSubmitEditing={handleSubmit}
-                />
+              />
                 <TouchableOpacity 
                   style={styles.submitButton}
                   onPress={handleSubmit}
@@ -545,28 +545,28 @@ export default function recipes() {
                     {isLoadingIngredients ? "..." : "→"}
                   </Text>
                 </TouchableOpacity>
-              </View>
+            </View>
 
               {responseMessage.length > 0 && (
-                <FlatList
-                  data={responseMessage}
+            <FlatList
+              data={responseMessage}
                   renderItem={({ item }) => (
                     <Item 
                       title={item} 
                       onAdd={() => handleAddToGroceryList(item)}
                     />
                   )}
-                  keyExtractor={(item, index) => index.toString()}
-                  scrollEnabled={false}
-                />
+              keyExtractor={(item, index) => index.toString()}
+              scrollEnabled={false} 
+            />
               )}
             </View>
           </View>
         )}
 
         {activeTab === 'recipes' && (
-          <View style={styles.contentSection}>
-            <View style={styles.boxContainer}>
+        <View style={styles.contentSection}>
+          <View style={styles.boxContainer}>
               <View style={styles.sectionHeader}>
                 <Ionicons name="sparkles-outline" size={22} color="#14b8a6" />
                 <Text style={styles.sectionTitle}>AI Recipe Generator</Text>
@@ -582,18 +582,18 @@ export default function recipes() {
                 </View>
               ) : (
                 <>
-                  <FlatList
-                    data={recipes}
-                    renderItem={({ item }) => (
-                      <RecipeItem 
-                        item={item}
-                        currentUserId={currentUserId}
-                        currentFridgeId={currentFridgeId}
-                      />
-                    )}
-                    keyExtractor={(item, index) => item.recipe_name || index.toString()}
-                    scrollEnabled={false}
-                  />
+            <FlatList
+              data={recipes}
+              renderItem={({ item }) => (
+                <RecipeItem 
+                  item={item} 
+                  currentUserId={currentUserId} 
+                  currentFridgeId={currentFridgeId}
+                />
+              )} 
+              keyExtractor={(item, index) => item.recipe_name || index.toString()}
+              scrollEnabled={false}
+            />
                   
                   {recipes.length > 0 && (
                     <TouchableOpacity 
@@ -656,8 +656,8 @@ export default function recipes() {
                   }
                 />
               )}
-            </View>
           </View>
+        </View>
         )}
       </ScrollView>
     </View>
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
-  }, 
+  },
 
   activeIconTab: {
     backgroundColor: '#14b8a6',

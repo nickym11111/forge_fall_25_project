@@ -64,12 +64,12 @@ export default function TabOneScreen() {
                 color="#94a3b8"
                 style={styles.inputIcon}
               />
-              <TextInput
-                onChangeText={setEmail}
-                placeholder="Email"
+          <TextInput
+            onChangeText={setEmail}
+            placeholder="Email"
                 placeholderTextColor="#94a3b8"
-                value={email}
-                style={styles.loginInput}
+            value={email}
+            style={styles.loginInput}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 onFocus={() => setFocusedInput("email")}
@@ -91,15 +91,15 @@ export default function TabOneScreen() {
                 size={20}
                 color="#94a3b8"
                 style={styles.inputIcon}
-              />
-              <TextInput
+          />
+          <TextInput
                 ref={passwordRef}
-                onChangeText={setPassword}
-                placeholder="Password"
+            onChangeText={setPassword}
+            placeholder="Password"
                 placeholderTextColor="#94a3b8"
-                value={password}
+            value={password}
                 secureTextEntry={!showPassword}
-                style={styles.loginInput}
+            style={styles.loginInput}
                 onFocus={() => setFocusedInput("password")}
                 onBlur={() => setFocusedInput(null)}
                 onSubmitEditing={Keyboard.dismiss}
@@ -117,41 +117,41 @@ export default function TabOneScreen() {
                 />
               </TouchableOpacity>
             </View>
-            <CustomButton
+          <CustomButton
               title="Sign In"
-              onPress={async () => {
-                try {
-                  const result = await login(email, password);
-
+            onPress={async () => {
+              try {
+                const result = await login(email, password);
+                
                   if (!result.success) {
                     setErrorMessage(
                       result.error ||
                         "We're sorry, but something went wrong. Please try again."
                     );
                     setShowErrorModal(true);
-                  }
-                } catch (e) {
+                }
+              } catch (e) {
                   setErrorMessage(
                     "We're sorry, but something went wrong. Please try again."
                   );
                   setShowErrorModal(true);
-                  console.log(e);
-                }
-              }}
-              style={styles.loginButton}
-              className=""
-              disabled={false}
-            />
+                console.log(e);
+              }
+            }}
+            style={styles.loginButton}
+            className="" 
+            disabled={!email || !password}
+          />
             <TouchableOpacity
-              style={styles.createAccountButton}
-              onPress={() => {
-                navigate("/account/CreateAccount");
-              }}
-            >
+            style={styles.createAccountButton}
+            onPress={() => {
+              navigate("/account/CreateAccount");
+            }}
+          >
               <Text style={styles.createAccountText}>
                 Don't have an account?{" "}
                 <Text style={styles.createAccountLink}>Create Account</Text>
-              </Text>
+          </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

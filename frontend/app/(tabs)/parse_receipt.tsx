@@ -112,13 +112,13 @@ export default function ParseReceiptScreen() {
 
   // fetches the user's session
   const getSession = async () => {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error("Error getting session:", error);
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error("Error getting session:", error);
       return null;
-    }
+      }
     setUserSession(data.session);
-  };
+    };
 
   useEffect(() => {
     getSession();
@@ -165,14 +165,14 @@ export default function ParseReceiptScreen() {
     const newExpiryDate = new Date(); // Default to today
 
     try {
-      const ExpiryDateResponse = await PredictExpiryDate(item.name);
-      const ExpiryDateData = await ExpiryDateResponse.json();
+    const ExpiryDateResponse = await PredictExpiryDate(item.name);
+    const ExpiryDateData = await ExpiryDateResponse.json();
       console.log(" Response data:", ExpiryDateData);
 
-      if (ExpiryDateData.days) {
-        const days = parseInt(ExpiryDateData.days);
+    if (ExpiryDateData.days) {
+      const days = parseInt(ExpiryDateData.days);
         console.log(" AI predicted", days, "days for", item.name);
-        newExpiryDate.setDate(newExpiryDate.getDate() + days);
+      newExpiryDate.setDate(newExpiryDate.getDate() + days);
       }
     } catch (expiryError) {
       console.warn(
@@ -500,16 +500,16 @@ export default function ParseReceiptScreen() {
         </TouchableOpacity>
 
         <View style={styles.uploadSection}>
-          <View style={styles.imageContainer}>
-            <TouchableOpacity
-              onPress={pickImage}
+      <View style={styles.imageContainer}>
+        <TouchableOpacity
+          onPress={pickImage}
               activeOpacity={0.8}
               style={styles.imageTouchable}
-            >
-              {imageUri ? (
-                <View style={styles.imageWrapper}>
-                  <Image source={{ uri: imageUri }} style={styles.image} />
-                  <View style={styles.imageOverlay}>
+        >
+          {imageUri ? (
+            <View style={styles.imageWrapper}>
+              <Image source={{ uri: imageUri }} style={styles.image} />
+              <View style={styles.imageOverlay}>
                     <View style={styles.overlayContent}>
                       <View style={styles.overlayIconCircle}>
                         <Ionicons
@@ -518,33 +518,33 @@ export default function ParseReceiptScreen() {
                           color="#14b8a6"
                         />
                       </View>
-                      <Text style={styles.imageOverlayText}>
+                <Text style={styles.imageOverlayText}>
                         Tap to change image
-                      </Text>
+                </Text>
                     </View>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.imageSkeleton}>
-                  <View style={styles.imageTextContainer}>
+              </View>
+            </View>
+          ) : (
+            <View style={styles.imageSkeleton}>
+              <View style={styles.imageTextContainer}>
                     <View style={styles.iconCircle}>
                       <Ionicons name="camera" size={36} color="#14b8a6" />
                     </View>
                     <Text style={styles.skeletonTitle}>
-                      Scan Receipt or Take Photo
-                    </Text>
+                  Scan Receipt or Take Photo
+                </Text>
                     <Text style={styles.skeletonSubtitle}>
                       AI will automatically detect items and expiry dates
-                    </Text>
+                </Text>
                     <View style={styles.hintBadge}>
                       <Ionicons name="sparkles" size={16} color="#14b8a6" />
                       <Text style={styles.hintText}>Powered by AI</Text>
                     </View>
-                  </View>
-                </View>
-              )}
-            </TouchableOpacity>
-          </View>
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
           {!imageUri && (
             <View style={styles.tipsCard}>
               <View style={styles.tipsHeader}>
@@ -612,7 +612,7 @@ export default function ParseReceiptScreen() {
                     style={styles.fridgeMateItem}
                     onPress={() => toggleFridgeMate(mate.id)}
                   >
-                    <View
+            <View
                       style={[
                         styles.checkbox,
                         sharingWith.includes(mate.id) && styles.checkboxChecked,
@@ -762,15 +762,15 @@ export default function ParseReceiptScreen() {
                     const results = await Promise.all(
                       selectedItems.map(async (index) => {
                         const item = parsedItems[index];
-                        const itemName = Object.keys(item)[0];
-                        const itemData = item[itemName];
+                    const itemName = Object.keys(item)[0];
+                    const itemData = item[itemName];
 
                         try {
                           await sendItemToFridge({
-                            name: itemName,
-                            quantity: Math.ceil(itemData.quantity),
+                      name: itemName,
+                      quantity: Math.ceil(itemData.quantity),
                             price: itemData.price,
-                            index,
+                      index,
                             sharedWith: [...sharingWith],
                           });
                           return { success: true, index };
@@ -850,7 +850,7 @@ export default function ParseReceiptScreen() {
                     <View style={styles.itemMeta}>
                       <Text style={styles.itemMetaText}>
                         Qty: {itemData.quantity}
-                      </Text>
+                    </Text>
                       {itemData.price && (
                         <>
                           <Text style={styles.itemMetaDivider}>•</Text>
@@ -859,7 +859,7 @@ export default function ParseReceiptScreen() {
                           </Text>
                         </>
                       )}
-                    </View>
+                  </View>
                   </View>
                   <View style={styles.buttonGroup}>
                     <TouchableOpacity
@@ -1079,9 +1079,9 @@ export default function ParseReceiptScreen() {
                         className=""
                         disabled={isAddingItem}
                       />
-                    </View>
                   </View>
                 </View>
+          </View>
               </TouchableWithoutFeedback>
 
               {/* Date Picker Modal for Add Item - iOS Overlay inside Modal */}
@@ -1120,7 +1120,7 @@ export default function ParseReceiptScreen() {
                           Done
                         </Text>
                       </TouchableOpacity>
-                    </View>
+      </View>
                     <View style={styles.addItemDatePickerModalPickerWrapper}>
                       <DateTimePicker
                         value={tempItemExpiryDate}
@@ -1210,7 +1210,7 @@ export default function ParseReceiptScreen() {
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+    </ScrollView>
             </View>
           </View>
         </Modal>

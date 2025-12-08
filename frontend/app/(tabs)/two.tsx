@@ -381,8 +381,8 @@ export default function TabOneScreen() {
       }
 
       // Update local state after successful backend delete
-      setData((prev) => prev.filter((i) => i.id !== item.id));
-      originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
+    setData((prev) => prev.filter((i) => i.id !== item.id));
+    originalHolder.current = originalHolder.current.filter((i) => i.id !== item.id);
       
     } catch (err) {
       console.error("Error deleting item:", err);
@@ -396,7 +396,7 @@ export default function TabOneScreen() {
   const handleQuantityChange = async (item: FoodItem, delta: number) => {
     const newQty = Math.max(1, (item.quantity || 1) + delta);
     const updated = { ...item, quantity: newQty };
-
+    
     const getExpiryDateString = (days: number | undefined) => {
       const date = new Date();
       date.setDate(date.getDate() + (days || 0));
@@ -443,10 +443,10 @@ export default function TabOneScreen() {
       }
 
       // Update local state after successful backend update
-      setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
-      originalHolder.current = originalHolder.current.map((it) =>
-        it.id === item.id ? updated : it
-      );
+    setData((prev) => prev.map((it) => (it.id === item.id ? updated : it)));
+    originalHolder.current = originalHolder.current.map((it) =>
+      it.id === item.id ? updated : it
+    );
       
     } catch (err) {
       console.error("Error updating quantity:", err);
@@ -471,7 +471,7 @@ export default function TabOneScreen() {
   const fetchFridgeItems = async (showFullLoading: boolean = true) => {
     try {
       if (showFullLoading) {
-        setLoading(true);
+      setLoading(true);
       } else {
         // For pull-to-refresh, only use refreshing state
         setRefreshing(true);
@@ -617,8 +617,8 @@ export default function TabOneScreen() {
           <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
           <ProfileIcon className="" style={styles.profileIconContainer} />
         </View>
-        <View style={[styles.container, { justifyContent: "center" }]}>
-          <ActivityIndicator size="large" color="#14b8a6" />
+      <View style={[styles.container, { justifyContent: "center" }]}>
+        <ActivityIndicator size="large" color="#14b8a6" />
           <Text style={styles.loadingText}>Loading fridge items...</Text>
         </View>
       </View>
@@ -660,23 +660,23 @@ export default function TabOneScreen() {
           <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
           <ProfileIcon className="" style={styles.profileIconContainer} />
         </View>
-        <View style={[styles.container, { justifyContent: "center" }]}>
+      <View style={[styles.container, { justifyContent: "center" }]}>
           <Text style={styles.errorText}>
-            {error}
-          </Text>
-          <TouchableOpacity
-            style={styles.filter_button}
+          {error}
+        </Text>
+        <TouchableOpacity
+          style={styles.filter_button}
             onPress={() => fetchFridgeItems(true)}
-          >
-            <Text style={styles.buttonLabel}>Retry</Text>
-          </TouchableOpacity>
+        >
+          <Text style={styles.buttonLabel}>Retry</Text>
+        </TouchableOpacity>
         </View>
       </View>
     );
   }
 
   if (data.length === 0) {
-    return (
+  return (
       <View style={styles.screenContainer}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>What's In Our Kitchen?</Text>
@@ -705,13 +705,13 @@ export default function TabOneScreen() {
       <View style={styles.searchContainer}>
         <View style={styles.inputContainer}>
           <Ionicons name="search-outline" size={20} color="#94a3b8" style={styles.inputIcon} />
-          <TextInput
+      <TextInput
             style={styles.searchInput}
-            onChangeText={searchFunction}
-            value={searchValue}
-            placeholder="Search food items..."
+        onChangeText={searchFunction}
+        value={searchValue}
+        placeholder="Search food items..."
             placeholderTextColor="#94a3b8"
-          />
+      />
         </View>
       </View>
       

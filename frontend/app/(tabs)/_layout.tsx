@@ -194,8 +194,8 @@ export default function TabLayout() {
         name="add-item"
         options={{
           href: null,
-        }}
-      />
+    }}
+  />
     </Tabs>
   );
 }
