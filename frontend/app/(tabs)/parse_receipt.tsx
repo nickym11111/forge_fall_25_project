@@ -476,6 +476,7 @@ export default function ParseReceiptScreen() {
   const handleAutoPredictExpiry = async () => {
     if (itemTitle.trim() && itemQuantity.trim()) {
       try {
+        setItemAiSuggested(false);
         setIsLoadingItemAI(true);
         const response = await PredictExpiryDate(itemTitle);
         const data = await response.json();
@@ -1028,6 +1029,15 @@ export default function ParseReceiptScreen() {
                           }}
                         >
                           AI Suggested
+                        </Text>
+                      )}
+                      {isLoadingItemAI && (
+                        <Text
+                          style={{
+                            color: "#14b8a6",
+                          }}
+                        >
+                          Loading...
                         </Text>
                       )}
                     </Text>
