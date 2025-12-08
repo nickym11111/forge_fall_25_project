@@ -303,10 +303,12 @@ export default function ParseReceiptScreen() {
       if (response.ok) {
         const result = await response.json();
         if (result.data && Array.isArray(result.data)) {
+          console.log("Fridge members:", result.data);
           setItemUsers(result.data);
         } else {
           // Fallback to fridgeMates from user context
           if (user?.fridgeMates) {
+            console.log("Fridge mates:", user.fridgeMates);
             setItemUsers(
               user.fridgeMates.map((mate: any) => ({
                 id: mate.id,
@@ -469,6 +471,29 @@ export default function ParseReceiptScreen() {
   const cancelItemDateSelection = () => {
     setTempItemExpiryDate(itemExpiryDate);
     setShowItemDatePicker(false);
+  };
+
+  const handleAutoPredictExpiry = async () => {
+    if (itemTitle.trim() && itemQuantity.trim()) {
+      try {
+        setIsLoadingItemAI(true);
+        const response = await PredictExpiryDate(itemTitle);
+        const data = await response.json();
+        if (data.days) {
+          const days = parseInt(data.days);
+          console.log("Days:", days);
+          const newDate = new Date();
+          newDate.setDate(newDate.getDate() + days);
+          setItemExpiryDate(newDate);
+          setTempItemExpiryDate(newDate);
+          setItemAiSuggested(true);
+        }
+      } catch (error) {
+        console.warn("Failed to auto-predict expiry:", error);
+      } finally {
+        setIsLoadingItemAI(false);
+      }
+    }
   };
 
   return (
@@ -948,6 +973,7 @@ export default function ParseReceiptScreen() {
                         placeholderTextColor="#94a3b8"
                         value={itemTitle}
                         onChangeText={setItemTitle}
+                        onBlur={handleAutoPredictExpiry}
                         editable={!isAddingItem}
                       />
                     </View>
@@ -967,6 +993,7 @@ export default function ParseReceiptScreen() {
                         placeholderTextColor="#94a3b8"
                         value={itemQuantity}
                         onChangeText={setItemQuantity}
+                        onBlur={handleAutoPredictExpiry}
                         keyboardType="numeric"
                         editable={!isAddingItem}
                       />
@@ -993,7 +1020,17 @@ export default function ParseReceiptScreen() {
                     </View>
 
                     {/* Expiry Date */}
-                    <Text style={styles.addItemModalLabel}>Expiry Date</Text>
+                    <Text style={styles.addItemModalLabel}>
+                      Expiry Date:{" "}
+                      <Text
+                        style={{
+                          visibility: itemAiSuggested ? "visible" : "hidden",
+                          color: "#14b8a6",
+                        }}
+                      >
+                        AI Suggested
+                      </Text>
+                    </Text>
                     {Platform.OS === "web" && DatePicker ? (
                       <View style={styles.addItemModalInputContainer}>
                         <Ionicons
